@@ -1,0 +1,259 @@
+; Waveform tables and definitions for the Hamamatsu S9970.
+; Based on E2V231.waveforms
+;   with ARC22 timing, ARC32 clock driver and ARC47 video boards.
+
+; Miscellaneous definitions
+VIDEO	EQU	$000000	; Video board timing select address
+CLK2	EQU	$002000	; Clock driver board timing select address
+CLK3	EQU	$003000
+DC0	EQU	$000000 ; Video board DC bias supply DAC voltage address 
+DC1	EQU	$100000
+CLKV	EQU	$200000	; Clock driver board DAC voltage selection address 
+
+; Delay numbers for clocking
+; spec sheet specifys parallel pulse width Tpwv S9970-0906 4.5 micro-secs = 4500ns = 8 x 640ns
+; Parallel clock delay bit 0xA00000 23 and 21 set = 32x640nsec delay= 20480ns  = 20 microsecs (E2V231)
+; Parallel clock delay bit 0x880000, bits 23 and bit 3 of last 16 bits = 8x640ns = 5120ns
+; spec sheet specifys serial pulse width Tpwh S9970-0906 5000ns = 8x640ns = 5120ns
+P_DELAY EQU	$880000	; Parallel clock delay bit 5120ns
+R_DELAY	EQU	$880000	; Serial register transfer delay 5120ns
+; Reset gate delay - spec sheet specifys pulse width Tpwr S9970-0906 = 500ns =  12x40ns + 40 = 520ns
+RG_DELAY EQU	$0C0000	; Reset Gate delay 5020ns
+NPCLR	EQU	65	; Parallel clocks to clear
+SH_DEL	EQU	50	; Shutter delay in milliseconds
+PRESKIP	EQU	45	; 50 on CCD - 5 to warm up the video processor
+PRESCAN	EQU	8	; 5 on CCD + 3 on video processor
+INT_TIM	EQU	$060000	; Signal integration time for ~1 microsec/pixel = 6x240ns
+
+VIDEO_CONFIG	EQU	$0C000C	; WARP = DAC_OUT = ON; H16B, Reset FIFOs
+DAC_ADDR	EQU	$0E0000 ; DAC Channel Address
+DAC_RegM	EQU	$0F4000 ; DAC m Register
+DAC_RegC	EQU	$0F8000 ; DAC c Register
+DAC_RegD	EQU	$0FC000 ; DAC X1 Register
+
+; CCD clock voltages
+RG_HI	EQU	 4.0	; Reset Gate High
+RG_LO	EQU     -8.0	; Reset Gate Low
+H_HI	EQU	 4.0	; Horizontal Register Clock High
+H_LO	EQU	-8.0	; Horizontal Register Clock Low
+
+P_HI	EQU	 4.0	; Parallel Clocks High
+P_LO	EQU     -8.0	; Parallel Clocks Low
+Vmax	EQU    +13.0	; Maximum clock driver voltage (see ARC-32 clock driver board docs)
+ZERO	EQU	 0.0	; Unused pins
+
+; Output video offset parameters
+OFFSET	EQU	$680		; 0 TO $FFF -> 12 bits
+OFFSET0	EQU	OFFSET
+OFFSET1	EQU	OFFSET
+OFFSET2	EQU	OFFSET
+OFFSET3	EQU	OFFSET
+
+; DC Bias voltages
+VOD	EQU	20.0	; Output Drain
+VRD	EQU	12.0	; Reset Drain			
+VOG	EQU      3.0	; Output Gate
+VSS     EQU      0.0    ; Substrate
+
+; Switch state bit definitions for the bottom half of ARC32 clock driver board
+; Fast clocks, CLK2
+RG	EQU	1	; reset gate 			, SDSU Pin #1, chip pin #1
+P1H	EQU	2	; horizontal register clock #1  , SDSU Pin #2, chip pin #10
+P2H	EQU	4	; horizontal register clock #2, also SG  , SDSU Pin #3, chip pin #9, SG on chip pin #6
+; SG same as P2H
+
+; Bit definitions for top half of clock driver board, CLK3
+; Slow Clocks, CLK3
+P1V	EQU	1	; vertical register clock #1    , SDSU Pin #13, chip pin #15
+P2V	EQU	2	; vertical register clock #2    , SDSU Pin #14, chip pin #14 and TG chip pin #16
+; TGV  ; Vertical transfer gate (TG in spec sheet) same as P2V
+
+; Not connected: lots of pins
+
+; Fast Clocks:	RG+P1H+P2H
+; Slow Clocks:  P1V+P2V
+
+;  ***  Definitions for Y: memory waveform tables  *****
+
+; Clock the entire image UP
+PARALLEL_UP
+	DC	END_PARALLEL_UP-PARALLEL_UP-1
+	DC	VIDEO+%0011000		; DC restore and reset integrator
+
+	DC	CLK3+P_DELAY+000+000
+	DC	CLK3+P_DELAY+P1V+000
+	DC	CLK3+P_DELAY+000+P2V
+; Consider:
+;	DC	CLK3+P_DELAY+000+000
+; P1V+P2V must be low before horizontal readout
+; in line binning and low dark current mode
+; in large full well mode P1V is high and P2V/TG is low 
+END_PARALLEL_UP
+
+
+; Clear the entire image UP
+PARALLEL_CLEAR_UP
+	DC	END_PARALLEL_CLEAR_UP-PARALLEL_CLEAR_UP-1
+	DC	VIDEO+%0011000		; DC restore and reset integrator
+	DC	CLK3+P_DELAY+P1V+000
+	DC	CLK3+P_DELAY+000+P2V
+END_PARALLEL_CLEAR_UP
+
+; Video processor bit definition
+;	     xfer, A/D, integ, Pol+, Pol-, DCrestore, rst   (1 => switch open)
+
+SERIAL_IDLE	; Clock serial charge from both L and R ends
+	DC	END_SERIAL_IDLE-SERIAL_IDLE-1
+	DC	CLK2+R_DELAY+00+P1H+000
+	DC	CLK2+R_DELAY+00+000+P2H
+	DC	VIDEO+$000000+%0010111		; Stop resetting integrator
+	DC	VIDEO+INT_TIM+%0000111		; Integrate
+	DC	VIDEO+$000000+%0011011		; Stop Integrate
+	DC	VIDEO+INT_TIM+%0001011		; Integrate
+	DC	VIDEO+$000000+%0011011		; Stop, A/D is sampling
+	DC	VIDEO+%1110100			; Start A/D conversion
+END_SERIAL_IDLE
+
+SERIAL_SKIP_LEFT		; Serial clocking waveform for skipping left
+	DC	END_SERIAL_SKIP_LEFT-SERIAL_SKIP_LEFT-1
+	DC	CLK2+R_DELAY+00+P1H+000
+	DC	CLK2+R_DELAY+RG+000+P2H
+END_SERIAL_SKIP_LEFT
+
+SERIALS_CLEAR		; Same as serial skip left
+	DC	END_SERIALS_CLEAR-SERIALS_CLEAR-1
+	DC	CLK2+R_DELAY+00+P1H+000
+	DC	CLK2+R_DELAY+RG+000+P2H
+END_SERIALS_CLEAR
+
+; **************  Waveform generating code for the LEFT **********
+FIRST_CLOCKS_LEFT
+	DC	END_FIRST_CLOCKS_LEFT-FIRST_CLOCKS_LEFT-1
+	DC	CLK2+RG_DELAY+RG+000+P2H 
+	DC	CLK2+R_DELAY+00+000+P2H
+	DC	CLK2+R_DELAY+00+P1H+000
+END_FIRST_CLOCKS_LEFT
+
+CLOCK_LINE_LEFT
+	DC	END_CLOCK_LINE_LEFT-CLOCK_LINE_LEFT-1
+	DC	CLK2+R_DELAY+00+000+P2H
+	DC	CLK2+R_DELAY+00+P1H+000
+END_CLOCK_LINE_LEFT
+
+RESET_VIDEO
+	DC	END_RESET_VIDEO-RESET_VIDEO-1
+	DC	VIDEO+$000000+%0010111		; Stop resetting integrator
+INTEGRATE_RESET
+	DC	VIDEO+INT_TIM+%0000111		; Integrate
+	DC	VIDEO+$000000+%0011011		; Stop Integrate
+END_RESET_VIDEO
+
+CHARGE_DUMP_LEFT
+	DC	END_CHARGE_DUMP_LEFT-CHARGE_DUMP_LEFT-1
+INTEGRATE_SIGNAL_LEFT
+	DC	VIDEO+INT_TIM+%0001011		; Integrate
+	DC	VIDEO+$000000+%0011011		; Stop, A/D is sampling
+	DC	VIDEO+%1110100	
+END_CHARGE_DUMP_LEFT
+
+
+; Initialization of clock driver and video processor DACs and switches
+; Fast Clocks:	RG SDSU pin #1 + P1H SDSU pin 2 + P2H SDSU pin #3
+; Slow Clocks:  P1V SDSU pin #13 + P2V SDSU Pin #14
+; ARC-32
+DACS	DC	END_DACS-DACS-1
+	DC	CLKV+$0A0080					; DAC = unbuffered mode
+	DC	CLKV+$000100+@CVI((RG_HI+Vmax)/(2*Vmax)*255)	; Pin #1, Reset Gate
+	DC	CLKV+$000200+@CVI((RG_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$000400+@CVI((H_HI+Vmax)/(2*Vmax)*255)	; Pin #2, P1H
+	DC	CLKV+$000800+@CVI((H_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$002000+@CVI((H_HI+Vmax)/(2*Vmax)*255)	; Pin #3, P2H
+	DC	CLKV+$004000+@CVI((H_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$008000+@CVI((ZERO+Vmax)/(2*Vmax)*255)	; Pin #4, Unused
+	DC	CLKV+$010000+@CVI((ZERO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$020100+@CVI((ZERO+Vmax)/(2*Vmax)*255)	; Pin #5, Unused
+	DC	CLKV+$020200+@CVI((ZERO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$020400+@CVI((ZERO+Vmax)/(2*Vmax)*255)	; Pin #6, Unused
+	DC	CLKV+$020800+@CVI((ZERO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$022000+@CVI((ZERO+Vmax)/(2*Vmax)*255)	; Pin #7, Unused
+	DC	CLKV+$024000+@CVI((ZERO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$028000+@CVI((ZERO+Vmax)/(2*Vmax)*255)	; Pin #8, Unused
+	DC	CLKV+$030000+@CVI((ZERO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$040100+@CVI((ZERO+Vmax)/(2*Vmax)*255)	; Pin #9, Unused
+	DC	CLKV+$040200+@CVI((ZERO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$040400+@CVI((ZERO+Vmax)/(2*Vmax)*255)	; Pin #10, Unused
+	DC	CLKV+$040800+@CVI((ZERO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$042000+@CVI((ZERO+Vmax)/(2*Vmax)*255)	; Pin #11, Unused
+	DC	CLKV+$044000+@CVI((ZERO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$048000+@CVI((ZERO+Vmax)/(2*Vmax)*255)	; Pin #12, Unused
+	DC	CLKV+$050000+@CVI((ZERO+Vmax)/(2*Vmax)*255)
+
+	DC	CLKV+$060100+@CVI((P_HI+Vmax)/(2*Vmax)*255)	; Pin #13, P1V
+	DC	CLKV+$060200+@CVI((P_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$060400+@CVI((P_HI+Vmax)/(2*Vmax)*255)	; Pin #14, P2V
+	DC	CLKV+$060800+@CVI((P_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$062000+@CVI((ZERO+Vmax)/(2*Vmax)*255)	; Pin #15, Unused
+	DC	CLKV+$064000+@CVI((ZERO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$068000+@CVI((ZERO+Vmax)/(2*Vmax)*255)	; Pin #16, Unused
+	DC	CLKV+$070000+@CVI((ZERO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$080100+@CVI((ZERO+Vmax)/(2*Vmax)*255)	; Pin #17, Unused
+	DC	CLKV+$080200+@CVI((ZERO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$080400+@CVI((ZERO+Vmax)/(2*Vmax)*255)	; Pin #18, Unused
+	DC	CLKV+$080800+@CVI((ZERO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$082000+@CVI((ZERO+Vmax)/(2*Vmax)*255)	; Pin #19, Unused
+	DC	CLKV+$084000+@CVI((ZERO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$088000+@CVI((ZERO+Vmax)/(2*Vmax)*255)	; Pin #33, Unused
+	DC	CLKV+$090000+@CVI((ZERO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$0A0100+@CVI((ZERO+Vmax)/(2*Vmax)*255)	; Pin #34, Unused
+	DC	CLKV+$0A0200+@CVI((ZERO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$0A0400+@CVI((ZERO+Vmax)/(2*Vmax)*255)	; Pin #35, Unused
+	DC	CLKV+$0A0800+@CVI((ZERO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$0A2000+@CVI((ZERO+Vmax)/(2*Vmax)*255)	; Pin #36, Unused
+	DC	CLKV+$0A4000+@CVI((ZERO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$0A8000+@CVI((ZERO+Vmax)/(2*Vmax)*255)	; Pin #37, Unused
+	DC	CLKV+$0B0000+@CVI((ZERO+Vmax)/(2*Vmax)*255)
+
+
+;  ******************  Code for 2 x ARC-45  ****************************
+
+; Set gain and integrator speed. (77, bb, dd, ee; low gain to high gain)
+	DC	$0c3c77			; Gain x1, slow integrate, board #0
+	DC	$0c3f77			; Gain x1, fast integ speed, board #0
+	DC	$0c3fbb			; Gain x2, fast integ speed, board #0
+	DC	$0c3fdd			; Gain x4.75, fast integ speed, board #0
+	DC	$0c3fee			; Gain x9.50, fast integ speed, board #0
+	DC	$1c3fbb			; Gain x2, fast integ speed, board #1
+
+	DC	DC0+$0c3fbb		; x2 fast
+	DC	DC1+$0c3fbb
+
+; Output offset voltages
+	DC	DC0+$0c8000+OFFSET0 	; Output video offset, ch. E
+	DC	DC0+$0cc000+OFFSET1	; Output video offset, ch. F
+	DC	DC1+$0c8000+OFFSET2 	; Output video offset, ch. G	
+	DC	DC1+$0cc000+OFFSET3	; Output video offset, ch. H
+
+; Output and reset drain DC bias voltages
+	DC	DC0+$0d0000+@CVI((VOD-7.50)/22.5*4095)	; VOD DB25 pin #1 board #0, chip pin #4
+;	DC	DC0+$0d4000+@CVI((-7.50)/22.5*4095)	;  pin #2 board #0
+	DC	DC0+$0c0000+@CVI((VRD-5.00)/15.0*4095)	; VRD DB25 pin #3 board #0, chip pin #2
+;	DC	DC0+$0c4000+@CVI((-5.00)/15.0*4095)	;  pin #4 board #0
+;	DC	DC0+$0d8000+@CVI((-7.50)/22.5*4095)	;  pin #5 board #0
+
+;	DC	DC1+$0d0000+@CVI((-7.50)/22.5*4095)	;  pin #1 board #1
+;	DC	DC1+$0d4000+@CVI((-7.50)/22.5*4095)	;  pin #2 board #1
+;	DC	DC1+$0c0000+@CVI((-5.00)/15.0*4095)	;  pin #3 board #1
+;	DC	DC1+$0c4000+@CVI((-5.00)/15.0*4095)	;  pin #4 board #1
+;	DC	DC1+$0d8000+@CVI((-7.50)/22.5*4095)	;  pin #5 board #1
+
+; Output gate, anti-blooming gate and substrate voltages
+	DC	DC0+$0e0000+@CVI((VOG+10.0)/20.0*4095)	; VOG DB25 pin # 9 board #0, chip pin #5
+	DC	DC0+$0e4000+@CVI((VSS+10.0)/20.0*4095)	; VSS DB25 pin #10 board #0, chip pin #20
+;	DC	DC1+$0e0000+@CVI((+10.0)/20.0*4095)	;  pin # 9 board #1
+;	DC	DC1+$0e4000+@CVI((+10.0)/20.0*4095)	;  pin #10 board #1
+
+END_DACS
+
+
+; Pixel readout table generated in "timCCD.asm"
+PXL_TBL	DC	0
