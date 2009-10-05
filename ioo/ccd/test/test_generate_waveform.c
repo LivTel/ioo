@@ -1,5 +1,5 @@
 /* test_setup_startup.c
- * $Header: /space/home/eng/cjm/cvs/ioo/ccd/test/test_generate_waveform.c,v 1.1 2009-10-02 16:42:50 cjm Exp $
+ * $Header: /space/home/eng/cjm/cvs/ioo/ccd/test/test_generate_waveform.c,v 1.2 2009-10-05 11:07:00 cjm Exp $
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,7 +28,7 @@
  * 	[-pta|-pixel_table_address <address>]
  * </pre>
  * @author $Author: cjm $
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 /* hash definitions */
 /**
@@ -61,7 +61,7 @@
 /**
  * Revision control system identifier.
  */
-static char rcsid[] = "$Id: test_generate_waveform.c,v 1.1 2009-10-02 16:42:50 cjm Exp $";
+static char rcsid[] = "$Id: test_generate_waveform.c,v 1.2 2009-10-05 11:07:00 cjm Exp $";
 /**
  * How much information to print out when using the text interface.
  */
@@ -151,8 +151,9 @@ static struct CCD_Setup_Window_Struct Window_List[CCD_SETUP_WINDOW_COUNT];
 /**
  * SDSU timing board Y space address of the start of PXL_TBL, the location
  * where GWF dumps the compiled serial clock waveform.
+ * @see #DEFAULT_PIXEL_TABLE_ADDRESS
  */
-static int Pxl_Tbl_Address = 0;
+static int Pxl_Tbl_Address = DEFAULT_PIXEL_TABLE_ADDRESS;
 /**
  * The last value written to the video processor board. Needed to determine
  * state transitions (i.e. low -> high bit transitions means something).
@@ -360,7 +361,7 @@ static int Read_PXL_TBL(CCD_Interface_Handle_T *handle,int pxl_tbl_address)
 static int Decode_PXL_TBL_Value(int value)
 {
 	int byte_list[3];
-	int delay,board,start_ad,end_ad,clock_value,video_value,amplifier_circuit;
+	int delay,board,start_ad,end_ad,clock_value,video_value,amplifier_circuit,i;
 
 	/* convert to bytes */
 	byte_list[0] = value & 0xFF;
@@ -391,6 +392,17 @@ static int Decode_PXL_TBL_Value(int value)
 	{
 		video_value = (value&0x7f); /* bits 6-0 are video values */
 		fprintf(stdout,"Delay %d nsec:video value %d:",delay,video_value);
+		/* display bitwise */
+		fprintf(stdout,"%");
+		for(i=6;i > -1; i--)
+		{
+			if(((video_value>>i) & 0x1) == 1)
+				fprintf(stdout,"1");
+			else
+				fprintf(stdout,"0");
+		}
+		fprintf(stdout,":");
+		/* display explanation as text */
 		if((video_value & 0x1) == 0x0)
 		{
 			fprintf(stdout,"Reset the integrator:");
@@ -870,4 +882,7 @@ static void Help(void)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.1  2009/10/02 16:42:50  cjm
+** Initial revision
+**
 */
