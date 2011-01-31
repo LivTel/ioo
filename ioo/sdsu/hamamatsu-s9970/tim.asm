@@ -324,8 +324,8 @@ CONTINUE_READING	EQU	RDCCD	 		; Address if reading out
 
 GAIN	DC	END_APPLICATON_Y_MEMORY-@LCV(L)-1
 
-NSR     DC      2200   	 	; Number Serial Read, set by host computer
-NPR     DC      2200	     	; Number Parallel Read, set by host computer
+NSR     DC      532   	 	; Number Serial Read, set by host computer
+NPR     DC      64	     	; Number Parallel Read, set by host computer
 NP_CLR	DC	NPCLR		; To clear the parallel register 
 TST_DATA DC	0		; For synthetic image
 NSBIN   DC      1       	; Serial binning parameter
@@ -382,3 +382,6 @@ END_APPLICATON_Y_MEMORY	EQU	@LCV(L)
 ; End of program
 	END
 
+;
+; $Log: not supported by cvs2svn $
+;
