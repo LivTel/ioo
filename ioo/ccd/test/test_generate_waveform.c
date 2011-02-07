@@ -1,5 +1,5 @@
 /* test_setup_startup.c
- * $Header: /space/home/eng/cjm/cvs/ioo/ccd/test/test_generate_waveform.c,v 1.2 2009-10-05 11:07:00 cjm Exp $
+ * $Header: /space/home/eng/cjm/cvs/ioo/ccd/test/test_generate_waveform.c,v 1.3 2011-02-07 17:07:52 cjm Exp $
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,7 +28,7 @@
  * 	[-pta|-pixel_table_address <address>]
  * </pre>
  * @author $Author: cjm $
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 /* hash definitions */
 /**
@@ -61,7 +61,7 @@
 /**
  * Revision control system identifier.
  */
-static char rcsid[] = "$Id: test_generate_waveform.c,v 1.2 2009-10-05 11:07:00 cjm Exp $";
+static char rcsid[] = "$Id: test_generate_waveform.c,v 1.3 2011-02-07 17:07:52 cjm Exp $";
 /**
  * How much information to print out when using the text interface.
  */
@@ -334,7 +334,9 @@ static int Read_PXL_TBL(CCD_Interface_Handle_T *handle,int pxl_tbl_address)
 		return FALSE;
 	}
 	fprintf(stdout,"Number of words in waveform:%d.\n",waveform_word_count);
-	for(i=1;i < waveform_word_count; i ++)
+	/* first entry in pxl_tbl is number of waveforms.
+	** actual waveforms start at pxl_tbl +1 */
+	for(i=1;i < (waveform_word_count+1); i ++)
 	{
 		address = pxl_tbl_address+i;
 		retval = CCD_DSP_Command_RDM(handle,CCD_DSP_TIM_BOARD_ID,CCD_DSP_MEM_SPACE_Y,address);
@@ -882,6 +884,9 @@ static void Help(void)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.2  2009/10/05 11:07:00  cjm
+** Added bitwise video output print.
+**
 ** Revision 1.1  2009/10/02 16:42:50  cjm
 ** Initial revision
 **
