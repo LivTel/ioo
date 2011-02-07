@@ -153,7 +153,7 @@ CHARGE_DUMP_LEFT
 INTEGRATE_SIGNAL_LEFT
 	DC	VIDEO+INT_TIM+%0001011		; Integrate
 	DC	VIDEO+$000000+%0011011		; Stop, A/D is sampling
-	DC	VIDEO+%1110100	
+	DC	VIDEO+%1110100	 	; Reset the integrator,Start A/D sample hold,Transfer A/D output to latch
 END_CHARGE_DUMP_LEFT
 
 
