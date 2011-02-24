@@ -1,0 +1,430 @@
+       COMMENT *
+	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/bif486/bif486.waveforms,v 1.1 2011-02-24 11:03:01 cjm Exp $
+	Id: 	 $Id: bif486.waveforms,v 1.1 2011-02-24 11:03:01 cjm Exp $
+	Version: $Revision: 1.1 $
+Waveform tables for Fairchild 486 4k x 4k CCD back-side CCD with the ARC 
+	four readout camera head board. 
+Generated from scratch from the spec sheet.
+Contains waveforms for split serial, split parallel and binning operation.
+
+The quadrants are defined as follows - 
+
+0	Lower Left			3	2
+1	Lower right
+2	Upper right			0	1
+3	Upper Left
+
+	*
+
+; Definitions of readout variables
+CLK2	EQU	$002000		; Clock driver board lower half
+CLK3	EQU	$003000		; Clock driver board lower half
+VIDEO	EQU	$000000		; Video processor board switches
+P_DLY	EQU	$F00000		; Parallel clock delay
+SER_DLY	EQU	$020000		; Serial delay 2x40ns +40ns instruction = 120ns
+SC_DLY	EQU	$010000		; Serial clear delay
+NSCLR	EQU	2060		; To clear the serial register
+NPCLR	EQU	4400    	; To clear the parallel register 
+SH_DEL	EQU	50		; Delay in milliseconds between shutter
+				;   closing and image readout
+PRESCAN EQU	0		; PRESCAN - 18 according to data sheet
+				; But PRESCAN is clocked over in RDCCD, why not set this to 0?
+PRESKIP EQU	0		; cjm PRESKIP
+NPAR	EQU	1		; Repeat number for SLOW_CLOCKS
+
+INT_TIM EQU	$060000		; Fast readout
+
+; The serial clocks are mostly on the lower bank, CLK2
+RG	EQU	1	; Reset Gate			pin #1
+H1L	EQU	2	; Horizontal clock, left	pin #2
+H2L	EQU	4	; 				pin #3
+H3	EQU	8	; 				pin #4
+H1R	EQU	$10	; Horizontal clock, right	pin #5
+H2R	EQU	$20	; 				pin #6
+SW	EQU	$40	; Summing Well			pin #7
+
+; The parallel clocks are all on the upper bank, CLK3
+V1U	EQU	1	; Vertical clock, upper		pin #13
+V2U	EQU	2	; 				pin #14
+V3U	EQU	4	; 				pin #15
+V1L	EQU	8	; Vertical clock, lower		pin #16
+V2L	EQU	$10	; 				pin #17
+V3L	EQU	$20	; 				pin #18
+TG	EQU	$40	; Transfer Gate			pin #19
+
+; Define the clocking voltages
+RG_HI	EQU	+8.0	; Reset Gate
+RG_LO	EQU	-0.7
+H_HI	EQU	+5.0	; Horizontal clocks
+H_LO	EQU	-5.0
+V_HI	EQU	+8.0	; Vertical clocks
+V_LO	EQU	-6.0
+ZERO	EQU	 0.0
+
+; DC Bias definition
+VOD	EQU	+26.0	; Output Drain
+VRD	EQU	+17.0	; Reset Drain
+VOG	EQU	 -1.5	; Output Gate
+
+; Video offset variables
+OFFSET	EQU	$400
+OFFSET0	EQU	$fff
+OFFSET1	EQU	OFFSET
+OFFSET2	EQU	OFFSET
+OFFSET3	EQU	OFFSET
+
+;SXMIT	EQU	$00F0C0				; Transmit A/Ds = 0 to 3
+;SXMIT	EQU	$00F040				; Transmit A/Ds = 0 to 1
+;SXMIT	EQU	$00F0C2				; Transmit A/Ds = 2 to 3
+
+;SXMIT	EQU	$00F000				; Transmit A/D = 0
+;SXMIT	EQU	$00F041				; Transmit A/D = 1
+;SXMIT	EQU	$00F082				; Transmit A/D = 2
+;SXMIT	EQU	$00F0C3				; Transmit A/D = 3
+
+;  ****************  Tables for parallel transfer  ****************
+
+; Copied from fif486 PARALLEL_UPPER
+PARALLEL_UP
+ 	DC	END_PARALLEL_UP-PARALLEL_UP-1
+	DC	CLK3+P_DLY+00+V1L+000+000+V1U+000+000
+	DC	CLK3+P_DLY+00+V1L+000+000+V1U+000+000
+	DC	CLK3+P_DLY+TG+V1L+000+V3L+V1U+000+V3U
+	DC	CLK3+P_DLY+TG+000+000+V3L+000+000+V3U
+	DC	CLK3+P_DLY+00+000+V2L+V3L+000+V2U+V3U
+	DC	CLK3+P_DLY+00+000+V2L+000+000+V2U+000
+	DC	CLK3+P_DLY+00+000+000+000+000+000+000
+END_PARALLEL_UP
+
+; Copied from fif486 PARALLEL_LOWER
+PARALLEL_DOWN
+ 	DC	END_PARALLEL_DOWN-PARALLEL_DOWN-1
+	DC	CLK3+P_DLY+00+000+V2L+000+000+V2U+000
+	DC	CLK3+P_DLY+00+000+V2L+000+000+V2U+000
+	DC	CLK3+P_DLY+TG+000+V2L+V3L+000+V2U+V3U
+	DC	CLK3+P_DLY+TG+000+000+V3L+000+000+V3U
+	DC	CLK3+P_DLY+TG+V1L+000+V3L+V1U+000+V3U
+	DC	CLK3+P_DLY+00+V1L+000+000+V1U+000+000
+	DC	CLK3+P_DLY+00+000+000+000+000+000+000
+END_PARALLEL_DOWN
+
+; Parallel transfer in both directions, MPP
+PARALLEL_SPLIT
+ 	DC	END_PARALLEL_SPLIT-PARALLEL_SPLIT-1
+	DC	CLK3+P_DLY+00+000+V2L+000+V1U+000+000
+	DC	CLK3+P_DLY+00+000+V2L+000+V1U+000+000
+	DC	CLK3+P_DLY+TG+000+V2L+V3L+V1U+000+V3U
+	DC	CLK3+P_DLY+TG+000+000+V3L+000+000+V3U
+	DC	CLK3+P_DLY+TG+V1L+000+V3L+000+V2U+V3U
+	DC	CLK3+P_DLY+00+V1L+000+000+000+V2U+000
+	DC	CLK3+P_DLY+00+000+000+000+000+000+000
+END_PARALLEL_SPLIT
+
+PARALLEL_CLEAR_UP
+	DC	END_PARALLEL_CLEAR_UP-PARALLEL_CLEAR_UP-1
+	DC	VIDEO+$000000+%0011000 ; rst, clamp to ground, amp inverting, don't integrate, no A/D, no xfer
+	DC	CLK2+00000+SW+RG+H1L+H2L+00+H1R+H2R
+	DC	CLK3+P_DLY+00+V1L+000+000+V1U+000+000
+	DC	CLK3+P_DLY+00+V1L+000+000+V1U+000+000
+	DC	CLK3+P_DLY+TG+V1L+000+V3L+V1U+000+V3U
+	DC	CLK3+P_DLY+TG+000+000+V3L+000+000+V3U
+	DC	CLK3+P_DLY+TG+000+V2L+V3L+000+V2U+V3U
+	DC	CLK3+P_DLY+00+000+V2L+000+000+V2U+000
+	DC	CLK3+P_DLY+00+000+000+000+000+000+000
+END_PARALLEL_CLEAR_UP
+
+PARALLEL_CLEAR_DOWN
+ 	DC	END_PARALLEL_CLEAR_DOWN-PARALLEL_CLEAR_DOWN-1
+	DC	VIDEO+$000000+%0011000 ; rst, clamp to ground, amp inverting, don't integrate, no A/D, no xfer
+	DC	CLK2+00000+SW+RG+H1L+H2L+00+H1R+H2R
+	DC	CLK3+P_DLY+00+000+V2L+000+000+V2U+000
+	DC	CLK3+P_DLY+00+000+V2L+000+000+V2U+000
+	DC	CLK3+P_DLY+TG+000+V2L+V3L+000+V2U+V3U
+	DC	CLK3+P_DLY+TG+000+000+V3L+000+000+V3U
+	DC	CLK3+P_DLY+TG+V1L+000+V3L+V1U+000+V3U
+	DC	CLK3+P_DLY+00+V1L+000+000+V1U+000+000
+	DC	CLK3+P_DLY+00+000+000+000+000+000+000
+END_PARALLEL_CLEAR_DOWN
+
+; Parallel transfer in both directions for the fastest clear, MPP mode
+PARALLEL_CLEAR_SPLIT
+	DC	END_PARALLEL_CLEAR_SPLIT-PARALLEL_CLEAR_SPLIT-1
+	DC	VIDEO+$000000+%0011000 ; rst, clamp to ground, amp inverting, don't integrate, no A/D, no xfer
+	DC	CLK2+00000+SW+RG+H1L+H2L+00+H1R+H2R
+	DC	CLK3+P_DLY+00+000+V2L+000+V1U+000+000
+	DC	CLK3+P_DLY+00+000+V2L+000+V1U+000+000
+	DC	CLK3+P_DLY+TG+000+V2L+V3L+V1U+000+V3U
+	DC	CLK3+P_DLY+TG+000+000+V3L+000+000+V3U
+	DC	CLK3+P_DLY+TG+V1L+000+V3L+000+V2U+V3U
+	DC	CLK3+P_DLY+00+V1L+000+000+000+V2U+000
+	DC	CLK3+P_DLY+00+000+000+000+000+000+000
+END_PARALLEL_CLEAR_SPLIT
+
+;  ****************  Tables for serial transfer  ****************
+;    xfer, A/D, integ, Pol+, Pol-, DCclamp, rst  (1 => switch open)
+
+; Idle mode clocking, split serial for speed
+SERIAL_IDLE
+ 	DC	END_SERIAL_IDLE-SERIAL_IDLE-1
+	DC	VIDEO+%1110100
+	DC	CLK2+SER_DLY+00+RG+H1L+000+H3+000+H2R
+	DC	CLK2+SER_DLY+00+RG+000+000+H3+000+000
+	DC	CLK2+SER_DLY+00+00+000+H2L+H3+H1R+000
+	DC	CLK2+SER_DLY+00+00+000+H2L+00+H1R+000
+	DC	CLK2+SER_DLY+SW+00+H1L+H2L+00+H1R+H2R
+	DC	CLK2+SER_DLY+SW+00+H1L+H2L+00+H1R+H2R
+	DC	VIDEO+$000000+%0010111		; Stop resetting integrator
+I_RST1	DC	VIDEO+$050000+%0000111		; Integrate
+	DC	CLK2+$000000+00+00+H1L+000+00+000+H2R
+	DC	VIDEO+$010000+%0011011		; Stop Integrate
+I_SIG1	DC	VIDEO+$060000+%0001011
+	DC	VIDEO+$000000+%0011011		; Stop, A/D is sampling
+END_SERIAL_IDLE
+
+SERIAL_SKIP_LEFT	; Serial clocking waveform for skipping left
+	DC	END_SERIAL_SKIP_LEFT-SERIAL_SKIP_LEFT-1
+	DC	CLK2+SER_DLY+00+RG+H1L+H2L+00+H1R+H2R
+	DC	CLK2+SER_DLY+00+RG+H1L+000+00+H1R+000
+	DC	CLK2+SER_DLY+SW+00+000+000+H3+000+000
+	DC	CLK2+SER_DLY+SW+00+000+H2L+H3+000+H2R
+END_SERIAL_SKIP_LEFT
+
+SERIAL_SKIP_RIGHT	; Serial clocking waveform for skipping right
+	DC	END_SERIAL_SKIP_RIGHT-SERIAL_SKIP_RIGHT-1
+	DC	CLK2+SER_DLY+00+RG+H1L+H2L+00+H1R+H2R
+	DC	CLK2+SER_DLY+00+RG+000+H2L+00+000+H2R
+	DC	CLK2+SER_DLY+SW+00+000+000+H3+000+000
+	DC	CLK2+SER_DLY+SW+00+H1L+000+H3+H1R+000
+END_SERIAL_SKIP_RIGHT
+
+SERIAL_SKIP_SPLIT	; Serial clocking waveform for skipping both ends
+	DC	END_SERIAL_SKIP_SPLIT-SERIAL_SKIP_SPLIT-1
+	DC	CLK2+SER_DLY+00+RG+H1L+H2L+00+H1R+H2R
+	DC	CLK2+SER_DLY+00+RG+H1L+000+00+000+H2R
+	DC	CLK2+SER_DLY+SW+00+000+000+H3+000+000
+	DC	CLK2+SER_DLY+SW+00+000+H2L+H3+H1R+000
+END_SERIAL_SKIP_SPLIT
+
+; Put the serial clocks and video processor in the expose state 
+SERIALS_EXPOSE
+	DC	END_SERIALS_EXPOSE-SERIALS_EXPOSE-1
+	DC	CLK2+SC_DLY+SW+RG+000+H2L+00+000+H2R
+	DC	VIDEO+%0011000
+END_SERIALS_EXPOSE
+
+SERIAL_CLEAR		; Serial clocking waveform for clearing both ends
+	DC	END_SERIAL_CLEAR-SERIAL_CLEAR-1
+	DC	CLK2+SC_DLY+00+RG+000+000+H3+000+000
+	DC	CLK2+SC_DLY+SW+RG+000+H2L+H3+H1R+000
+	DC	CLK2+SC_DLY+SW+00+H1L+H2L+00+H1R+H2R
+	DC	CLK2+SC_DLY+00+00+H1L+000+00+000+H2R
+END_SERIAL_CLEAR
+
+; Copied from E2V231.waveforms
+RESET_VIDEO
+ 	DC	END_RESET_VIDEO-RESET_VIDEO-1
+	DC	VIDEO+$000000+%0010111		; Stop resetting integrator
+INTEGRATE_RESET
+	DC	VIDEO+INT_TIM+%0000111		; Integrate
+	DC	VIDEO+$000000+%0011011		; Stop Integrate
+END_RESET_VIDEO
+
+; ************ Waveform generating code for the LEFT ****************
+
+; This generated from scratch from CCD486 spec sheet
+; RG high only for first clocks
+; At the end of this waveform SG must remain high until pixel is sampled (on SW high->low transition).
+FIRST_CLOCKS_LEFT
+ 	DC	END_FIRST_CLOCKS_LEFT-FIRST_CLOCKS_LEFT-1
+	DC	CLK2+SER_DLY+00+00+000+000+H3+000+000
+	DC	CLK2+SER_DLY+00+00+000+H2L+H3+000+H2R
+	DC	CLK2+SER_DLY+00+00+000+H2L+00+000+H2R
+	DC	CLK2+SER_DLY+SW+RG+H1L+H2L+00+H1R+H2R
+	DC	CLK2+SER_DLY+SW+00+H1L+000+00+H1R+000
+	DC	CLK2+SER_DLY+SW+00+H1L+000+00+H1R+000 ; NB identical to above
+	DC	CLK2+SER_DLY+SW+00+H1L+000+H3+H1R+000
+END_FIRST_CLOCKS_LEFT
+
+; This generated from scratch from CCD486 spec sheet
+; NB this is clocked NSBIN-1, i.e. only for bin clocking, first/bin1 clocks should go in FIRST_CLOCKs.
+; We should keep SW high throughout CLOCK_LINE, using CHARGE_DUMP to clock it low (for pixel sampling).
+CLOCK_LINE_LEFT
+	DC	END_CLOCK_LINE_LEFT-CLOCK_LINE_LEFT-1
+	DC	CLK2+SER_DLY+SW+00+000+000+H3+000+000
+	DC	CLK2+SER_DLY+SW+00+000+H2L+H3+000+H2R
+	DC	CLK2+SER_DLY+SW+00+000+H2L+00+000+H2R
+	DC	CLK2+SER_DLY+SW+00+H1L+H2L+00+H1R+H2R
+	DC	CLK2+SER_DLY+SW+00+H1L+000+00+H1R+000
+	DC	CLK2+SER_DLY+SW+00+H1L+000+00+H1R+000 ; NB identical to above
+	DC	CLK2+SER_DLY+SW+00+H1L+000+H3+H1R+000
+END_CLOCK_LINE_LEFT
+
+; part of serial waveform (end thereof)
+; output video available following high-low transition of TG (=SW?) 
+CHARGE_DUMP_LEFT
+ 	DC	END_CHARGE_DUMP_LEFT-CHARGE_DUMP_LEFT-1
+	DC	CLK2+SER_DLY+00+00+H1L+000+H3+H1R+000 ; Same as end of FIRST_CLOCKS_LEFT/CLOCK_LINE_LEFT but SW low
+INTEGRATE_SIGNAL_LEFT ; Copied from E2V231
+	DC	VIDEO+INT_TIM+%0001011		; Integrate
+	DC	VIDEO+$000000+%0011011		; Stop, A/D is sampling
+	DC	VIDEO+$000000+%1110100
+END_CHARGE_DUMP_LEFT
+
+; **************  Waveform generating code for the RIGHT  **********
+
+; This generated from scratch from CCD486 spec sheet
+; RG high only for first clocks
+; At the end of this waveform SG must remain high until pixel is sampled (on SW high->low transition).
+FIRST_CLOCKS_RIGHT
+ 	DC	END_FIRST_CLOCKS_RIGHT-FIRST_CLOCKS_RIGHT-1
+	DC	CLK2+SER_DLY+00+00+000+000+H3+000+000
+	DC	CLK2+SER_DLY+00+00+H1L+000+H3+H1R+000
+	DC	CLK2+SER_DLY+00+00+H1L+000+H3+H1R+000 ; NB identical to above
+	DC	CLK2+SER_DLY+00+00+H1L+000+00+H1R+000
+	DC	CLK2+SER_DLY+SW+RG+H1L+H2L+00+H1R+H2R
+	DC	CLK2+SER_DLY+SW+00+000+H2L+00+000+H2R
+	DC	CLK2+SER_DLY+SW+00+000+H2L+00+000+H2R ; NB identical to above
+	DC	CLK2+SER_DLY+SW+00+000+H2L+H3+000+H2R
+END_FIRST_CLOCKS_RIGHT
+
+; This generated from scratch from CCD486 spec sheet
+; This called for NSBIN-1. No RG, SW remains high until CHARGE_DUMP
+CLOCK_LINE_RIGHT
+ 	DC	END_CLOCK_LINE_RIGHT-CLOCK_LINE_RIGHT-1
+	DC	CLK2+SER_DLY+SW+00+000+000+H3+000+000
+	DC	CLK2+SER_DLY+SW+00+H1L+000+H3+H1R+000
+	DC	CLK2+SER_DLY+SW+00+H1L+000+H3+H1R+000 ; NB identical to above
+	DC	CLK2+SER_DLY+SW+00+H1L+000+00+H1R+000
+	DC	CLK2+SER_DLY+SW+00+H1L+H2L+00+H1R+H2R
+	DC	CLK2+SER_DLY+SW+00+000+H2L+00+000+H2R
+	DC	CLK2+SER_DLY+SW+00+000+H2L+00+000+H2R ; NB identical to above
+	DC	CLK2+SER_DLY+SW+00+000+H2L+H3+000+H2R
+END_CLOCK_LINE_RIGHT
+
+; part of serial waveform (end thereof)
+; output video available following high-low transition of TG (=SW?) 
+CHARGE_DUMP_RIGHT
+ 	DC	END_CHARGE_DUMP_RIGHT-CHARGE_DUMP_RIGHT-1
+	DC	CLK2+SER_DLY+00+00+000+H2L+H3+000+H2R ; Same as end of FIRST_CLOCKS_RIGHT/CLOCK_LINE_RIGHT but SW low
+INTEGRATE_SIGNAL_RIGHT ; Copied from E2V231
+	DC	VIDEO+INT_TIM+%0001011		; Integrate
+	DC	VIDEO+$000000+%0011011		; Stop, A/D is sampling
+	DC	VIDEO+$000000+%1110100
+END_CHARGE_DUMP_RIGHT
+
+; **************  Waveform generating code for SPLIT = Both  **********
+
+; This generated from scratch from CCD486 spec sheet
+; left shift left
+; right shift right
+; RG high only for first clocks
+; At the end of this waveform SG must remain high until pixel is sampled (on SW high->low transition).
+FIRST_CLOCKS_SPLIT
+ 	DC	END_FIRST_CLOCKS_SPLIT-FIRST_CLOCKS_SPLIT-1
+	DC	CLK2+SER_DLY+00+00+000+000+H3+000+000
+	DC	CLK2+SER_DLY+00+00+000+H2L+H3+H1R+000
+	DC	CLK2+SER_DLY+00+00+000+H2L+H3+H1R+000 ; NB identical to above
+	DC	CLK2+SER_DLY+00+00+000+H2L+00+H1R+000
+	DC	CLK2+SER_DLY+SW+RG+H1L+H2L+00+H1R+H2R
+	DC	CLK2+SER_DLY+SW+00+H1L+000+00+000+H2R
+	DC	CLK2+SER_DLY+SW+00+H1L+000+00+000+H2R ; NB identical to above
+	DC	CLK2+SER_DLY+SW+00+H1L+000+H3+000+H2R
+END_FIRST_CLOCKS_SPLIT
+
+; This generated from scratch from CCD486 spec sheet
+CLOCK_LINE_SPLIT
+ 	DC	END_CLOCK_LINE_SPLIT-CLOCK_LINE_SPLIT-1
+	DC	CLK2+SER_DLY+SW+00+000+000+H3+000+000
+	DC	CLK2+SER_DLY+SW+00+000+H2L+H3+H1R+000
+	DC	CLK2+SER_DLY+SW+00+000+H2L+H3+H1R+000 ; NB identical to above
+	DC	CLK2+SER_DLY+SW+00+000+H2L+00+H1R+000
+	DC	CLK2+SER_DLY+SW+00+H1L+H2L+00+H1R+H2R
+	DC	CLK2+SER_DLY+SW+00+H1L+000+00+000+H2R
+	DC	CLK2+SER_DLY+SW+00+H1L+000+00+000+H2R ; NB identical to above
+	DC	CLK2+SER_DLY+SW+00+H1L+000+H3+000+H2R
+END_CLOCK_LINE_SPLIT
+
+; part of serial waveform (end thereof)
+; output video available following high-low transition of TG (=SW?) 
+CHARGE_DUMP_SPLIT
+ 	DC	END_CHARGE_DUMP_SPLIT-CHARGE_DUMP_SPLIT-1
+	DC	CLK2+SER_DLY+00+00+000+H2L+H3+000+H2R ; Same as end of FIRST_CLOCKS_SPLIT/CLOCK_LINE_SPLIT but SW low
+INTEGRATE_SIGNAL_SPLIT ; Copied from E2V231
+	DC	VIDEO+INT_TIM+%0001011		; Integrate
+	DC	VIDEO+$000000+%0011011		; Stop, A/D is sampling
+	DC	VIDEO+$000000+%1110100
+END_CHARGE_DUMP_SPLIT
+
+
+DACS	DC	END_DACS-DACS-1
+	DC	(CLK2<<8)+(0<<14)+@CVI((RG_HI+10.0)/20.0*4095) 	; #1, RG
+	DC	(CLK2<<8)+(1<<14)+@CVI((RG_LO+10.0)/20.0*4095)
+	DC	(CLK2<<8)+(2<<14)+@CVI((H_HI+10.0)/20.0*4095) 	; #2, H1L
+	DC	(CLK2<<8)+(3<<14)+@CVI((H_LO+10.0)/20.0*4095)
+	DC	(CLK2<<8)+(4<<14)+@CVI((H_HI+10.0)/20.0*4095)	; #3, H2L
+	DC	(CLK2<<8)+(5<<14)+@CVI((H_LO+10.0)/20.0*4095)
+	DC	(CLK2<<8)+(6<<14)+@CVI((H_HI+10.0)/20.0*4095)	; #4, H3
+	DC	(CLK2<<8)+(7<<14)+@CVI((H_LO+10.0)/20.0*4095)
+	DC	(CLK2<<8)+(8<<14)+@CVI((H_HI+10.0)/20.0*4095)	; #5, H1R
+	DC	(CLK2<<8)+(9<<14)+@CVI((H_LO+10.0)/20.0*4095)
+	DC	(CLK2<<8)+(10<<14)+@CVI((H_HI+10.0)/20.0*4095)	; #6, H2R
+	DC	(CLK2<<8)+(11<<14)+@CVI((H_LO+10.0)/20.0*4095)
+	DC	(CLK2<<8)+(12<<14)+@CVI((H_HI+10.0)/20.0*4095)	; #7, SW 
+	DC	(CLK2<<8)+(13<<14)+@CVI((H_LO+10.0)/20.0*4095)
+
+; Define all the parallel clock voltages
+	DC	(CLK2<<8)+(24<<14)+@CVI((V_HI+10.0)/20.0*4095)	; #13, V1U
+	DC	(CLK2<<8)+(25<<14)+@CVI((V_LO+10.0)/20.0*4095)
+	DC	(CLK2<<8)+(26<<14)+@CVI((V_HI+10.0)/20.0*4095)	; #14, V2U
+	DC	(CLK2<<8)+(27<<14)+@CVI((V_LO+10.0)/20.0*4095)
+	DC	(CLK2<<8)+(28<<14)+@CVI((V_HI+10.0)/20.0*4095)	; #15, V3U
+	DC	(CLK2<<8)+(29<<14)+@CVI((V_LO+10.0)/20.0*4095)
+	DC	(CLK2<<8)+(30<<14)+@CVI((V_HI+10.0)/20.0*4095)	; #16, V1L
+	DC	(CLK2<<8)+(31<<14)+@CVI((V_LO+10.0)/20.0*4095)
+	DC	(CLK2<<8)+(32<<14)+@CVI((V_HI+10.0)/20.0*4095)	; #17, V2L
+	DC	(CLK2<<8)+(33<<14)+@CVI((V_LO+10.0)/20.0*4095)
+	DC	(CLK2<<8)+(34<<14)+@CVI((V_HI+10.0)/20.0*4095)	; #18, V3L
+	DC	(CLK2<<8)+(35<<14)+@CVI((V_LO+10.0)/20.0*4095)
+	DC	(CLK2<<8)+(36<<14)+@CVI((V_HI+10.0)/20.0*4095)	; #19, TG
+	DC	(CLK2<<8)+(37<<14)+@CVI((V_LO+10.0)/20.0*4095)
+
+; Set video processor gain and integrator speed.
+	DC	$0c3fbb			; Default with INT_TIM = $06
+	DC	$1c3fbb
+
+; Definitions of available gain settings
+;	DC	$0c3f77			; x1    Gain, fast integrate
+;	DC	$0c3fbb			; x2    Gain, fast integrate
+;	DC	$0c3fdd			; x4.75 Gain, fast integrate
+;	DC	$0c3fee			; x9    Gain, fast integrate
+;	DC	$0c3cbb			; x2	Gain, slow integrate
+
+; Output offset voltages to get about 1000 A/D units
+	DC	$0c8000+OFFSET0		; Output #0, Lower Left,  VID0
+	DC	$0cc000+OFFSET1		; Output #1, Lower Right, VID0
+	DC	$1c8000+OFFSET2		; Output #2, Upper Right, VID1
+	DC	$1cc000+OFFSET3		; Output #3, Upper Left,  VID1
+
+; Output drain DC bias voltages
+	DC	$0d0000+@CVI((VOD-7.5)/22.5*4095)	; Vod #0 = LL, pin #1
+	DC	$0d4000+@CVI((VOD-7.5)/22.5*4095)	; Vod #1 = LR, pin #2
+	DC	$1d0000+@CVI((VOD-7.5)/22.5*4095)	; Vod #2 = UR, pin #1
+	DC	$1d4000+@CVI((VOD-7.5)/22.5*4095)	; Vod #3 = UL, pin #2
+
+; Reset drain DC bias voltages
+	DC	$0c0000+@CVI((VRD-5.0)/15.0*4095)	; Vrd #0 = LL, pin #3
+	DC	$0c4000+@CVI((VRD-5.0)/15.0*4095)	; Vrd #1 = LR, pin #4
+	DC	$1c0000+@CVI((VRD-5.0)/15.0*4095)	; Vrd #2 = UR, pin #3
+	DC	$1c4000+@CVI((VRD-5.0)/15.0*4095)	; Vrd #3 = LR, pin #4
+
+; Output gate DC bias voltages
+	DC	$0e0000+@CVI((VOG+10.0)/20.0*4095) 	; Vog #0 = LL, pin #9
+	DC	$0e4000+@CVI((VOG+10.0)/20.0*4095) 	; Vog #1 = LR, pin #10
+	DC	$1e0000+@CVI((VOG+10.0)/20.0*4095) 	; Vog #2 = UR, pin #9
+	DC	$1e4000+@CVI((VOG+10.0)/20.0*4095) 	; Vog #3 = UL, pin #10
+
+END_DACS
+
+;
+; $Log: not supported by cvs2svn $
+;
