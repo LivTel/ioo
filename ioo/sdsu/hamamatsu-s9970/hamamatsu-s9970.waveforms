@@ -15,14 +15,14 @@ CLKV	EQU	$200000	; Clock driver board DAC voltage selection address
 ; Parallel clock delay bit 0xA00000 23 and 21 set = 32x640nsec delay= 20480ns  = 20 microsecs (E2V231)
 ; Parallel clock delay bit 0x880000, bits 23 and bit 3 of last 16 bits = 8x640ns = 5120ns
 ; spec sheet specifys serial pulse width Tpwh S9970-0906 5000ns = 8x640ns = 5120ns
-P_DELAY EQU	$880000	; Parallel clock delay bit 5120ns
-R_DELAY	EQU	$880000	; Serial register transfer delay 5120ns
+P_DELAY EQU	$900000	; Parallel clock delay bit 5120ns
+R_DELAY	EQU	$900000	; Serial register transfer delay 5120ns
 ; Reset gate delay - spec sheet specifys pulse width Tpwr S9970-0906 = 500ns =  12x40ns + 40 = 520ns
-RG_DELAY EQU	$0C0000	; Reset Gate delay 5020ns
+RG_DELAY EQU	$0C0000	; Reset Gate delay 520ns
 NPCLR	EQU	65	; Parallel clocks to clear
 SH_DEL	EQU	50	; Shutter delay in milliseconds
-PRESKIP	EQU	45	; 50 on CCD - 5 to warm up the video processor
-PRESCAN	EQU	8	; 5 on CCD + 3 on video processor
+PRESKIP	EQU	0	; No PRESKIP for Hamamatsu
+PRESCAN	EQU	3	; 3 on video processor only
 INT_TIM	EQU	$060000	; Signal integration time for ~1 microsec/pixel = 6x240ns
 
 VIDEO_CONFIG	EQU	$0C000C	; WARP = DAC_OUT = ON; H16B, Reset FIFOs
@@ -83,8 +83,7 @@ PARALLEL_UP
 	DC	CLK3+P_DELAY+000+000
 	DC	CLK3+P_DELAY+P1V+000
 	DC	CLK3+P_DELAY+000+P2V
-; Consider:
-;	DC	CLK3+P_DELAY+000+000
+	DC	CLK3+P_DELAY+000+000
 ; P1V+P2V must be low before horizontal readout
 ; in line binning and low dark current mode
 ; in large full well mode P1V is high and P2V/TG is low 
@@ -97,6 +96,7 @@ PARALLEL_CLEAR_UP
 	DC	VIDEO+%0011000		; DC restore and reset integrator
 	DC	CLK3+P_DELAY+P1V+000
 	DC	CLK3+P_DELAY+000+P2V
+	DC      CLK3+0000000+000+000
 END_PARALLEL_CLEAR_UP
 
 ; Video processor bit definition
@@ -104,8 +104,8 @@ END_PARALLEL_CLEAR_UP
 
 SERIAL_IDLE	; Clock serial charge from both L and R ends
 	DC	END_SERIAL_IDLE-SERIAL_IDLE-1
-	DC	CLK2+R_DELAY+00+P1H+000
-	DC	CLK2+R_DELAY+00+000+P2H
+	DC	CLK2+R_DELAY+RG+000+P2H
+	DC	CLK2+R_DELAY+RG+P1H+000
 	DC	VIDEO+$000000+%0010111		; Stop resetting integrator
 	DC	VIDEO+INT_TIM+%0000111		; Integrate
 	DC	VIDEO+$000000+%0011011		; Stop Integrate
@@ -131,26 +131,29 @@ FIRST_CLOCKS_LEFT
 	DC	END_FIRST_CLOCKS_LEFT-FIRST_CLOCKS_LEFT-1
 	DC	CLK2+RG_DELAY+RG+000+P2H 
 	DC	CLK2+R_DELAY+00+000+P2H
-	DC	CLK2+R_DELAY+00+P1H+000
 END_FIRST_CLOCKS_LEFT
 
 CLOCK_LINE_LEFT
 	DC	END_CLOCK_LINE_LEFT-CLOCK_LINE_LEFT-1
-	DC	CLK2+R_DELAY+00+000+P2H
 	DC	CLK2+R_DELAY+00+P1H+000
+	DC	CLK2+R_DELAY+00+000+P2H
 END_CLOCK_LINE_LEFT
 
+; P1L and P2H before integrating reset signal
 RESET_VIDEO
 	DC	END_RESET_VIDEO-RESET_VIDEO-1
 	DC	VIDEO+$000000+%0010111		; Stop resetting integrator
 INTEGRATE_RESET
 	DC	VIDEO+INT_TIM+%0000111		; Integrate
-	DC	VIDEO+$000000+%0011011		; Stop Integrate
+	DC	VIDEO+$000000+%0010111		; Stop Integrate
 END_RESET_VIDEO
 
 CHARGE_DUMP_LEFT
 	DC	END_CHARGE_DUMP_LEFT-CHARGE_DUMP_LEFT-1
+; clock P1H, P2L before integrating signal
+	DC	CLK2+R_DELAY+00+P1H+000
 INTEGRATE_SIGNAL_LEFT
+	DC      VIDEO+INT_TIM+%0011011		; swaps polarity
 	DC	VIDEO+INT_TIM+%0001011		; Integrate
 	DC	VIDEO+$000000+%0011011		; Stop, A/D is sampling
 	DC	VIDEO+%1110100	 	; Reset the integrator,Start A/D sample hold,Transfer A/D output to latch
