@@ -42,7 +42,7 @@ IDLE	DO      Y:<NSR,IDL1     	; Loop over number of pixels per line
 	JMP     <PRC_RCV		; Go process header and command
 NO_COM	NOP
 IDL1
-	MOVE    #<PARALLEL_CLEAR,R0     ; Address of parallel clocking waveform
+	MOVE    Y:<PARALLEL_CLEAR,R0
 	CLOCK  				; Go clock out the CCD charge
 	JMP     <IDLE
 
@@ -336,7 +336,7 @@ NP_READ	DC	0		; Number of parallels to read
 NR_BIAS	DC	0		; Number of bias pixels to read
 NROWS	DC	40		; Number of rows in the storage region
 SBIN	DC	1		; Current serial binning number
-OS	DC	'ALL'		; Name of the output source(s)
+OS	DC	'__A'		; Name of the output source(s)
 LAST_CLK 	DC	0	; Last clock before SXMIT
 SXMIT_ADR 	DC	0	; Address of SXMIT value
 LAST_SXMIT 	DC	0	; Last value of SXMIT
@@ -384,4 +384,7 @@ END_APPLICATON_Y_MEMORY	EQU	@LCV(L)
 
 ;
 ; $Log: not supported by cvs2svn $
+; Revision 1.2  2011/01/31 16:01:05  cjm
+; Updated NSR and NPR to correct numbers.
+;
 ;
