@@ -131,7 +131,7 @@ CLEAR	JSR	<CLR_CCD
 ; Default clearing routine with serial clocks inactive
 ; Fast clear image before each exposure, executed as a subroutine
 CLR_CCD	DO      Y:<NP_CLR,LPCLR2	; Loop over number of lines in image
-	MOVE    #PARALLEL_CLEAR,R0      ; Address of parallel transfer waveform
+	MOVE    Y:<PARALLEL_CLEAR,R0      ; Address of parallel transfer waveform
 	CLOCK
 	JCLR    #EF,X:HDR,LPCLR1 	; Simple test for fast execution
 	MOVE	#COM_BUF,R3
@@ -370,7 +370,9 @@ STG_B	MOVE	#$0C3C00,X0
 
 ; Send this same value to 15 video processor boards whether they exist or not
 	MOVE	#$100000,X0	; Increment value
-	DO	#15,STG_LOOP
+; This used to loop round over 15 Video boards (#15).
+; Unfortunately this changed the P1V DAC voltage on the clock driver board due to an addressing issue.
+	DO	#2,STG_LOOP
 	MOVE	B1,A1
 	JSR	<XMIT_A_WORD	; Transmit A to TIM-A-STD
 	JSR	<PAL_DLY	; Wait for SSI and PAL to be empty
@@ -788,7 +790,8 @@ EQ_UL	MOVE	#PARALLEL_UP,X0
 	MOVE	X0,Y:FIRST_CLOCKS
 	MOVE	#CLOCK_LINE_LEFT,X0
 	MOVE	X0,Y:CLOCK_LINE
-	MOVE	#$00F0C3,X0
+; Upper left should be first A/D board 0
+	MOVE	#$00F000,X0
 	MOVE	X0,Y:SXMIT
 	MOVE	#CHARGE_DUMP_LEFT,X0
 	MOVE	X0,Y:CHARGE_DUMP
