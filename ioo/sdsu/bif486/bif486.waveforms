@@ -1,7 +1,7 @@
        COMMENT *
-	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/bif486/bif486.waveforms,v 1.1 2011-02-24 11:03:01 cjm Exp $
-	Id: 	 $Id: bif486.waveforms,v 1.1 2011-02-24 11:03:01 cjm Exp $
-	Version: $Revision: 1.1 $
+	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/bif486/bif486.waveforms,v 1.2 2011-05-19 15:14:09 cjm Exp $
+	Id: 	 $Id: bif486.waveforms,v 1.2 2011-05-19 15:14:09 cjm Exp $
+	Version: $Revision: 1.2 $
 Waveform tables for Fairchild 486 4k x 4k CCD back-side CCD with the ARC 
 	four readout camera head board. 
 Generated from scratch from the spec sheet.
@@ -17,9 +17,12 @@ The quadrants are defined as follows -
 	*
 
 ; Definitions of readout variables
+VIDEO	EQU	$000000		; Video processor board switches
 CLK2	EQU	$002000		; Clock driver board lower half
 CLK3	EQU	$003000		; Clock driver board lower half
-VIDEO	EQU	$000000		; Video processor board switches
+DC0	EQU	$000000         ; Video board DC bias supply DAC voltage address 
+DC1	EQU	$100000
+CLKV	EQU	$200000	        ; Clock driver board DAC voltage selection address 
 P_DLY	EQU	$F00000		; Parallel clock delay
 SER_DLY	EQU	$020000		; Serial delay 2x40ns +40ns instruction = 120ns
 SC_DLY	EQU	$010000		; Serial clear delay
@@ -42,6 +45,8 @@ H3	EQU	8	; 				pin #4
 H1R	EQU	$10	; Horizontal clock, right	pin #5
 H2R	EQU	$20	; 				pin #6
 SW	EQU	$40	; Summing Well			pin #7
+; Where is TG (horizontal)? Not quite the same as SW
+; Not shown on spec sheet timing diagram however. 
 
 ; The parallel clocks are all on the upper bank, CLK3
 V1U	EQU	1	; Vertical clock, upper		pin #13
@@ -50,7 +55,9 @@ V3U	EQU	4	; 				pin #15
 V1L	EQU	8	; Vertical clock, lower		pin #16
 V2L	EQU	$10	; 				pin #17
 V3L	EQU	$20	; 				pin #18
+; TG  = VTG on spec sheet
 TG	EQU	$40	; Transfer Gate			pin #19
+
 
 ; Define the clocking voltages
 RG_HI	EQU	+8.0	; Reset Gate
@@ -59,6 +66,7 @@ H_HI	EQU	+5.0	; Horizontal clocks
 H_LO	EQU	-5.0
 V_HI	EQU	+8.0	; Vertical clocks
 V_LO	EQU	-6.0
+Vmax	EQU    +13.0	; Maximum clock driver voltage (see ARC-32 clock driver board docs)
 ZERO	EQU	 0.0
 
 ; DC Bias definition
@@ -356,41 +364,55 @@ INTEGRATE_SIGNAL_SPLIT ; Copied from E2V231
 END_CHARGE_DUMP_SPLIT
 
 
+; ARC-32
 DACS	DC	END_DACS-DACS-1
-	DC	(CLK2<<8)+(0<<14)+@CVI((RG_HI+10.0)/20.0*4095) 	; #1, RG
-	DC	(CLK2<<8)+(1<<14)+@CVI((RG_LO+10.0)/20.0*4095)
-	DC	(CLK2<<8)+(2<<14)+@CVI((H_HI+10.0)/20.0*4095) 	; #2, H1L
-	DC	(CLK2<<8)+(3<<14)+@CVI((H_LO+10.0)/20.0*4095)
-	DC	(CLK2<<8)+(4<<14)+@CVI((H_HI+10.0)/20.0*4095)	; #3, H2L
-	DC	(CLK2<<8)+(5<<14)+@CVI((H_LO+10.0)/20.0*4095)
-	DC	(CLK2<<8)+(6<<14)+@CVI((H_HI+10.0)/20.0*4095)	; #4, H3
-	DC	(CLK2<<8)+(7<<14)+@CVI((H_LO+10.0)/20.0*4095)
-	DC	(CLK2<<8)+(8<<14)+@CVI((H_HI+10.0)/20.0*4095)	; #5, H1R
-	DC	(CLK2<<8)+(9<<14)+@CVI((H_LO+10.0)/20.0*4095)
-	DC	(CLK2<<8)+(10<<14)+@CVI((H_HI+10.0)/20.0*4095)	; #6, H2R
-	DC	(CLK2<<8)+(11<<14)+@CVI((H_LO+10.0)/20.0*4095)
-	DC	(CLK2<<8)+(12<<14)+@CVI((H_HI+10.0)/20.0*4095)	; #7, SW 
-	DC	(CLK2<<8)+(13<<14)+@CVI((H_LO+10.0)/20.0*4095)
+	DC	CLKV+$0A0080					; DAC = unbuffered mode
+	DC	CLKV+$000100+@CVI((RG_HI+Vmax)/(2*Vmax)*255)	; ARC-32 Pin #1, Reset Gate
+	DC	CLKV+$000200+@CVI((RG_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$000400+@CVI((H_HI+Vmax)/(2*Vmax)*255)	; ARC-32 Pin #2, H1L
+	DC	CLKV+$000800+@CVI((H_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$002000+@CVI((H_HI+Vmax)/(2*Vmax)*255)	; ARC-32 Pin #3, H2L
+	DC	CLKV+$004000+@CVI((H_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$008000+@CVI((H_HI+Vmax)/(2*Vmax)*255)	; ARC-32 Pin #4, H3
+	DC	CLKV+$010000+@CVI((H_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$020100+@CVI((H_HI+Vmax)/(2*Vmax)*255)	; ARC-32 Pin #5, H1R
+	DC	CLKV+$020200+@CVI((H_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$020400+@CVI((H_HI+Vmax)/(2*Vmax)*255)	; ARC-32 Pin #6, H2R
+	DC	CLKV+$020800+@CVI((H_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$022000+@CVI((H_HI+Vmax)/(2*Vmax)*255)	; ARC-32 Pin #7, SW
+	DC	CLKV+$024000+@CVI((H_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$028000+@CVI((ZERO+Vmax)/(2*Vmax)*255)	; ARC-32 Pin #8, Unused
+	DC	CLKV+$030000+@CVI((ZERO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$040100+@CVI((ZERO+Vmax)/(2*Vmax)*255)	; ARC-32 Pin #9, Unused
+	DC	CLKV+$040200+@CVI((ZERO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$040400+@CVI((ZERO+Vmax)/(2*Vmax)*255)	; ARC-32 Pin #10, Unused
+	DC	CLKV+$040800+@CVI((ZERO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$042000+@CVI((ZERO+Vmax)/(2*Vmax)*255)	; ARC-32 Pin #11, Unused
+	DC	CLKV+$044000+@CVI((ZERO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$048000+@CVI((ZERO+Vmax)/(2*Vmax)*255)	; ARC-32 Pin #12, Unused
+	DC	CLKV+$050000+@CVI((ZERO+Vmax)/(2*Vmax)*255)
 
 ; Define all the parallel clock voltages
-	DC	(CLK2<<8)+(24<<14)+@CVI((V_HI+10.0)/20.0*4095)	; #13, V1U
-	DC	(CLK2<<8)+(25<<14)+@CVI((V_LO+10.0)/20.0*4095)
-	DC	(CLK2<<8)+(26<<14)+@CVI((V_HI+10.0)/20.0*4095)	; #14, V2U
-	DC	(CLK2<<8)+(27<<14)+@CVI((V_LO+10.0)/20.0*4095)
-	DC	(CLK2<<8)+(28<<14)+@CVI((V_HI+10.0)/20.0*4095)	; #15, V3U
-	DC	(CLK2<<8)+(29<<14)+@CVI((V_LO+10.0)/20.0*4095)
-	DC	(CLK2<<8)+(30<<14)+@CVI((V_HI+10.0)/20.0*4095)	; #16, V1L
-	DC	(CLK2<<8)+(31<<14)+@CVI((V_LO+10.0)/20.0*4095)
-	DC	(CLK2<<8)+(32<<14)+@CVI((V_HI+10.0)/20.0*4095)	; #17, V2L
-	DC	(CLK2<<8)+(33<<14)+@CVI((V_LO+10.0)/20.0*4095)
-	DC	(CLK2<<8)+(34<<14)+@CVI((V_HI+10.0)/20.0*4095)	; #18, V3L
-	DC	(CLK2<<8)+(35<<14)+@CVI((V_LO+10.0)/20.0*4095)
-	DC	(CLK2<<8)+(36<<14)+@CVI((V_HI+10.0)/20.0*4095)	; #19, TG
-	DC	(CLK2<<8)+(37<<14)+@CVI((V_LO+10.0)/20.0*4095)
+	DC	CLKV+$060100+@CVI((V_HI+Vmax)/(2*Vmax)*255)	; ARC-32 Pin #13, V1U
+	DC	CLKV+$060200+@CVI((V_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$060400+@CVI((V_HI+Vmax)/(2*Vmax)*255)	; ARC-32 Pin #14, V2U
+	DC	CLKV+$060800+@CVI((V_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$062000+@CVI((V_HI+Vmax)/(2*Vmax)*255)	; ARC-32 Pin #15, V3U
+	DC	CLKV+$064000+@CVI((V_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$068000+@CVI((V_HI+Vmax)/(2*Vmax)*255)	; ARC-32 Pin #16, V1L
+	DC	CLKV+$070000+@CVI((V_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$080100+@CVI((V_HI+Vmax)/(2*Vmax)*255)	; ARC-32 Pin #17, V2L
+	DC	CLKV+$080200+@CVI((V_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$080400+@CVI((V_HI+Vmax)/(2*Vmax)*255)	; ARC-32 Pin #18, V3L
+	DC	CLKV+$080800+@CVI((V_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$082000+@CVI((V_HI+Vmax)/(2*Vmax)*255)	; ARC-32 Pin #19, TG
+	DC	CLKV+$084000+@CVI((V_LO+Vmax)/(2*Vmax)*255)
+
+;  ******************  Code for 2 x ARC-45  ****************************
 
 ; Set video processor gain and integrator speed.
-	DC	$0c3fbb			; Default with INT_TIM = $06
-	DC	$1c3fbb
+	DC	DC0+$0c3fbb		; Default with INT_TIM = $06
+	DC	DC1+$0c3fbb
 
 ; Definitions of available gain settings
 ;	DC	$0c3f77			; x1    Gain, fast integrate
@@ -400,31 +422,34 @@ DACS	DC	END_DACS-DACS-1
 ;	DC	$0c3cbb			; x2	Gain, slow integrate
 
 ; Output offset voltages to get about 1000 A/D units
-	DC	$0c8000+OFFSET0		; Output #0, Lower Left,  VID0
-	DC	$0cc000+OFFSET1		; Output #1, Lower Right, VID0
-	DC	$1c8000+OFFSET2		; Output #2, Upper Right, VID1
-	DC	$1cc000+OFFSET3		; Output #3, Upper Left,  VID1
+	DC	DC0+$0c8000+OFFSET0	; Output #0, Lower Left,  VID0
+	DC	DC0+$0cc000+OFFSET1	; Output #1, Lower Right, VID0
+	DC	DC1+$0c8000+OFFSET2	; Output #2, Upper Right, VID1
+	DC	DC1+$0cc000+OFFSET3	; Output #3, Upper Left,  VID1
 
 ; Output drain DC bias voltages
-	DC	$0d0000+@CVI((VOD-7.5)/22.5*4095)	; Vod #0 = LL, pin #1
-	DC	$0d4000+@CVI((VOD-7.5)/22.5*4095)	; Vod #1 = LR, pin #2
-	DC	$1d0000+@CVI((VOD-7.5)/22.5*4095)	; Vod #2 = UR, pin #1
-	DC	$1d4000+@CVI((VOD-7.5)/22.5*4095)	; Vod #3 = UL, pin #2
+	DC	DC0+$0d0000+@CVI((VOD-7.5)/22.5*4095)	; Vod #0 = LL, ARC-45 #0, DB25 pin #1
+	DC	DC0+$0d4000+@CVI((VOD-7.5)/22.5*4095)	; Vod #1 = LR, ARC-45 #0, DB25 pin #2
+	DC	DC1+$0d0000+@CVI((VOD-7.5)/22.5*4095)	; Vod #2 = UR, ARC-45 #1, DB25 pin #1
+	DC	DC1+$0d4000+@CVI((VOD-7.5)/22.5*4095)	; Vod #3 = UL, ARC-45 #1, DB25 pin #2
 
 ; Reset drain DC bias voltages
-	DC	$0c0000+@CVI((VRD-5.0)/15.0*4095)	; Vrd #0 = LL, pin #3
-	DC	$0c4000+@CVI((VRD-5.0)/15.0*4095)	; Vrd #1 = LR, pin #4
-	DC	$1c0000+@CVI((VRD-5.0)/15.0*4095)	; Vrd #2 = UR, pin #3
-	DC	$1c4000+@CVI((VRD-5.0)/15.0*4095)	; Vrd #3 = LR, pin #4
+	DC	DC0+$0c0000+@CVI((VRD-5.0)/15.0*4095)	; Vrd #0 = LL, ARC-45 #0, DB25 pin #3
+	DC	DC0+$0c4000+@CVI((VRD-5.0)/15.0*4095)	; Vrd #1 = LR, ARC-45 #0, DB25 pin #4
+	DC	DC1+$0c0000+@CVI((VRD-5.0)/15.0*4095)	; Vrd #2 = UR, ARC-45 #1, DB25 pin #3
+	DC	DC1+$0c4000+@CVI((VRD-5.0)/15.0*4095)	; Vrd #3 = LR, ARC-45 #1, DB25 pin #4
 
 ; Output gate DC bias voltages
-	DC	$0e0000+@CVI((VOG+10.0)/20.0*4095) 	; Vog #0 = LL, pin #9
-	DC	$0e4000+@CVI((VOG+10.0)/20.0*4095) 	; Vog #1 = LR, pin #10
-	DC	$1e0000+@CVI((VOG+10.0)/20.0*4095) 	; Vog #2 = UR, pin #9
-	DC	$1e4000+@CVI((VOG+10.0)/20.0*4095) 	; Vog #3 = UL, pin #10
+	DC	DC0+$0e0000+@CVI((VOG+10.0)/20.0*4095) 	; Vog #0 = LL, ARC-45 #0, DB25 pin #9
+	DC	DC0+$0e4000+@CVI((VOG+10.0)/20.0*4095) 	; Vog #1 = LR, ARC-45 #0, DB25 pin #10
+	DC	DC1+$0e0000+@CVI((VOG+10.0)/20.0*4095) 	; Vog #2 = UR, ARC-45 #1, DB25 pin #9
+	DC	DC1+$0e4000+@CVI((VOG+10.0)/20.0*4095) 	; Vog #3 = UL, ARC-45 #1, DB25 pin #10
 
 END_DACS
 
 ;
 ; $Log: not supported by cvs2svn $
+; Revision 1.1  2011/02/24 11:03:01  cjm
+; Initial revision
+;
 ;
