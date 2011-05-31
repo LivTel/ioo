@@ -176,8 +176,8 @@ LOOP_AD
 ; The algorithmn assumes a reverse biased diode whose A/D count A_CCDT 
 ;   is proportional to temperature. Don't start controlling temperature 
 ;   until it falls below target temperature. 
-	MOVE    Y:<T_CCDT,X0	; Get actual CCD temperature
-	MOVE    Y:<A_CCDT,A	; Get lower CCD temperature limit
+	MOVE    Y:<T_CCDT,X0	; Get lower CCD temperature limit
+	MOVE    Y:<A_CCDT,A	; Get actual CCD temperature
 	SUB	X0,A
 	MOVE	A1,X0
 	MOVE	Y:<T_COEFF,X1	
