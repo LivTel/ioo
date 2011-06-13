@@ -1,0 +1,108 @@
+O Filter Wheel Control
+======================
+
+Version: $Revision: 1.1 $
+
+Initial document created as a result of a chat with SDB on 13/6/11.
+
+O filter wheel has 12 positions
+
+- 3 x 'locators' that can be driven in and out under pneumatic control
+- Motor
+- Clutch cyclinder
+- 6 x proximity switches
+- 5 x actuators that trigger the proximity switches
+
+Locators
+========
+
+- 1 output bit, set drive in (say), clear drive out under pneumatic control
+- 2 input bits (x3 = 6 in total)
+  - 1 set if locator is driven in
+  - 1 set if locator is driven out
+  - if no bits set, locator is moving
+  - if both bits set, this is an error
+
+Motor
+=====
+
+- 1 output bit, set on (say).
+
+24v. Currently not reversable, this could change if needed.
+
+Clutch Cylinder
+===============
+
+- 1 bit output, set means motor drive engaged (say), clear means motor is not engaged.
+- 2 bits input
+  - 1 bit set if engaged
+  - 1 bit set if disengaged
+  - 0 bits set, transitions between engaged/disengaged
+  - both bits set - error.
+
+Proximity Switches
+==================
+
+1 bit input - set if over an actuator.
+
+A different set of proximity switches are set for each filter wheel position.
+This position set is not decided yet.
+
+Suggested movement procedure
+============================
+
+- Set 'Clutch Cylinder engage' bit, wait until 'Clutch Cylinder Engaged' input bit is set
+- Clear 'Locator Output Bit' (drive out), wait until 'Locator is Driven Out' input bit is set (x3).
+- Set 'Motor Bit'
+- Enter loop, reading 'Proximity Switches' input bits, Look for specified pattern, timeout if not found (or pattern
+   does not change) within a certain time period.
+- Set 'Locator Output Bit' (drive in)
+- Clear 'Clutch Cylinder engage' bit (disengage clutch).
+- Wait until 'Clutch Cylinder Disengaged' input bit is set.
+- Clear 'Motor Bit'
+- Wait until 'Locator is Driven In' input bit is set (x3).
+- Recheck 'Proximity Switches' input bits against specified pattern.
+
+
+Homing
+======
+
+There is no home sensor, hence no real concept of home.
+Homing will just consist of moving the wheel to a known position.
+
+Bits
+====
+
+Input
+-----
+LOCATOR_1_INPUT_IN
+LOCATOR_1_INPUT_OUT
+LOCATOR_2_INPUT_IN
+LOCATOR_2_INPUT_OUT
+LOCATOR_3_INPUT_IN
+LOCATOR_3_INPUT_OUT
+CLUTCH_INPUT_ENGAGED
+CLUTCH_INPUT_DISENGAGED
+PROXIMITY_1_INPUT_ON
+PROXIMITY_2_INPUT_ON
+PROXIMITY_3_INPUT_ON
+PROXIMITY_4_INPUT_ON
+PROXIMITY_5_INPUT_ON
+PROXIMITY_6_INPUT_ON
+
+14 input bits
+
+Output
+------
+LOCATOR_1_OUTPUT_IN
+LOCATOR_2_OUTPUT_IN
+LOCATOR_3_OUTPUT_IN
+MOTOR_OUTPUT_ON
+CLUTCH_OUTPUT_ENGAGE
+
+5 output bits
+
+Log
+---
+
+$Log: not supported by cvs2svn $
