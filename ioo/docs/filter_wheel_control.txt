@@ -1,7 +1,7 @@
 O Filter Wheel Control
 ======================
 
-Version: $Revision: 1.1 $
+Version: $Revision: 1.2 $
 
 Initial document created as a result of a chat with SDB on 13/6/11.
 
@@ -63,6 +63,14 @@ Suggested movement procedure
 - Wait until 'Locator is Driven In' input bit is set (x3).
 - Recheck 'Proximity Switches' input bits against specified pattern.
 
+Suggested abort procedure
+=========================
+- Leave the locators out
+- Leave the clutch cylinder engaged
+- Clear the 'Motor Bit'
+
+The locators could be driven if, but if we are between positions they will just press against the wheel.
+Leaving the clutch engaged means the motor being off will stop the wheel moving.
 
 Homing
 ======
@@ -106,3 +114,6 @@ Log
 ---
 
 $Log: not supported by cvs2svn $
+Revision 1.1  2011/06/13 15:42:30  cjm
+Initial revision
+
