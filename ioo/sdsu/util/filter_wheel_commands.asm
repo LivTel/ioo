@@ -1,63 +1,59 @@
 ; filter_wheel_commands.asm
        COMMENT * 
-	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/util/filter_wheel_commands.asm,v 1.1 2011-06-02 14:06:16 cjm Exp $
+	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/util/filter_wheel_commands.asm,v 1.2 2011-07-21 10:51:19 cjm Exp $
 	This include file contains all the commands we can issue to the utility board,
 	to start filter wheel operations.
 	This source file should be included in utilappl.asm, after all the other commands are defined.
-	Version: $Revision: 1.1 $
+	Version: $Revision: 1.2 $
 	Author: $Author: cjm $
 	*
 
-; FWM goes here if an error occurs during startup of FWM (the wheel is not starting in a detent).
-FWM_ERROR
-	MOVE	X:(R4)+,X0			; Get second command parameter (no of positions) into X0 
-						; to clear stack
-	JMP	<ERROR				; Jump to error routine
-
-; Filter wheel move: FWM <direction> <no of positions>
+; Filter wheel move: FWM <position>
 FILTER_WHEEL_MOVE
 ; command parameters
-	MOVE	X:(R4)+,X0			; Get first command parameter (direction) into X0
-; set wheel direction digital output bit
-; X0 is wheel direction
-; A is loaded with values to test X0 against
-; wheel == 0
-	JCLR	#FW0_INPUT_DETENT,Y:<DIG_IN,FWM_ERROR ; If the detent bit in Y:DIG_IN is clear, 
-						; we are not starting in a detent. Return an error.
-	BSET    #FW0_OUTPUT_MOVE,Y:<DIG_OUT 	; switch filter wheel 0 movement on.
-	MOVE	X:<ZERO,A			; A = 0
-	CMP	X0,A				; Is the direction 0?
-	JNE	<FWM_W0D1			; If the direction is NOT 0, go to FWM_W0D1
-	BCLR    #FW0_OUTPUT_DIR,Y:<DIG_OUT 	; We are using wheel 0, in direction zero. Clear dir bit accordingly.
-	JMP	<FWM_DIR_END			; We have set direction, go to end of direction code
-FWM_W0D1
-	BSET    #FW0_OUTPUT_DIR,Y:<DIG_OUT 	; We are using wheel 0, in direction one. Set dir bit accordingly.
-FWM_DIR_END
-	MOVE	X:(R4)+,X0			; Get third command parameter (no of positions) into X0
-	MOVE	X0,Y:<FW_POS_MOVE		; Move X0 to Y:<FW_POS_MOVE - parameter is no of positions
-	MOVE	X:<ZERO,X0
-	MOVE	X0,Y:<FW_DETENT_CHECK_NUM	; Reset num to count to zero.
-	BSET    #ST_FW_IN_DETENT,X:<STATUS 	; We are currently in a detent, (see above for test), set 
-						; relevant status bit.
-	BSET    #ST_FW_MOVE,X:<STATUS 		; We are moving the filter wheel
-	JMP	<FINISH				; Issue 'DON' and get next command
-
-; Filter wheel reset: FWR
-FILTER_WHEEL_RESET
-	BCLR    #FW0_OUTPUT_DIR,Y:<DIG_OUT 	; We are using wheel 0, in direction zero. Clear dir bit accordingly.
-	BSET    #FW0_OUTPUT_MOVE,Y:<DIG_OUT 	; switch filter wheel 0 movement on.
-	BSET    #ST_FW_RESET,X:<STATUS 		; Put in filter wheel reset mode
+	MOVE	X:(R4)+,X0			; Get first command parameter (position) into X0
+	MOVE	X0,Y:<FW_POS			; Move X0 to Y:<FW_POS - parameter is position
+; find target proximity sensor pattern
+        MOVE	#FW_PROXIMITY_PATTERN,R5	; R5 = Address of FW_PROXIMITY_PATTERN
+	MOVE	Y:<FW_POS,X0			; X0 = Y:<FW_POS
+	MOVE    Y:(R5),X1			; X1 = proximity pattern at Y:(FW_PROXIMITY_PATTERN + 0)
+	REP	X0				; Repeat next line R0 (Y:<FW_POS) times
+	MOVE    Y:(R5)+,X1			; X1 = proximity pattern at Y:(FW_PROXIMITY_PATTERN++)
+	MOVE    Y:(R5),X1			; X1 = proximity pattern at Y:(FW_PROXIMITY_PATTERN + Y:<FW_POS)
+	MOVE	X1,Y:<FW_TARGET_PROXIMITY_PATTERN ; Y:<FW_TARGET_PROXIMITY_PATTERN = X1 = proximity pattern
+; reset move timeout FW_MOVE_TIMEOUT to zero
+	MOVE	X:<ZERO,X0			; X0 = 0
+	MOVE	X0,Y:<FW_MOVE_TIMEOUT		; FW_MOVE_TIMEOUT = 0
+; reset error code to 0
+	MOVE	X0,Y:<FW_ERROR_CODE		; FW_ERROR_CODE = X0 = 0
+; Set relevant ST_FW_MOVE and ST_FW_ENGAGE_CLUTCH bits in X:STATUS, so the ISR knows what we are doing
+	BSET    #ST_FW_MOVE,X:<STATUS		; We are starting to move the filter wheel
+	BSET    #ST_FW_ENGAGE_CLUTCH,X:<STATUS	; Run the engage clutch part of the filter wheel move ISR
+	BCLR	#ST_FW_LOCATORS_OUT,X:<STATUS	; Ensure rest of filter wheel status bits are not set
+	BCLR	#ST_FW_READING_PROXIMITY,X:<STATUS	; Ensure rest of filter wheel status bits are not set
+	BCLR	#ST_FW_LOCATORS_IN,X:<STATUS	; Ensure rest of filter wheel status bits are not set
+	BCLR	#ST_FW_DISENGAGE_CLUTCH,X:<STATUS	; Ensure rest of filter wheel status bits are not set
+	BCLR	#ST_FW_DISENGAGE_CLUTCH,X:<STATUS	; Ensure rest of filter wheel status bits are not set
 	JMP	<FINISH				; Issue 'DON' and get next command
 
 ; Filter wheel abort: FWA
 ; Resets ST_FW_RESET and ST_FW_MOVE STATUS bits (X:<STATUS)
-; Clears filter wheel output bits FW0_OUTPUT_MOVE
+; Clears filter wheel output bits DIG_OUT_BIT_MOTOR_ON
 FILTER_WHEEL_ABORT
 	BCLR    #ST_FW_MOVE,X:<STATUS 		; Take out of filter wheel move mode.
-	BCLR    #ST_FW_RESET,X:<STATUS 		; Take out of filter wheel reset mode.
-	BCLR    #FW0_OUTPUT_MOVE,Y:<DIG_OUT 	; Stop filter wheel 0 move.
+; Leave the locators driven out
+; Leave the clutch cyclinder engaged
+; turn off the motor
+	BCLR	#DIG_OUT_BIT_MOTOR_ON,Y:<DIG_OUT	; turn motor off
+; Set error code to 1: Abort
+	MOVE	#>9,X0					; X0 = 1
+	MOVE	X0,Y:<FW_ERROR_CODE			; Y:<FW_ERROR_CODE = X0 = 1
 	JMP	<FINISH				; Issue 'DON' and get next command
+
 
        COMMENT * 
 	$Log: not supported by cvs2svn $
+	Revision 1.1  2011/06/02 14:06:16  cjm
+	Initial revision
+
 	*
