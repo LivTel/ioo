@@ -1,24 +1,24 @@
 ; filter_wheel_equ.asm
        COMMENT * 
-	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/util/filter_wheel_equ.asm,v 1.2 2011-07-21 10:47:34 cjm Exp $
+	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/util/filter_wheel_equ.asm,v 1.3 2011-07-26 13:57:37 cjm Exp $
 	This include file defines EQUates used by the filter wheel.
 	Some of these define what we are using the digital input and output bits for,
 	located at DIG_IN (Y:0) and DIG_OUT (Y:1).
 	Some define bits for the status word STATUS (X:0). Note the first five (0..4) bits are already used.
 	This source file should be included after the "Bit definitions of STATUS word" in utilappl.asm.
 	Note the values of the bit definitions will need updating in libo_ccd:ccd_filter_wheel.c if they change.
-	Version: $Revision: 1.2 $
+	Version: $Revision: 1.3 $
 	Author: $Author: cjm $
 	*
 ;Note the values of the bit definitions will need updating in libo_ccd:ccd_filter_wheel.c if they change.
 
 ;  Extra Bit definitions of STATUS word
 ST_FW_MOVE		EQU	5	; Set if a filter wheel move (FWM) operation is in progress.
-ST_FW_ENGAGE_CLUTCH	EQU	6	; Set if the ISR is currently engaging the clutch.
+ST_FW_RESET		EQU	6	; Set if a filter wheel reset (FWR) operation is in progress.
 ST_FW_LOCATORS_OUT	EQU	7	; Set if the ISR is currently moving the locators out.
-ST_FW_READING_PROXIMITY	EQU	8	; Set if the ISR is currently waiting for the proximity sensors to be in the right location.
-ST_FW_LOCATORS_IN	EQU	9	; Set if the ISR is currently moving the locators in.
-ST_FW_DISENGAGE_CLUTCH	EQU	10	; Set if the ISR is currently disengaging the clutch.
+ST_FW_MOVE_IN_POSITION	EQU	8	; Set if the ISR is currently moving the wheel, and it is not yet in a position
+ST_FW_MOVE_OUT_POSITION EQU	9	; Set if the ISR is currently moving the wheel, and it is in position and moving out
+ST_FW_LOCATORS_IN	EQU	10	; Set if the ISR is currently moving the locators in.
 
 ; Bit definitions of the digital input word DIG_IN (Y:0)
 ; Note these values take the form of a bit number i.e. '4' means the fourth bit is set,
@@ -43,15 +43,18 @@ DIG_IN_BIT_PROXIMITY_6_ON     EQU	13	; (1<<13) Set when proximity sensor 6 is tr
 DIG_IN_PROXIMITY_MASK	      EQU	$003f00	; Bits 8-13 set
 
 ; Bit definitions of the digital output word DIG_OUT (Y:1)
-DIG_OUT_BIT_LOCATOR_1_IN      EQU	0	; (1<<0) Set to push locator 1 in, clear to move locator 1 out
-DIG_OUT_BIT_LOCATOR_2_IN      EQU	1	; (1<<1) Set to push locator 2 in, clear to move locator 2 out
-DIG_OUT_BIT_LOCATOR_3_IN      EQU	2	; (1<<2) Set to push locator 3 in, clear to move locator 3 out
-DIG_OUT_BIT_MOTOR_ON	      EQU	3	; (1<<3) Set to turn motor on, clear to stop motor
-DIG_OUT_BIT_CLUTCH_ENGAGE     EQU	4	; (1<<4) Set to engage clutch, clear to disengage clutch
+; digital outputs float high when the SDSU controller is turned on,
+; and are set low (0) when the utility board application program is loaded.
+DIG_OUT_BIT_LOCATORS_IN		EQU	0	; (1<<0) Set to push the locators in, clear to move the locators out
+DIG_OUT_BIT_MOTOR_ON		EQU	1	; (1<<3) Set to turn motor on, clear to stop motor
+DIG_OUT_BIT_CLUTCH_DISENGAGE    EQU	2	; (1<<4) Clear to engage clutch, set to disengage clutch
 
 
        COMMENT * 
 	$Log: not supported by cvs2svn $
+	Revision 1.2  2011/07/21 10:47:34  cjm
+	First O version, with clutch engage/disengage and too many locator outputs.
+
 	Revision 1.1  2011/06/02 14:06:13  cjm
 	Initial revision
 
