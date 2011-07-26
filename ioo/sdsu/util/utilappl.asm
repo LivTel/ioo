@@ -56,6 +56,9 @@ ST_SH   EQU     2       ; Set if shutter is open
 ST_READ EQU     3	; Set if a readout needs to be initiated
 STRT_EX	EQU	4	; Set to indicate start of exposure
 
+; Include bit definitions for filter wheel. Some of these are Bit definitions of STATUS word
+	INCLUDE "filter_wheel_equ.asm"
+
 ; Bit definitions of software OPTIONS word
 OPT_SH  EQU     0       ; Set to open and close shutter
 
@@ -92,6 +95,7 @@ WATCH_T EQU     8       ; Processed watchdog signal from timing board - Input
 	RTS
 
 TIMER	RTI				; RTI for now so downloading works
+	IF	@SCP("MASTER","UTILITY")
 	JCLR    #ST_EX,X:STATUS,NO_TIM	; Continue on if we're not exposing
 	JCLR	#STRT_EX,X:<STATUS,EX_STRT ; Skip if exposure has been started
 	BCLR	#STRT_EX,X:<STATUS	; Clear status = "not start of exposure"
@@ -120,6 +124,7 @@ NO_SHUT	MOVE	Y:<SH_DEL,Y1		; Get shutter closing time
 	SUB	Y1,B			; B = EL_TIM - (TGT_TIM + SH_DEL)
 	JLT	<NO_TIM			; If (EL .GE. TGT+DEL) we've timed out
 	BSET    #ST_READ,X:<STATUS	; Set so a readout will be initiated
+	ENDIF
 
 ; Return from interrupt
 NO_TIM	BSET    #ST_SRVC,X:<STATUS	; SERVICE needs executing
@@ -130,6 +135,7 @@ NO_TIM	BSET    #ST_SRVC,X:<STATUS	; SERVICE needs executing
 ; This long subroutine is executed every millisecond, but isn't an ISR so
 ;   that care need not be taken to preserve registers and stacks.
 SERVICE	BCLR	#ST_SRVC,X:<STATUS	; Clear request to execute SERVICE
+	IF	@SCP("MASTER","UTILITY")
 	JCLR	#ST_READ,X:<STATUS,UPD_DIG ; Initiate readout?
 
 	MOVE	X:<TIMING,A
@@ -139,9 +145,13 @@ SERVICE	BCLR	#ST_SRVC,X:<STATUS	; Clear request to execute SERVICE
 	BCLR	#ST_EX,X:<STATUS	; Exposure is no longer in progress
 	BCLR	#ST_READ,X:<STATUS	; Readout will be initiated
 	RTS				; Return now to save time
+	ENDIF
 
 ; Update all the digital input/outputs; reset watchdog timer
 UPD_DIG	MOVEP   Y:RD_DIG,Y:DIG_IN  ; Read 16 digital inputs
+; Include filter wheel code, that evaluates digital inputs and sets digital outputs accordingly
+; This code is in the 1ms interrupt.
+	INCLUDE "filter_wheel_isr.asm"
 	MOVEP	#1,Y:EN_DIG	   ; Enable digital outputs
 	MOVEP   Y:DIG_OUT,Y:WR_DIG ; Write 16 digital outputs
 
@@ -199,6 +209,7 @@ WR_DAC	MOVEP	A1,Y:WR_DAC0	; Update DAC and record of it
 	MOVE	A0,Y:<DAC0_LS
 	RTS			; Return from subroutine SERVICE call
 
+	IF	@SCP("MASTER","UTILITY")
 ; Shutter support subroutines for the TIMER executive
 ;   Also support shutter connection to timing board for now.
 OSHUT	BCLR    #SHUTTER,X:PBD  ; Clear Port B bit #3 to open shutter
@@ -214,6 +225,7 @@ OPEN	JSR	OSHUT		; Call open shutter subroutine
 	JMP	<FINISH		; Send 'DON' reply
 CLOSE	JSR	CSHUT		; Call close shutter subroutine
 	JMP	<FINISH		; Send 'DON' reply
+	ENDIF
 
 ; Test D/A converter
 TDA	MOVE	#CTDA,N4	; Set internal jump address	
@@ -296,6 +308,7 @@ D_TDG
 	MOVEP	#$8007,X:IPR	; Restore interrupts
 	JMP	<START		; Go get the command
 
+	IF	@SCP("MASTER","UTILITY")
 ;  **************  BEGIN  COMMAND  PROCESSING  ***************
 ; Subroutine to turn analog power OFF
 PWR_OFF_SUBROUTINE
@@ -399,7 +412,9 @@ PWR_DLY	DO	#4000,L_DLY
 	NOP			
 L_DLY
 	RTS
+	ENDIF
 
+	IF	@SCP("MASTER","UTILITY")
 ; Start an exposure by first issuing a 'CLR' to the timing board
 START_EX
 	MOVE	X:<HDR_ID,X0	; Save header of device issuing command
@@ -440,6 +455,10 @@ ABORT	BCLR    #ST_EX,X:<STATUS ; Take out of exposing mode
 	MOVE	Y:<COM_HDR,X0
 	MOVE    X0,X:<HDR_ID	; Header to device issuing 'AEX' command
 	JMP     <FINISH		; Issue 'DON' and get next command
+	ENDIF
+
+; Include filter wheel commands.
+	INCLUDE "filter_wheel_commands.asm"
 
 ; A 'DON' reply has been received in response to a command issued by
 ;    the Utility board. Read the X:STATUS bits in responding to it.
@@ -464,6 +483,7 @@ PR_DONE	MOVE	N4,R0		; Get internal jump address
 	ELSE			; Memory offsets for generating EEPROMs
         ORG     P:COM_TBL,P:APL_XY
 	ENDIF
+	IF	@SCP("MASTER","UTILITY")
 	DC	'PON',PWR_ON	; Power ON
 	DC      'POF',PWR_OFF	; Power OFF
 	DC	'SEX',START_EX	; Start exposure
@@ -472,11 +492,22 @@ PR_DONE	MOVE	N4,R0		; Get internal jump address
 	DC	'AEX',ABORT	; Abort exposure
 	DC	'OSH',OPEN	; Open shutter
 	DC	'CSH',CLOSE	; Close shutter
+	ELSE
+	DC	0,START,0,START,0,START,0,START
+	DC	0,START,0,START,0,START,0,START
+	ENDIF
 	DC      'DON',PR_DONE	; Process DON reply
 	DC	'TAD',TAD	; Test A/D
 	DC	'TDA',TDA	; Test D/A
 	DC	'TDG',TDG	; Test Digital I/O
-	DC	0,START,0,START,0,START,0,START
+; Include filter wheel command table entries.
+; Note what goes in here must also change the next line.
+	INCLUDE "filter_wheel_command_table.asm"
+; This next line has been edited to remove the empty command table entries
+; now defined in filter_wheel_command_table.asm
+; Deleted 3 from table to allow two filter wheel commands:
+; original SDSU line;	DC	0,START,0,START,0,START,0,START
+	DC	0,START
 
 ; Y: parameter table definitions, containing no "bootrom" definitions
 	IF	@SCP("DOWNLOAD","HOST")
@@ -536,6 +567,9 @@ INCR	DC	$CCCCCC	; Exposure time increment = 0.8 milliseconds
 SH_DEL	DC	10	; Shutter closing time
 TEMP	DC	0	; Temporary storage location for X:PBD word
 COM_HDR	DC	0	; Header of command being executed
+
+; Include filter wheel variables.
+	INCLUDE "filter_wheel_variables.asm"
 
 ; During the downloading of this application program the one millisecond 
 ;   timer interrupts are enabled, so the utility board will attempt to execute 
