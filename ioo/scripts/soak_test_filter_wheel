@@ -1,0 +1,60 @@
+#!/bin/csh
+# soak test the O filter wheel
+# $Header: /space/home/eng/cjm/cvs/ioo/scripts/soak_test_filter_wheel,v 1.1 2011-08-23 15:27:43 cjm Exp $
+set reset_count = 0
+set move_count = 0
+set move_success_count = 0
+sset move_fail_count = 0
+set stop_on_error = 1
+set do_reset = 1
+set done = 0
+alias test_dir = '/icc/bin/o/ccd/test/i386-linux/'
+alias test_dsp_download "${test_dir}/test_dsp_download"
+alias test_filter_wheel "${test_dir}/test_filter_wheel"
+echo "Starting soak_test_filter_wheel."
+echo "Downloading dsp code."
+test_dsp_download -interface_device pci -board utility -filename /icc/bin/o/dsp/util.lod
+set test_status = $status
+if ( ${test_status} != 0 ) then
+	echo "test_dsp_download failed."
+	exit 1
+endif
+while ( ${done} == 0 )
+	# reset if necessary
+	if( ${do_reset} == 1 ) then
+		echo "Reseting filter wheel."
+		test_filter_wheel -nosetup -noshutdown -log_level 5 -reset
+		set test_status = $status
+		if ( ${test_status} != 0 ) then
+			echo "test_filter_wheel -reset failed with error code ${test_status} ."
+			exit 1
+		endif
+		@ reset_count ++
+		set do_reset = 0
+	endif
+	# Move
+	set position = `/bin/awk 'BEGIN {srand() ; p = int (rand() * 12); print p}'`
+	echo "Attempting to move to position ${position}."
+	test_filter_wheel -nosetup -noshutdown -log_level 5 -move -position ${position}
+	set test_status = $status
+	if ( ${test_status} != 0 ) then
+		echo "Moving to position ${position} failed."
+		echo "test_filter_wheel -move -position ${position} failed with error code ${test_status} ."
+		if( ${stop_on_error} == 1 ) then
+			exit 1
+		else
+			@ move_fail_count ++
+			set do_reset = 1
+		endif
+	else
+		@ move_success_count ++
+		echo "Moving to position ${position} succeeded."
+	endif
+	@ move_count ++
+	# print totals
+	echo "Resets: ${reset_count} Moves: ${move_count} Success: ${move_success_count} Failures: ${move_fail_count}"
+end
+echo "Finishing soak_test_filter_wheel."
+#
+# $Log: not supported by cvs2svn $
+#
