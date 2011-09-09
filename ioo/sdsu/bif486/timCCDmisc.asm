@@ -1,4 +1,4 @@
-; $Header: /space/home/eng/cjm/cvs/ioo/sdsu/bif486/timCCDmisc.asm,v 1.1 2011-02-24 11:02:27 cjm Exp $
+; $Header: /space/home/eng/cjm/cvs/ioo/sdsu/bif486/timCCDmisc.asm,v 1.2 2011-09-09 12:24:34 cjm Exp $
 ; Copied from e2v230 version.
 ; Various changed imported from fif486 version
 ; Miscellaneous CCD control routines
@@ -133,7 +133,7 @@ CLEAR	JSR	<CLR_CCD
 
 ; Default clearing routine with serial clocks inactive
 ; Fast clear image before each exposure, executed as a subroutine
-; cjm Use #PARALLEL_CLEAR_SPLIT or PARALLEL_CLEAR,
+; cjm Use #PARALLEL_CLEAR_SPLIT or Y:<PARALLEL_CLEAR,
 ; PARALLEL_CLEAR_SPLIT is better as it is always faster?
 CLR_CCD	DO      Y:<NP_CLR,LPCLR2	; Loop over number of lines in image
 	MOVE    #PARALLEL_CLEAR_SPLIT,R0 ; Address of parallel transfer waveform
@@ -852,4 +852,7 @@ SET_PIXEL_TIME
 
 ;
 ; $Log: not supported by cvs2svn $
+; Revision 1.1  2011/02/24 11:02:27  cjm
+; Initial revision
+;
 ;
