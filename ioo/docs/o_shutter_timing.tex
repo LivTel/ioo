@@ -1,0 +1,139 @@
+\documentclass[10pt,a4paper]{article}
+\pagestyle{plain}
+\textwidth 16cm
+\textheight 21cm
+\oddsidemargin -0.5cm
+\topmargin 0cm
+
+\title{O Shutter Timing}
+\author{C. J. Mottram}
+\date{}
+\begin{document}
+\pagenumbering{arabic}
+\thispagestyle{empty}
+\maketitle
+\begin{abstract}
+This document describes the model and implemetation used for the O shutter.
+\end{abstract}
+
+\centerline{\Large History}
+\begin{center}
+\begin{tabular}{|l|l|l|p{15em}|}
+\hline
+{\bf Version} & {\bf Author} & {\bf Date} & {\bf Notes} \\
+\hline
+0.1 & C. J. Mottram & 12/09/11 & First draft \\
+\hline
+\end{tabular}
+\end{center}
+
+\newpage
+\tableofcontents
+\listoffigures
+\listoftables
+\newpage
+
+\section{Introduction}
+This document describes the IO:O shutter timing, and how we model it in software. This is important for
+O, as the shutter is particularily slow to open and close.
+
+The shutter is a Uniblitz CS90. The shutter specifications \cite{bib:uniblitzcs90spec} contain timing data for the shutter.
+
+\section{Timing Diagram}
+
+The timing diagram is shown in Figure \ref{fig:oshuttim}.
+
+\setlength{\unitlength}{1in}
+\begin{figure}[!h]
+	\begin{center}
+		\begin{picture}(10.0,5.5)(0.0,0.0)
+			\put(0,0){\special{psfile=o_shutter_delays.eps   hscale=75 vscale=75}}
+		\end{picture}
+	\end{center}
+	\caption{\em O Shutter Timing Diagram.}
+	\label{fig:oshuttim} 
+\end{figure}
+
+The user specifies the exposure length {\bf Texp}. The user expects the {\bf UTSTART} FITS header keyword to record
+when the shutter started to open. We have decided the exposure length {\bf Texp} is defined for the centre of the CCD
+where a point source is likely to be placed. The edges of the CCD will end up with a shorter exposure length 
+{\bf $Texp - SOD - SCD$}.
+
+When the software commands the shutter to open (the timing board DSP code) the relevant utility board signal line is set high. There is then a {\bf Shutter Trigger Delay} {\bf STD} before the shutter control electronics start to open the 
+shutter. The shutter takes a long time to open (it is a mechanical device) called the {\bf Shutter Open Delay} {\bf SOD}. 
+
+After the relevant utility board signal line is set high the utility board should wait {\bf $STD + Texp - SCD$} before
+setting the utility board signal line low again. The shutter again takes a while to close (the {\bf Shutter Close Delay} {\bf SCD}), and then the utility board waits for a few more milliseconds (the {\bf Readout Delay} {\bf RD}) before actually starting to read out the CCD.
+
+\section{Uniblitz Timings}
+
+The Uniblitz CS90 timings, as taken from the \cite{bib:uniblitzcs90spec}, are in Table \ref{tab:uniblitzcs90time}:
+
+\begin{table}[!h]
+\begin{center}
+\begin{tabular}{|l|l|p{15em}|l|}
+\hline
+{\bf Timing Diagram} & {\bf Uniblitz Diagram} & {\bf Uniblitz Description} & {\bf Value} \\ \hline
+STD                  & O-A		      & Delay time on opening after current is applied & 20 ms \\ 
+SOD                  & A-C                    & Transfer time on opening                       & 70 ms \\ 
+SCD                  & E-G                    & Transfer time on closing                       & 90 ms \\ \hline
+\end{tabular}
+\end{center}
+\caption{\em Uniblitz CS90 timings.}
+\label{tab:uniblitzcs90time}
+\end{table}
+
+\section{Timing board code}
+
+\subsection{As supplied}
+
+The supplied timing board DSP code for exposures starts at the {\bf START\_EXPOSURE} routine. This works as follows:
+
+\begin{itemize}
+\item {\bf IIA} is sent to the PCI board to initialise the PCI image address 
+      (i.e. clear the PCI DMA buffer for the image readout).
+\item The {\bf CLR\_CCD} sub-routine is called to clock out residual charge on the CCD.
+\item The {\bf TST\_RCV} routine address is put into the {\bf IDL\_ADR} memory location, so that commands can be
+      processed during an exposure (abort commands).
+\item The {\bf SERIALS\_EXPOSE} waveform is clocked to but the serial clocks in the right state for exposure. 
+      The {\bf WAIT\_TO\_FINISH\_CLOCKING} is called to ensure the clocking has been completed.
+\item If the {\bf SHUT} bit is set in {\bf X:STATUS}, the {\bf OSHUT} sub-routine is called to open the shutter.
+\item The return address for the {\bf EXPOSE} routine is setup, and then {\bf EXPOSE} is called to wait for the
+      exposure length, whilst checking for commands over the optical fibre.
+\item The {\bf PCI\_READ\_IMAGE} routine is called to put the PCI card in a state to receive image data. The {\bf ST\_RDC} bit is set in {\bf X:STATUS}.
+\item If the {\bf SHUT} bit is set in {\bf X:STATUS}, the {\bf CSHUT} sub-routine is called to close the shutter.
+\item A loop is entered to delay for {\bf Y:SHDEL} milliseconds.
+\item {\bf RDCCD} is called to readout the CCD.
+\end{itemize}
+
+
+\subsection{Suggested changes}
+
+All the above requires the following changes to be made.
+
+The exposure length is passed to the DSP code using the {\bf SET} command. The {\bf EXPOSE} routine starts a timer
+that waits until that time has elapsed. This exposure length should be modified as follows:
+${\bf Texp} = {\bf STD} + {\bf Texp} - {\bf SCD}$. This can be done in the C layer.
+
+The value of {\bf UTSTART} should be the time the exposure is started (when the {\bf SEX} command returns?)
+ plus {\bf STD}. This can be done in the C layer.
+
+The delay at the end of the {\bf EXPOSE} routine ({\bf Y:SHDEL}) should be set to ${\bf SCD} + {\bf RD}$.
+This again can be done from the C layer.
+
+Note for a RUNAT command, where we want to start an exposure at a specific time, we should send the
+{\bf SEX} command {\bf STD} milliseconds early. Given the number of milliseconds we are talking about ($\sim$ 20ms)
+and the overall speed of the shutter this is not very important, but it could be done in the C layer if necessary anyway.
+
+So it appears the DSP code does not need to change at all, and the changes can be done in the C layer, with
+config passed down from the Java layer.
+
+\begin{thebibliography}{99}
+\addcontentsline{toc}{section}{Bibliography}
+
+\bibitem{bib:uniblitzcs90spec}{\bf CS90 Shutter Specifications}
+Uniblitz \newline{\em http://www.uniblitz.com/resources\_filelibrary/cs90\_10\_16\_08.pdf}
+
+\end{thebibliography}
+
+\end{document}
