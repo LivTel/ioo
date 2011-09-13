@@ -106,6 +106,20 @@ The supplied timing board DSP code for exposures starts at the {\bf START\_EXPOS
 \item {\bf RDCCD} is called to readout the CCD.
 \end{itemize}
 
+\subsection{Clearing the CCD}
+
+As supplied, the SDSU code calls the {\bf CLR\_CCD} routine before opening the shutter and starting the exposure.
+For RATCam, we commented this out of the SDSU timing board code, and manually issued a {\bf CLR} command from the
+C layer software a few seconds ($\sim$ 10) before the exposure started. This allowed us to know the exposure
+start time and hence UTSTART with more accuracy - comments in the RATCam code suggest {\bf CLR\_CCD} took $\sim$ 5
+seconds.
+
+The {\bf CLR\_CCD} routine in IO:O seems to be a lot quicker, but the pulse widths are shorter than spec so we 
+are currently unsure this will clock all the accumulated charge out correctly. We could comment out the 
+{\bf CLR\_CCD} routine from the DSP code and call the {\bf CLR} command from the C layer software a few seconds before.
+Or we could measure the length of time the {\bf CLR\_CCD} routine takes and take this into account when issuing
+a {\bf SEX} command (for a RUNAT command, and for calculating {\bf UTSTART}).
+
 
 \subsection{Suggested changes}
 
