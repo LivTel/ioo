@@ -1,4 +1,4 @@
-; $Header: /space/home/eng/cjm/cvs/ioo/sdsu/bif486/timCCDmisc.asm,v 1.2 2011-09-09 12:24:34 cjm Exp $
+; $Header: /space/home/eng/cjm/cvs/ioo/sdsu/bif486/timCCDmisc.asm,v 1.3 2011-09-14 09:54:35 cjm Exp $
 ; Copied from e2v230 version.
 ; Various changed imported from fif486 version
 ; Miscellaneous CCD control routines
@@ -181,7 +181,8 @@ START_EXPOSURE
 	JSR	<XMT_WRD
 	MOVE	#'IIA',B		; Initialize the PCI image address
 	JSR	<XMT_WRD
-	JSR	<CLR_CCD
+; cjm clearing the CCD is now done separatly from the C layer
+;	JSR	<CLR_CCD
 	MOVE	#TST_RCV,R0		; Process commands during the exposure
 	MOVE	R0,X:<IDL_ADR
 ;; cjm Put serial clocks to exposure state
@@ -852,6 +853,9 @@ SET_PIXEL_TIME
 
 ;
 ; $Log: not supported by cvs2svn $
+; Revision 1.2  2011/09/09 12:24:34  cjm
+; Fixed comment.
+;
 ; Revision 1.1  2011/02/24 11:02:27  cjm
 ; Initial revision
 ;
