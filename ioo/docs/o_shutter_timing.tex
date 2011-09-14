@@ -13,7 +13,7 @@
 \thispagestyle{empty}
 \maketitle
 \begin{abstract}
-This document describes the model and implemetation used for the O shutter.
+This document describes the model and implementation used for the O shutter.
 \end{abstract}
 
 \centerline{\Large History}
@@ -36,7 +36,7 @@ This document describes the model and implemetation used for the O shutter.
 
 \section{Introduction}
 This document describes the IO:O shutter timing, and how we model it in software. This is important for
-O, as the shutter is particularily slow to open and close.
+O, as the shutter is particularly slow to open and close.
 
 The shutter is a Uniblitz CS90. The shutter specifications \cite{bib:uniblitzcs90spec} contain timing data for the shutter.
 
@@ -140,7 +140,7 @@ Note for a RUNAT command, where we want to start an exposure at a specific time,
 {\bf SEX} command {\bf STD} milliseconds early. Given the number of milliseconds we are talking about ($\sim$ 20ms)
 and the overall speed of the shutter this is not very important, but it could be done in the C layer if necessary anyway.
 
-We will probably handle clearing the CCD the same was as RATCam. {\bf CLR\_CCD} will be called seperatly from the 
+We will probably handle clearing the CCD the same was as RATCam. {\bf CLR\_CCD} will be called separately from the 
 C layer, and the {\bf CLR\_CCD} call commented out of the {\bf START\_EXPOSURE} DSP routine. 
 
 This is the only change needed to the DSP code. The other changes can be done in the C layer, with
