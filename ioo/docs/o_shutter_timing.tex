@@ -22,7 +22,8 @@ This document describes the model and implemetation used for the O shutter.
 \hline
 {\bf Version} & {\bf Author} & {\bf Date} & {\bf Notes} \\
 \hline
-0.1 & C. J. Mottram & 12/09/11 & First draft \\
+0.1 & C. J. Mottram & 12/09/11 & First draft. \\
+0.2 & C. J. Mottram & 14/09/11 & CLR\_CCD changes. \\
 \hline
 \end{tabular}
 \end{center}
@@ -139,7 +140,10 @@ Note for a RUNAT command, where we want to start an exposure at a specific time,
 {\bf SEX} command {\bf STD} milliseconds early. Given the number of milliseconds we are talking about ($\sim$ 20ms)
 and the overall speed of the shutter this is not very important, but it could be done in the C layer if necessary anyway.
 
-So it appears the DSP code does not need to change at all, and the changes can be done in the C layer, with
+We will probably handle clearing the CCD the same was as RATCam. {\bf CLR\_CCD} will be called seperatly from the 
+C layer, and the {\bf CLR\_CCD} call commented out of the {\bf START\_EXPOSURE} DSP routine. 
+
+This is the only change needed to the DSP code. The other changes can be done in the C layer, with
 config passed down from the Java layer.
 
 \begin{thebibliography}{99}
