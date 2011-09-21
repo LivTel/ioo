@@ -227,6 +227,7 @@ CLOSE	JSR	CSHUT		; Call close shutter subroutine
 	JMP	<FINISH		; Send 'DON' reply
 	ENDIF
 
+	IF	@SCP("TESTCOM","YES")
 ; Test D/A converter
 TDA	MOVE	#CTDA,N4	; Set internal jump address	
 
@@ -307,6 +308,7 @@ D_TDG
 	JEQ	CTDG1		; Keep going if no commands
 	MOVEP	#$8007,X:IPR	; Restore interrupts
 	JMP	<START		; Go get the command
+	ENDIF
 
 	IF	@SCP("MASTER","UTILITY")
 ;  **************  BEGIN  COMMAND  PROCESSING  ***************
@@ -497,9 +499,13 @@ PR_DONE	MOVE	N4,R0		; Get internal jump address
 	DC	0,START,0,START,0,START,0,START
 	ENDIF
 	DC      'DON',PR_DONE	; Process DON reply
+	IF	@SCP("TESTCOM","YES")
 	DC	'TAD',TAD	; Test A/D
 	DC	'TDA',TDA	; Test D/A
 	DC	'TDG',TDG	; Test Digital I/O
+	ELSE
+	DC	0,START,0,START,0,START
+	ENDIF
 ; Include filter wheel command table entries.
 ; Note what goes in here must also change the next line.
 	INCLUDE "filter_wheel_command_table.asm"
@@ -526,9 +532,9 @@ AD_IN   DC      0,0,0,0,0,0,0,0
         DC      0,0,0,0,0,0,0,0 ; Table of 16 A/D values
 EL_TIM_MSECONDS  DC      0       ; Number of milliseconds elapsed
 TGT_TIM DC      6000    ; Number of milliseconds desired in exposure
-U_CCDT  DC      $C20    ; Upper range of CCD temperature control loop
-L_CCDT  DC      $C50    ; Lower range of CCD temperature control loop
-K_CCDT  DC      85      ; Constant of proportionality for CCDT control
+U_CCDT  DC      $C20    ; Upper range of CCD temperature control loop (cjm: not used)
+L_CCDT  DC      $C50    ; Lower range of CCD temperature control loop (cjm: not used)
+K_CCDT  DC      85      ; Constant of proportionality for CCDT control (cjm: not used)
 A_CCDT  EQU     AD_IN+5 ; Address of CCD temperature in A/D table
 T_CCDT	DC	$0FFF	; Target CCD T for small increment algorithmn
 T_COEFF	DC	$010000	; Coefficient for difference in temperatures
@@ -546,6 +552,7 @@ I_P15   DC      0       ; Initial value of +15 volts
 I_M15   DC      0       ; Initial value of -15 volts
 
 ; Define some command names
+	IF	@SCP("MASTER","UTILITY")
 CLR     DC      'CLR'   ; Clear CCD
 RDC     DC      'RDC'   ; Readout CCD
 ABR     DC      'ABR'   ; Abort readout
@@ -557,7 +564,7 @@ SBV	DC	'SBV'	; Message to timing - set bias voltages
 IDL	DC	'IDL'	; Message to timing - put camera in idle mode
 STP	DC	'STP'	; Message to timing - Stop idling
 CSW	DC	'CSW'	; Message to timing - clear switches
-
+	ENDIF
 ; Miscellaneous
 CC00	DC	$C00	; Maximum heater voltage so the board doesn't burn up
 SV_A1	DC	0	; Save register A1 during analog processing
