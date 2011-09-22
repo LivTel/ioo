@@ -1,30 +1,46 @@
 #!/bin/csh
-# $Header: /space/home/eng/cjm/cvs/ioo/ccd/test/test_temperature_control_graph_temperature,v 1.1 2011-09-20 09:20:16 cjm Exp $
-# $Id: test_temperature_control_graph_temperature,v 1.1 2011-09-20 09:20:16 cjm Exp $
+# $Header: /space/home/eng/cjm/cvs/ioo/ccd/test/test_temperature_control_graph_temperature,v 1.2 2011-09-22 17:08:06 cjm Exp $
+# $Id: test_temperature_control_graph_temperature,v 1.2 2011-09-22 17:08:06 cjm Exp $
 if ( $#argv != 1 ) then
 	echo "test_temperature_control_graph_temperature <csv filename>"
 	exit 1
 endif
 set csv_filename = "$1"
-alias csv2gnuplot `dirname $0`"/csv2gnuplot.sh"
 set output_image_format = "png"
 set output_temp_filename = "${csv_filename:r}_temp.${output_image_format}"
-set csv_temp_filename = "${csv_filename:r}_temp.csv"
-# create csv file for temp vs time
+set gnuplot_script_filename = "${csv_filename:r}_temp_gnuplot.scr"
+set temp_filename = "${csv_filename:r}_temp.dat"
+# create gnuplot file for temp vs time
 # remove header line
 # Make seconds column since first measurement
-cat ${csv_filename} | awk  -F',' ' { if (NR== 2) { first_time = $1; print "0,"$5 } if (NR > 2) { print ($1 - first_time)","$5 } }' >  ${csv_temp_filename}
+# $3 is the temperature coefficient
+# $5 is the CCD temperature in degrees C
+cat ${csv_filename} | awk  -F',' ' { if (NR== 2) { first_time = $1; print "0 "$5 } if (NR > 2) { print ($1 - first_time)" "$5 } }' >  ${temp_filename}
+set temp_coeff = `cat ${csv_filename} | awk  -F',' ' { if (NR== 2) { first_coeff = $3 ; } if (NR > 2) { if ( $3 != first_coeff ) { first_coeff = "Multiple" } } }; END { print first_coeff}' `
 # Find sensible x ranges, by ignoring zero values
-set xmin = `cat ${csv_temp_filename} | awk -F',' ' BEGIN { ymin=9990000000 } { if ( $1 < ymin ) ymin = $1 ; } END { print ymin }'`
+set xmin = `cat ${temp_filename} | awk ' BEGIN { ymin=9990000000 } { if ( $1 < ymin ) ymin = $1 ; } END { print ymin }'`
 set xmin = `echo "( ${xmin} - 1 )" | bc`
-set xmax = `cat ${csv_temp_filename} | awk -F',' ' BEGIN { ymax=0; } { if ( $1 > ymax ) ymax = $1 } END { print ymax }'`
-set ymin = `cat ${csv_temp_filename} | awk -F',' ' BEGIN { ymin=0 } { if ( $2 < ymin ) ymin = $2 ; } END { print ymin }'`
+set xmax = `cat ${temp_filename} | awk ' BEGIN { ymax=0; } { if ( $1 > ymax ) ymax = $1 } END { print ymax }'`
+set ymin = `cat ${temp_filename} | awk ' BEGIN { ymin=100 } { if ( $2 < ymin ) ymin = $2 ; } END { print ymin }'`
 set ymin = `echo "( ${ymin} - 1 )" | bc`
-set ymax = `cat ${csv_temp_filename} | awk -F',' ' BEGIN { ymax=0; } { if ( $2 > ymax ) ymax = $2 } END { print ymax }'`
-set temp_gnuplot_options_filename = "${csv_temp_filename:r}_gnuplot_options.dat"
-echo "set xrange [${xmin}:${xmax}]" > ${temp_gnuplot_options_filename}
-echo "set yrange [${ymin}:${ymax}]" >> ${temp_gnuplot_options_filename}
-csv2gnuplot -i ${csv_temp_filename} -G ${temp_gnuplot_options_filename} -o ${csv_temp_filename:r}_gnuplot.dat -g ${csv_temp_filename:r}_gnuplot.scr -W 800 -H 600 -F ${output_image_format} -O ${output_temp_filename} -e
+set ymax = `cat ${temp_filename} | awk ' BEGIN { ymax=-273; } { if ( $2 > ymax ) ymax = $2 } END { print ymax }'`
+set ymax = `echo "( ${ymax} + 1 )" | bc`
+rm -f ${gnuplot_script_filename}
+touch ${gnuplot_script_filename}
+echo "set xrange [${xmin}:${xmax}]" >> ${gnuplot_script_filename}
+echo "set yrange [${ymin}:${ymax}]" >> ${gnuplot_script_filename}
+echo "set mytics 5" >> ${gnuplot_script_filename}
+echo 'set title "Dewar Temperature using coefficient:'${temp_coeff}'"' >> ${gnuplot_script_filename}
+echo 'set xlabel "Time (secs)"' >> ${gnuplot_script_filename}
+echo 'set ylabel "Temperature (C)"'  >> ${gnuplot_script_filename}
+echo 'plot "'${temp_filename}'" using 1:2 title "CCD Temperature"' >> ${gnuplot_script_filename}
+echo "set terminal png size 800,600" >> ${gnuplot_script_filename}
+echo 'set output "'${output_temp_filename}'"' >> ${gnuplot_script_filename}
+echo "replot" >> ${gnuplot_script_filename}
+gnuplot ${gnuplot_script_filename}
 #
 # $Log: not supported by cvs2svn $
+# Revision 1.1  2011/09/20 09:20:16  cjm
+# Initial revision
+#
 #
