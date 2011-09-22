@@ -1,0 +1,50 @@
+#!/bin/csh
+# $Header: /space/home/eng/cjm/cvs/ioo/ccd/test/test_temperature_control_graph_adus,v 1.1 2011-09-22 17:07:31 cjm Exp $
+# $Id: test_temperature_control_graph_adus,v 1.1 2011-09-22 17:07:31 cjm Exp $
+if ( $#argv != 1 ) then
+	echo "test_temperature_control_graph_adus <csv filename>"
+	exit 1
+endif
+set csv_filename = "$1"
+set output_image_format = "png"
+set output_adus_filename = "${csv_filename:r}_adus.${output_image_format}"
+set gnuplot_script_filename = "${csv_filename:r}_adus_gnuplot.scr"
+set adus_filename = "${csv_filename:r}_adus.dat"
+echo "Creating gnuplot data in ${adus_filename}"
+# create gnuplot file for adus vs time
+# remove header line
+# Make seconds column since first measurement
+# $1 is time in seconds
+# $3 is the temperature coefficient
+# $4 is the target ADUs (4095 means don't use the heater)
+# $7 is the actual dewar temp in ADUs
+# $8 is the heater ADUs
+cat ${csv_filename} | awk  -F',' ' { if (NR== 2) { first_time = $1; print "0 "$4" "$7" "$8 } if (NR > 2) { print ($1 - first_time)" "$4" "$7" "$8 } }' >  ${adus_filename}
+set temp_coeff = `cat ${csv_filename} | awk  -F',' ' { if (NR== 2) { first_coeff = $3 ; } if (NR > 2) { if ( $3 != first_coeff ) { first_coeff = "Multiple" } } }; END { print first_coeff}' `
+# Find sensible x ranges, by ignoring zero values
+set xmin = `cat ${adus_filename} | awk ' BEGIN { ymin=9990000000 } { if ( $1 < ymin ) ymin = $1 ; } END { print ymin }'`
+set xmin = `echo "( ${xmin} - 1 )" | bc`
+set xmax = `cat ${adus_filename} | awk ' BEGIN { ymax=0; } { if ( $1 > ymax ) ymax = $1 } END { print ymax }'`
+set ymin = `cat ${adus_filename} | awk ' BEGIN { ymin=65535 } { if ( $2 < ymin ) ymin = $2 ; if ( $3 < ymin ) ymin = $3 ;if ( $4 < ymin ) ymin = $4 ;  } END { print ymin }'`
+set ymin = `echo "( ${ymin} - 100 )" | bc`
+set ymax = `cat ${adus_filename} | awk ' BEGIN { ymax=0; } { if ( $2 > ymax ) ymax = $2 ;if ( $3 > ymax ) ymax = $3 ; if ( $4 > ymax ) ymax = $4 ; } END { print ymax }'`
+set ymax = `echo "( ${ymax} + 100 )" | bc`
+echo "Creating gnuplot script in ${gnuplot_script_filename}."
+rm -f ${gnuplot_script_filename}
+touch ${gnuplot_script_filename}
+echo "set xrange [${xmin}:${xmax}]" >> ${gnuplot_script_filename}
+echo "set yrange [${ymin}:${ymax}]" >> ${gnuplot_script_filename}
+echo "set mytics 5" >> ${gnuplot_script_filename}
+echo 'set title "Temperature Servoing using coefficient:'${temp_coeff}'"' >> ${gnuplot_script_filename}
+echo 'set xlabel "Time (secs)"' >> ${gnuplot_script_filename}
+echo 'set ylabel "ADUs"'  >> ${gnuplot_script_filename}
+echo 'plot "'${adus_filename}'" using 1:2 title "Target Temp ADUs"' >> ${gnuplot_script_filename}
+echo 'replot "'${adus_filename}'" using 1:3 title "Actual Temp ADUs"' >> ${gnuplot_script_filename}
+echo 'replot "'${adus_filename}'" using 1:4 title "Heater ADUs"' >> ${gnuplot_script_filename}
+echo "set terminal png size 800,600" >> ${gnuplot_script_filename}
+echo 'set output "'${output_adus_filename}'"' >> ${gnuplot_script_filename}
+echo "replot" >> ${gnuplot_script_filename}
+gnuplot ${gnuplot_script_filename}
+#
+# $Log: not supported by cvs2svn $
+#
