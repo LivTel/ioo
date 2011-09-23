@@ -1,7 +1,7 @@
        COMMENT *
-	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/bif486/bif486.waveforms,v 1.4 2011-09-09 12:23:39 cjm Exp $
-	Id: 	 $Id: bif486.waveforms,v 1.4 2011-09-09 12:23:39 cjm Exp $
-	Version: $Revision: 1.4 $
+	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/bif486/bif486.waveforms,v 1.5 2011-09-23 14:21:21 cjm Exp $
+	Id: 	 $Id: bif486.waveforms,v 1.5 2011-09-23 14:21:21 cjm Exp $
+	Version: $Revision: 1.5 $
 Waveform tables for Fairchild 486 4k x 4k CCD back-side CCD with the ARC 
 	four readout camera head board. 
 Generated from scratch from the spec sheet.
@@ -28,8 +28,9 @@ P_DLY	EQU	$FF0000		; Parallel clock delay, bit 23 set so 0x70 = 127x640ns +40ns 
 SER_DLY	EQU	$060000		; Serial delay 6x40ns +40ns instruction = 280ns (should be 300ns)
 SC_DLY	EQU	$010000		; Serial clear delay
 NSCLR	EQU	2060		; To clear the serial register
-NPCLR	EQU	4400    	; To clear the parallel register 
-SH_DEL	EQU	50		; Delay in milliseconds between shutter
+NPCLR	EQU	1024    	; To clear the parallel register. Should be at least 2049, but anything longer than
+				; 1024 causes CLR to return TOUT.
+SH_DEL	EQU	100		; Delay in milliseconds between shutter
 				;   closing and image readout
 PRESCAN EQU	0		; PRESCAN - 18 according to data sheet
 				; But PRESCAN is clocked over in RDCCD, why not set this to 0?
@@ -79,7 +80,7 @@ VOG	EQU	 -2.5	; Output Gate
 
 ; Video offset variables
 OFFSET	EQU	$400
-OFFSET0	EQU	$fff
+OFFSET0	EQU	OFFSET
 OFFSET1	EQU	OFFSET
 OFFSET2	EQU	OFFSET
 OFFSET3	EQU	OFFSET
@@ -550,6 +551,11 @@ END_DACS
 
 ;
 ; $Log: not supported by cvs2svn $
+; Revision 1.4  2011/09/09 12:23:39  cjm
+; Fixed parallel waveforms by duplicating clock lines.
+; P_DLY 0xFF0000 should be 81us, but on oscilloscope only takes 41us.
+; Serial waveforms modified to get 1200ns pulse width (should be 1.25us).
+;
 ; Revision 1.3  2011/09/08 13:58:04  cjm
 ; Rewritten. Names closer to spec sheet: SW -> SG. TG-> VTG.
 ; Voltages changed to summary test report voltages.
