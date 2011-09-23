@@ -1,4 +1,4 @@
-; $Header: /space/home/eng/cjm/cvs/ioo/sdsu/bif486/timCCDmisc.asm,v 1.3 2011-09-14 09:54:35 cjm Exp $
+; $Header: /space/home/eng/cjm/cvs/ioo/sdsu/bif486/timCCDmisc.asm,v 1.4 2011-09-23 14:23:18 cjm Exp $
 ; Copied from e2v230 version.
 ; Various changed imported from fif486 version
 ; Miscellaneous CCD control routines
@@ -128,25 +128,15 @@ CSHUT	BCLR    #ST_SHUT,X:<STATUS 	; Clear status to mean shutter closed
 	RTS
 
 ; Clear the CCD, executed as a command
-CLEAR	JSR	<CLR_CCD
-	JMP     <FINISH
-
-; Default clearing routine with serial clocks inactive
-; Fast clear image before each exposure, executed as a subroutine
-; cjm Use #PARALLEL_CLEAR_SPLIT or Y:<PARALLEL_CLEAR,
-; PARALLEL_CLEAR_SPLIT is better as it is always faster?
-CLR_CCD	DO      Y:<NP_CLR,LPCLR2	; Loop over number of lines in image
+; NB this will no longer clear the whole CCD
+; Setting NPCLR = NP_CLR to > 1024 causes the CLR command to take too long and return TOUT.
+; Call this command wtwice to clear the whole CCD
+CLEAR	
+	;JSR	<CLR_CCD
+	DO      Y:<NP_CLR,LPCLR2	; Loop over number of lines in image
 	MOVE    #PARALLEL_CLEAR_SPLIT,R0 ; Address of parallel transfer waveform
 	CLOCK
-	JCLR    #EF,X:HDR,LPCLR1 	; Simple test for fast execution
-	MOVE	#COM_BUF,R3
-	JSR	<GET_RCV		; Check for FO command
-	JCC	<LPCLR1			; Continue no commands received
-
-	MOVE	#LPCLR1,R0
-	MOVE	R0,X:<IDL_ADR
-	JMP	<PRC_RCV
-LPCLR1	NOP
+	NOP
 LPCLR2
 ; cjm clear serial register
 ; diddly tim.asm will require NS_CLR   DC      NSCLR          ; To clear the serial register
@@ -155,7 +145,33 @@ LPCLR2
 	CLOCK
 	NOP
 LSCLR2
-	RTS
+	JMP     <FINISH
+
+; Default clearing routine with serial clocks inactive
+; Fast clear image before each exposure, executed as a subroutine
+; cjm Use #PARALLEL_CLEAR_SPLIT or Y:<PARALLEL_CLEAR,
+; PARALLEL_CLEAR_SPLIT is better as it is always faster?
+;CLR_CCD	DO      Y:<NP_CLR,LPCLR2	; Loop over number of lines in image
+;	MOVE    #PARALLEL_CLEAR_SPLIT,R0 ; Address of parallel transfer waveform
+;	CLOCK
+;	JCLR    #EF,X:HDR,LPCLR1 	; Simple test for fast execution
+;	MOVE	#COM_BUF,R3
+;	JSR	<GET_RCV		; Check for FO command
+;	JCC	<LPCLR1			; Continue no commands received
+
+;	MOVE	#LPCLR1,R0
+;	MOVE	R0,X:<IDL_ADR
+;	JMP	<PRC_RCV
+;LPCLR1	NOP
+;LPCLR2
+; cjm clear serial register
+; diddly tim.asm will require NS_CLR   DC      NSCLR          ; To clear the serial register
+;	DO	Y:<NS_CLR,LSCLR2	; Clear out the serial shift register
+;	MOVE	#<SERIAL_CLEAR,R0
+;	CLOCK
+;	NOP
+;LSCLR2
+;	RTS
 
 ; Start the exposure timer and monitor its progress
 EXPOSE	MOVEP	#0,X:TLR0		; Load 0 into counter timer
@@ -853,6 +869,9 @@ SET_PIXEL_TIME
 
 ;
 ; $Log: not supported by cvs2svn $
+; Revision 1.3  2011/09/14 09:54:35  cjm
+; Commented out CLR_CCD from the START_EXPOSURE routine.
+;
 ; Revision 1.2  2011/09/09 12:24:34  cjm
 ; Fixed comment.
 ;
