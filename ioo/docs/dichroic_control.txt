@@ -1,0 +1,201 @@
+Dichroic Control
+----------------
+
+Version: $Revision: 1.1 $
+
+Initial document created as a result of a chat with SDB on 27/9/11.
+
+3 positions:
+- red dichroic
+- blue dichroic
+- mirror (central position)
+
+Mechanism is a slide powered by a air. There is a solenoid that controls whether the slide is pushed
+to one end or the other. There is a second solenoid that deploys a mid position stop used when moving to the middle
+(mirror) position. Note this stop should only be deployed when the slide is travelling in a certain direction.
+
+Outputs (from control computer to mechanism)
+-------
+
+1 digital output bit, solenoid control, whether the slide is moving to on end or the other.
+1 digital output bit, solenoid control, deploy the mid position stop.
+
+Bits
+----
+
+DIG_OUT_SLIDE_DIRECTION   (0 to left/red, 1 to right/blue)
+DIG_OUT_MID_POSN_DEPLOY   (0 to retract/stow, 1 to deploy)
+
+Inputs (from mechanism to control computer)
+------
+
+3 digital input bits, (magnetic proximity for instance), one for each position the slide is in.
+
+2 digital input bits, (magnetic proximity for instance), one for the mid stop being deployed, one for the mid
+stop being stowed.
+
+Bits
+----
+
+DIG_IN_POSITION_LEFT   (0 if not in left position, 1 if in left position(=red)) 
+DIG_IN_POSITION_RIGHT  (0 if not in right position, 1 if in right position(=blue)) 
+DIG_IN_POSITION_MID    (0 if not in middle position, 1 if in middle position(=mirror))
+
+DIG_IN_MID_STOP_STOW   (0 if mid stop is NOT stowed, 1 if mid stop IS stowed).
+DIG_IN_MID_STOP_DEPLOY (0 if mid stop is NOT deployed, 1 if mid stop IS deployed).
+
+Control
+-------
+
+We must ensure the mid stop is out of the way before driving from one end to another.
+The following pseudo-code assumes:
+- red|left|0 is one position
+- blue|right|2 is the other end of the slide
+- mirror|middle|1 is the mid position
+- The hardware is setup such that the slide must be driven to red|left|0, before the mid stop is deployed
+
+
+move red|left|0
+---------------
+
+mid_stop_stow()
+digitalWrite(DIG_OUT_SLIDE_DIRECTION,0)
+done = false
+startTime = now;
+currentTime = now;
+while(done == false)
+{
+	// check mid stop still stowed
+	mid_stop_stowed = ((digitalRead(DIG_IN_MID_STOP_STOW)==1)&&(digitalRead(DIG_IN_MID_STOP_DEPLOY)==0))
+	if(mid_stop_stowed == false)
+		return mid stop moved error
+	// if we are in position finish loop - check ALL position inputs outside of loop
+	if(digitalRead(DIG_IN_POSITION_LEFT)==1)
+		done = true
+	// check for timeout
+	currentTime = now;
+	if((currentTime-startTime) > MOVE_TIMEOUT)
+		return timeout error
+}
+if(digitalRead(DIG_IN_POSITION_LEFT)==0)
+	return position error
+if(digitalRead(DIG_IN_POSITION_RIGHT)==1)
+	return position error
+if(digitalRead(DIG_IN_POSITION_MID)==1)
+	return position error
+
+move mirror|middle|1
+---------------------
+
+// first, move to the left, this also internally does a mid stop stow
+move(red|left|0)
+// then deploy mid stop
+mid_stop_deploy()
+// now move towards the right/blue
+digitalWrite(DIG_OUT_SLIDE_DIRECTION,1)
+done = false
+startTime = now;
+currentTime = now;
+while(done == false)
+{
+	// check mid stop still deployed
+	mid_stop_deployed = ((digitalRead(DIG_IN_MID_STOP_STOW)==0)&&(digitalRead(DIG_IN_MID_STOP_DEPLOY)==1))
+	if(mid_stop_deployed == false)
+		return mid stop moved error
+	// if we are in position finish loop - check ALL position inputs outside of loop
+	if(digitalRead(DIG_IN_POSITION_MID)==1)
+		done = true
+	// check for timeout
+	currentTime = now;
+	if((currentTime-startTime) > MOVE_TIMEOUT)
+		return timeout error
+}
+if(digitalRead(DIG_IN_POSITION_LEFT)==1)
+	return position error
+if(digitalRead(DIG_IN_POSITION_RIGHT)==1)
+	return position error
+if(digitalRead(DIG_IN_POSITION_MID)==0)
+	return position error
+
+move blue|right|2
+-----------------
+
+mid_stop_stow()
+digitalWrite(DIG_OUT_SLIDE_DIRECTION,1)
+done = false
+startTime = now;
+currentTime = now;
+while(done == false)
+{
+	// check mid stop still stowed
+	mid_stop_stowed = ((digitalRead(DIG_IN_MID_STOP_STOW)==1)&&(digitalRead(DIG_IN_MID_STOP_DEPLOY)==0))
+	if(mid_stop_stowed == false)
+		return mid stop moved error
+	// if we are in position finish loop - check ALL position inputs outside of loop
+	if(digitalRead(DIG_IN_POSITION_RIGHT)==1)
+		done = true
+	// check for timeout
+	currentTime = now;
+	if((currentTime-startTime) > MOVE_TIMEOUT)
+		return timeout error
+}
+if(digitalRead(DIG_IN_POSITION_RIGHT)==0)
+	return position error
+if(digitalRead(DIG_IN_POSITION_LEFT)==1)
+	return position error
+if(digitalRead(DIG_IN_POSITION_MID)==1)
+	return position error
+
+
+mid_stop_deploy()
+---------------
+
+// check we are in the right position before deploying
+// in this case, we assume left|red|0 is the right position to be in before deploying
+if(digitalRead(DIG_IN_POSITION_RIGHT)==1)
+	return position error
+if(digitalRead(DIG_IN_POSITION_LEFT)==0)
+	return position error
+if(digitalRead(DIG_IN_POSITION_MID)==1)
+	return position error
+// start deploying
+digitalWrite(DIG_OUT_MID_POSN_DEPLOY,1)
+startTime = now;
+currentTime = now;
+deployed = false
+while(((currentTime-startTime) < DEPLOY_TIMEOUT)&&(deployed == false))
+{
+	deployed = ((digitalRead(DIG_IN_MID_STOP_STOW)==0)&&(digitalRead(DIG_IN_MID_STOP_DEPLOY)==1))
+	currentTime = now;
+}
+if (deployed == false)
+   return timeout error
+
+mid_stop_stow()
+---------------
+
+digitalWrite(DIG_OUT_MID_POSN_DEPLOY,0)
+startTime = now;
+currentTime = now;
+stowed = false
+while(((currentTime-startTime) < STOW_TIMEOUT)&&(stowed == false))
+{
+	stowed = ((digitalRead(DIG_IN_MID_STOP_STOW)==1)&&(digitalRead(DIG_IN_MID_STOP_DEPLOY)==0))
+	currentTime = now;
+}
+if (stowed == false)
+   return timeout error
+
+Timeouts
+--------
+To be defined:
+MOVE_TIMEOUT
+STOW_TIMEOUT
+DEPLOY_TIMEOUT
+
+
+Log
+---
+
+$Log: not supported by cvs2svn $
+
