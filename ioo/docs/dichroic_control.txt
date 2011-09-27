@@ -1,7 +1,7 @@
 Dichroic Control
 ----------------
 
-Version: $Revision: 1.1 $
+Version: $Revision: 1.2 $
 
 Initial document created as a result of a chat with SDB on 27/9/11.
 
@@ -58,8 +58,9 @@ The following pseudo-code assumes:
 move red|left|0
 ---------------
 
-mid_stop_stow()
+// we have to be moving red|left|0 before attempting to stow the mid stop, to take pressure of the mid stop
 digitalWrite(DIG_OUT_SLIDE_DIRECTION,0)
+midStopStow()
 done = false
 startTime = now;
 currentTime = now;
@@ -90,7 +91,7 @@ move mirror|middle|1
 // first, move to the left, this also internally does a mid stop stow
 move(red|left|0)
 // then deploy mid stop
-mid_stop_deploy()
+midStopDeploy()
 // now move towards the right/blue
 digitalWrite(DIG_OUT_SLIDE_DIRECTION,1)
 done = false
@@ -120,7 +121,9 @@ if(digitalRead(DIG_IN_POSITION_MID)==0)
 move blue|right|2
 -----------------
 
-mid_stop_stow()
+// we have to be moving red|left|0 before attempting to stow the mid stop, to take pressure of the mid stop
+digitalWrite(DIG_OUT_SLIDE_DIRECTION,0)
+midStopStow()
 digitalWrite(DIG_OUT_SLIDE_DIRECTION,1)
 done = false
 startTime = now;
@@ -147,7 +150,7 @@ if(digitalRead(DIG_IN_POSITION_MID)==1)
 	return position error
 
 
-mid_stop_deploy()
+midStopDeploy()
 ---------------
 
 // check we are in the right position before deploying
@@ -171,9 +174,10 @@ while(((currentTime-startTime) < DEPLOY_TIMEOUT)&&(deployed == false))
 if (deployed == false)
    return timeout error
 
-mid_stop_stow()
----------------
+midStopStow()
+-------------
 
+// we should be moving red|left|0 before attempting to stow the mid stop
 digitalWrite(DIG_OUT_MID_POSN_DEPLOY,0)
 startTime = now;
 currentTime = now;
@@ -198,4 +202,7 @@ Log
 ---
 
 $Log: not supported by cvs2svn $
+Revision 1.1  2011/09/27 14:25:33  cjm
+Initial revision
+
 
