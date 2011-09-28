@@ -24,6 +24,7 @@ This document describes the model and implementation used for the O shutter.
 \hline
 0.1 & C. J. Mottram & 12/09/11 & First draft. \\
 0.2 & C. J. Mottram & 14/09/11 & CLR\_CCD changes. \\
+0.3 & C. J. Mottram & 28/09/11 & Added actual shutter timings derived by IAS. \\
 \hline
 \end{tabular}
 \end{center}
@@ -82,6 +83,23 @@ SCD                  & E-G                    & Transfer time on closing        
 \end{center}
 \caption{\em Uniblitz CS90 timings.}
 \label{tab:uniblitzcs90time}
+\end{table}
+
+Some experimentally determined shutter timings are in Table \ref{tab:experimenttime}. These were derived by IAS
+on 28/09/2011.
+
+\begin{table}[!h]
+\begin{center}
+\begin{tabular}{|l|l|p{15em}|l|}
+\hline
+{\bf Timing Diagram} & {\bf Uniblitz Diagram} & {\bf Uniblitz Description} & {\bf Value} \\ \hline
+STD                  & O-A		      & Delay time on opening after current is applied & 15 ms \\ 
+SOD                  & A-C                    & Transfer time on opening                       & 45 ms \\ 
+SCD                  & E-G                    & Transfer time on closing                       & 110 ms \\ \hline
+\end{tabular}
+\end{center}
+\caption{\em Experimentally determined Uniblitz CS90 timings.}
+\label{tab:experimenttime}
 \end{table}
 
 \section{Timing board code}
