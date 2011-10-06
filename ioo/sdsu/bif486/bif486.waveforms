@@ -1,7 +1,7 @@
        COMMENT *
-	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/bif486/bif486.waveforms,v 1.5 2011-09-23 14:21:21 cjm Exp $
-	Id: 	 $Id: bif486.waveforms,v 1.5 2011-09-23 14:21:21 cjm Exp $
-	Version: $Revision: 1.5 $
+	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/bif486/bif486.waveforms,v 1.6 2011-10-06 10:24:33 cjm Exp $
+	Id: 	 $Id: bif486.waveforms,v 1.6 2011-10-06 10:24:33 cjm Exp $
+	Version: $Revision: 1.6 $
 Waveform tables for Fairchild 486 4k x 4k CCD back-side CCD with the ARC 
 	four readout camera head board. 
 Generated from scratch from the spec sheet.
@@ -25,7 +25,8 @@ DC1	EQU	$100000
 CLKV	EQU	$200000	        ; Clock driver board DAC voltage selection address 
 P_DLY	EQU	$FF0000		; Parallel clock delay, bit 23 set so 0x70 = 127x640ns +40ns delay = 81320 ns = 81 us
 				; However, on oscilloscope only 41us
-SER_DLY	EQU	$060000		; Serial delay 6x40ns +40ns instruction = 280ns (should be 300ns)
+SER_DLY	EQU	$030000		; Slow delay on Spec sheet $060000 =  6x40ns +40ns instruction = 280ns (should be 300ns)
+				; Faster readout $030000 = 3x40ns +40ns instruction = 160ns
 SC_DLY	EQU	$010000		; Serial clear delay
 NSCLR	EQU	2060		; To clear the serial register
 NPCLR	EQU	1024    	; To clear the parallel register. Should be at least 2049, but anything longer than
@@ -551,6 +552,11 @@ END_DACS
 
 ;
 ; $Log: not supported by cvs2svn $
+; Revision 1.5  2011/09/23 14:21:21  cjm
+; Reduced NPCLR from 4400 to 1024 so CLR does not TOUT.
+; Set OFFSET0 to OFFSET, so bias levels are sane.
+; Changed SH_DEL from 50 to 100ms, see Uniblitz CS90 docs for details.
+;
 ; Revision 1.4  2011/09/09 12:23:39  cjm
 ; Fixed parallel waveforms by duplicating clock lines.
 ; P_DLY 0xFF0000 should be 81us, but on oscilloscope only takes 41us.
