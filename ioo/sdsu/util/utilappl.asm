@@ -537,7 +537,7 @@ L_CCDT  DC      $C50    ; Lower range of CCD temperature control loop (cjm: not 
 K_CCDT  DC      85      ; Constant of proportionality for CCDT control (cjm: not used)
 A_CCDT  EQU     AD_IN+5 ; Address of CCD temperature in A/D table
 T_CCDT	DC	$0FFF	; Target CCD T for small increment algorithmn
-T_COEFF	DC	$010000	; Coefficient for difference in temperatures
+T_COEFF	DC	$001000	; Coefficient for difference in temperatures: originally $010000
 DAC0_LS	DC	0	; Least significant part of heater voltage
 
 ; Define power supply turn-on variables
