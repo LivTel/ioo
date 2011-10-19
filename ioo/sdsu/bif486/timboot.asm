@@ -779,7 +779,9 @@ L_FO_INIT
 	CLR	B
 	MOVE	#$100000,X0	; Increment over board numbers for DAC writes
 	MOVE	#$001000,X1	; Increment over board numbers for WRSS writes
-	DO	#15,L_ANALOG	; Fifteen video processor boards maximum
+; we used to loop over fifteen (#15) video boards here, but we now loop over #2 as 
+; addressing issues caused DAC entries to be overwritten in the clock driver board
+	DO	#2,L_ANALOG	; Fifteen video processor boards maximum
 	JSR	<XMIT_A_WORD	; Transmit A to TIM-A-STD
 	ADD	X0,A
 	MOVE	B,Y:WRSS	; This is for the fast analog switches
