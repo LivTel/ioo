@@ -1,7 +1,7 @@
        COMMENT *
-	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/bif486/bif486.waveforms,v 1.6 2011-10-06 10:24:33 cjm Exp $
-	Id: 	 $Id: bif486.waveforms,v 1.6 2011-10-06 10:24:33 cjm Exp $
-	Version: $Revision: 1.6 $
+	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/bif486/bif486.waveforms,v 1.7 2011-10-19 10:28:28 cjm Exp $
+	Id: 	 $Id: bif486.waveforms,v 1.7 2011-10-19 10:28:28 cjm Exp $
+	Version: $Revision: 1.7 $
 Waveform tables for Fairchild 486 4k x 4k CCD back-side CCD with the ARC 
 	four readout camera head board. 
 Generated from scratch from the spec sheet.
@@ -25,7 +25,7 @@ DC1	EQU	$100000
 CLKV	EQU	$200000	        ; Clock driver board DAC voltage selection address 
 P_DLY	EQU	$FF0000		; Parallel clock delay, bit 23 set so 0x70 = 127x640ns +40ns delay = 81320 ns = 81 us
 				; However, on oscilloscope only 41us
-SER_DLY	EQU	$030000		; Slow delay on Spec sheet $060000 =  6x40ns +40ns instruction = 280ns (should be 300ns)
+SER_DLY	EQU	$060000		; Slow delay on Spec sheet $060000 =  6x40ns +40ns instruction = 280ns (should be 300ns)
 				; Faster readout $030000 = 3x40ns +40ns instruction = 160ns
 SC_DLY	EQU	$010000		; Serial clear delay
 NSCLR	EQU	2060		; To clear the serial register
@@ -100,6 +100,9 @@ OFFSET3	EQU	OFFSET
 ; Copied from fif486 PARALLEL_UPPER
 PARALLEL_UP
  	DC	END_PARALLEL_UP-PARALLEL_UP-1
+; setup serial clocks correctly
+	DC	CLK2+SER_DLY+SG+RG+H1L+H2L+00+H1R+H2R
+	DC	CLK2+SER_DLY+SG+RG+H1L+H2L+00+H1R+H2R
 	DC	CLK3+P_DLY+000+V1L+000+000+V1U+000+000
 	DC	CLK3+P_DLY+000+V1L+000+000+V1U+000+000 ; duplicate of line above to get 300us pulse width
 	DC	CLK3+P_DLY+000+V1L+000+000+V1U+000+000 ; duplicate of line above to get 300us pulse width
@@ -119,6 +122,11 @@ PARALLEL_UP
 	DC	CLK3+P_DLY+000+000+V2L+000+000+V2U+000 ; duplicate of line above to get 200us pulse width
 	DC	CLK3+P_DLY+000+000+V2L+000+000+V2U+000 ; duplicate of line above to get 200us pulse width
 	DC	CLK3+P_DLY+000+000+000+000+000+000+000
+; setup serial clocks correctly
+	DC	CLK2+SER_DLY+SG+RG+H1L+000+00+000+H1R
+	DC	CLK2+SER_DLY+SG+RG+H1L+000+H3+000+H1R
+	DC	CLK2+SER_DLY+SG+RG+000+000+H3+000+000
+	DC	CLK2+SER_DLY+SG+RG+000+000+H3+000+000
 END_PARALLEL_UP
 
 ; Copied from fif486 PARALLEL_LOWER
@@ -310,16 +318,18 @@ END_SERIAL_SKIP_SPLIT
 ; Put the serial clocks and video processor in the expose state 
 SERIALS_EXPOSE
 	DC	END_SERIALS_EXPOSE-SERIALS_EXPOSE-1
-	DC	CLK2+SC_DLY+SG+RG+000+H2L+00+000+H2R
+	DC	CLK3+P_DLY+000+000+000+000+000+000+000
+	DC	CLK2+SC_DLY+SG+RG+H1L+H2L+00+H1R+H2R
 	DC	VIDEO+%0011000
 END_SERIALS_EXPOSE
 
 SERIAL_CLEAR		; Serial clocking waveform for clearing both ends
 	DC	END_SERIAL_CLEAR-SERIAL_CLEAR-1
-	DC	CLK2+SC_DLY+00+RG+000+000+H3+000+000
-	DC	CLK2+SC_DLY+SG+RG+000+H2L+H3+H1R+000
-	DC	CLK2+SC_DLY+SG+00+H1L+H2L+00+H1R+H2R
-	DC	CLK2+SC_DLY+00+00+H1L+000+00+000+H2R
+	DC	CLK2+SER_DLY+00+RG+000+000+H3+000+000
+	DC	CLK2+SER_DLY+00+RG+000+H2L+H3+H1R+000
+	DC	CLK2+SER_DLY+SG+00+H1L+H2L+00+H1R+H2R
+	DC	CLK2+SER_DLY+SG+00+H1L+000+00+000+H2R
+	DC	CLK2+SER_DLY+SG+00+H1L+000+H3+000+H2R
 END_SERIAL_CLEAR
 
 ; Copied from E2V231.waveforms
@@ -337,10 +347,12 @@ END_RESET_VIDEO
 ; We pulse Reset Gate RG at the start of the waveform to allow settle time before sampling the reset voltage
 FIRST_CLOCKS_LEFT
  	DC	END_FIRST_CLOCKS_LEFT-FIRST_CLOCKS_LEFT-1
-	DC	CLK2+SER_DLY+00+RG+000+000+H3+000+000
+	DC	CLK2+SER_DLY+00+00+000+000+H3+000+000
 	DC	CLK2+SER_DLY+00+00+000+H2L+H3+000+H2R
 	DC	CLK2+SER_DLY+00+00+000+H2L+H3+000+H2R ; duplicate to make horizontal waveforms 1200ns long (4x300ns)
 	DC	CLK2+SER_DLY+00+00+000+H2L+00+000+H2R
+	DC	CLK2+SER_DLY+SG+RG+H1L+H2L+00+H1R+H2R
+	DC	CLK2+SER_DLY+SG+00+H1L+000+00+H1R+000
 ; last line should have short delay here for binning 1 only, as RESET_VIDEO comes next
 END_FIRST_CLOCKS_LEFT
 
@@ -349,7 +361,6 @@ END_FIRST_CLOCKS_LEFT
 ; We should keep SG high throughout CLOCK_LINE, 
 CLOCK_LINE_LEFT
 	DC	END_CLOCK_LINE_LEFT-CLOCK_LINE_LEFT-1
-	DC	CLK2+SER_DLY+SG+00+H1L+H2L+00+H1R+H2R
 	DC	CLK2+SER_DLY+SG+00+H1L+000+00+H1R+000
 	DC	CLK2+SER_DLY+SG+00+H1L+000+00+H1R+000 ; duplicate to make horizontal waveforms 1200ns long (4x300ns)
 	DC	CLK2+SER_DLY+SG+00+H1L+000+H3+H1R+000
@@ -357,7 +368,9 @@ CLOCK_LINE_LEFT
 	DC	CLK2+SER_DLY+SG+00+000+000+H3+000+000 ; duplicate to make horizontal waveforms 1200ns long (4x300ns)
 	DC	CLK2+SER_DLY+SG+00+000+H2L+H3+000+H2R
 	DC	CLK2+SER_DLY+SG+00+000+H2L+00+000+H2R
-	DC	CLK2+$010000+SG+00+000+H2L+00+000+H2R ; short delay as RESET_VIDEO must come next (binning 2)
+	DC	CLK2+SER_DLY+SG+00+000+H2L+00+000+H2R ; short delay as RESET_VIDEO must come next (binning 2)
+	DC	CLK2+SER_DLY+SG+00+H1L+H2L+00+H1R+H2R
+	DC	CLK2+SER_DLY+SG+00+H1L+000+00+H1R+000
 END_CLOCK_LINE_LEFT
 
 ; part of serial waveform (end thereof)
@@ -365,8 +378,6 @@ END_CLOCK_LINE_LEFT
 ; output video available following high-low transition of SG
 CHARGE_DUMP_LEFT
  	DC	END_CHARGE_DUMP_LEFT-CHARGE_DUMP_LEFT-1
-	DC	CLK2+SER_DLY+SG+00+H1L+H2L+00+H1R+H2R
-	DC	CLK2+SER_DLY+SG+00+H1L+000+00+H1R+000
 	DC	CLK2+SER_DLY+SG+00+H1L+000+00+H1R+000 ; duplicate to make horizontal waveforms 1200ns long (4x300ns)
 	DC	CLK2+SER_DLY+SG+00+H1L+000+H3+H1R+000
 	DC	CLK2+$010000+00+00+000+000+H3+000+000
@@ -552,6 +563,9 @@ END_DACS
 
 ;
 ; $Log: not supported by cvs2svn $
+; Revision 1.6  2011/10/06 10:24:33  cjm
+; Changed SER_DLY from $060000 to $030000 to speed up readout.
+;
 ; Revision 1.5  2011/09/23 14:21:21  cjm
 ; Reduced NPCLR from 4400 to 1024 so CLR does not TOUT.
 ; Set OFFSET0 to OFFSET, so bias levels are sane.
