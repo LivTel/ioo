@@ -327,14 +327,17 @@ CONTINUE_READING	EQU	RDCCD	 		; Address if reading out
 	ENDIF
 
 GAIN	DC	END_APPLICATON_Y_MEMORY-@LCV(L)-1
-
+; NSR's location should match ccd_setup.c:SETUP_ADDRESS_DIMENSION_COLS.
 NSR     DC      4400   	 	; Number Serial Read, set by host computer
+; NPR's location should match ccd_setup.c:SETUP_ADDRESS_DIMENSION_ROWS.
 NPR     DC      4096	     	; Number Parallel Read, set by host computer
 NS_CLR	DC      NSCLR          ; To clear the serial register
 NP_CLR	DC	NPCLR		; To clear the parallel register 
-TST_DATA DC	0		; For synthetic image
+; NSBIN's location should match ccd_setup.c:SETUP_ADDRESS_BIN_X
 NSBIN   DC      1       	; Serial binning parameter
+; NPBIN's location should match ccd_setup.c:SETUP_ADDRESS_BIN_Y
 NPBIN   DC      1       	; Parallel binning parameter
+TST_DATA DC	0		; For synthetic image
 CONFIG	DC	CC		; Controller configuration
 NS_READ	DC	0		; Number of serials to read
 NP_READ	DC	0		; Number of parallels to read
