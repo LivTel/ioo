@@ -1,4 +1,4 @@
-; $Header: /space/home/eng/cjm/cvs/ioo/sdsu/bif486/timCCDmisc.asm,v 1.4 2011-09-23 14:23:18 cjm Exp $
+; $Header: /space/home/eng/cjm/cvs/ioo/sdsu/bif486/timCCDmisc.asm,v 1.5 2011-10-19 10:41:10 cjm Exp $
 ; Copied from e2v230 version.
 ; Various changed imported from fif486 version
 ; Miscellaneous CCD control routines
@@ -80,7 +80,9 @@ CLEAR_SWITCHES
 	CLR	B
 	MOVE	#$100000,X0	; Increment over board numbers for DAC writes
 	MOVE	#$001000,X1	; Increment over board numbers for WRSS writes
-	DO	#15,L_VIDEO	; Fifteen video processor boards maximum
+; we used to loop over fifteen (#15) video boards here, but we now loop over #2 as 
+; addressing issues caused DAC entries to be overwritten in the clock driver board
+	DO	#2,L_VIDEO	; Fifteen video processor boards maximum
 	JSR	<XMIT_A_WORD	; Transmit A to TIM-A-STD
 	ADD	X0,A
 	MOVE	B,Y:WRSS
@@ -869,6 +871,12 @@ SET_PIXEL_TIME
 
 ;
 ; $Log: not supported by cvs2svn $
+; Revision 1.4  2011/09/23 14:23:18  cjm
+; Commented out CLR_CCD subroutine, and call in START_EXPOSURE.
+; Rewritten directly in CLEAR (CLR) command implementation. Removed checking for
+; commands whilst this is in progress. Underlying problem was parallel
+; clocks were too slow, see NPCLR for details.
+;
 ; Revision 1.3  2011/09/14 09:54:35  cjm
 ; Commented out CLR_CCD from the START_EXPOSURE routine.
 ;
