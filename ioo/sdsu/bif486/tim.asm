@@ -143,7 +143,7 @@ SPL_PAR	JCLR	#SPLIT_P,X:STATUS,WT_CLK
 WT_CLK	MOVE	Y:<NSBIN,X0
 	MOVE	X0,Y:<LAST_NSBIN
 	MOVE	Y:<NPBIN,X0
-	MOVE	X0,Y:<LAST_NPBIN	; Previous binning factors = current
+	MOVE	X0,Y:<LAST_NPBIN		; Previous binning factors = current
 	MOVE	Y:<NSR,X0
 	MOVE	X0,Y:<LAST_NSR
 	MOVE	Y:<NPR,X0
@@ -160,10 +160,20 @@ L_PSKIP
 ; *******  Begin readout over the entire array  ******
 ; This is the main loop over each line to be read out
 	DO	Y:<NP_READ,LPR
-	DO      Y:<NPBIN,L_SP
-	MOVE    Y:<PARALLEL,R0
+	MOVE    Y:<PARALLEL_START,R0
 	CLOCK
+; subtract 1 from bin parallel bining NPBIN, and call the BIN waveform that many times
+        MOVE    Y:<NPBIN,A
+	SUB	#1,A
+	JLE	L_SP			; Don't loop zero or a negative number
+	NOP
+	DO      A1,L_SP
+	MOVE    Y:<PARALLEL_BIN,R0
+	CLOCK
+	NOP
 L_SP
+	MOVE    Y:<PARALLEL_END,R0
+	CLOCK
 
 ; Check for a command once per line. Only the ABORT command should be issued.
 	MOVE	#COM_BUF,R3
@@ -356,7 +366,9 @@ LAST_NPBIN 	DC	0	; Last used parallel binning number
 SHDEL		DC	SH_DEL	; Delay from shutter close to start of readout
 
 ; Waveform table addresses
-PARALLEL 		DC	PARALLEL_SPLIT
+PARALLEL_START 		DC	PARALLEL_SPLIT_START
+PARALLEL_BIN 		DC	PARALLEL_SPLIT_BIN
+PARALLEL_END 		DC	PARALLEL_SPLIT_END
 PARALLEL_CLEAR 		DC	PARALLEL_CLEAR_SPLIT
 SERIAL_SKIP 		DC	SERIAL_SKIP_SPLIT
 FIRST_CLOCKS 		DC 	FIRST_CLOCKS_SPLIT
