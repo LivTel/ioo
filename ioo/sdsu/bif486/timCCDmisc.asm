@@ -1,4 +1,4 @@
-; $Header: /space/home/eng/cjm/cvs/ioo/sdsu/bif486/timCCDmisc.asm,v 1.5 2011-10-19 10:41:10 cjm Exp $
+; $Header: /space/home/eng/cjm/cvs/ioo/sdsu/bif486/timCCDmisc.asm,v 1.6 2011-10-20 13:24:10 cjm Exp $
 ; Copied from e2v230 version.
 ; Various changed imported from fif486 version
 ; Miscellaneous CCD control routines
@@ -143,7 +143,7 @@ LPCLR2
 ; cjm clear serial register
 ; diddly tim.asm will require NS_CLR   DC      NSCLR          ; To clear the serial register
 	DO	Y:<NS_CLR,LSCLR2	; Clear out the serial shift register
-	MOVE	#<SERIAL_CLEAR,R0
+	MOVE	#SERIAL_CLEAR,R0
 	CLOCK
 	NOP
 LSCLR2
@@ -204,7 +204,7 @@ START_EXPOSURE
 	MOVE	#TST_RCV,R0		; Process commands during the exposure
 	MOVE	R0,X:<IDL_ADR
 ;; cjm Put serial clocks to exposure state
-	MOVE	#<SERIALS_EXPOSE,R0	; Put serial clocks in the correct state
+	MOVE	#SERIALS_EXPOSE,R0	; Put serial clocks in the correct state
         CLOCK
 	JSR	<WAIT_TO_FINISH_CLOCKING
 ;; cjm diddly fif486 has code to wait for external trigger here - we don't need this?
@@ -715,13 +715,16 @@ SEL_OS	MOVE	Y:<OS,X0		; Get amplifier(s) name
 	MOVE	#'ALL',A		; All Amplifiers = readout #0 to #3
 	CMP	X0,A
 	JNE	<CMP_LL
-	MOVE	#PARALLEL_SPLIT,X0
-	MOVE	X0,Y:PARALLEL
+	MOVE	#PARALLEL_SPLIT_START,X0
+	MOVE	X0,Y:PARALLEL_START
+	MOVE	#PARALLEL_SPLIT_BIN,X0
+	MOVE	X0,Y:PARALLEL_BIN
+	MOVE	#PARALLEL_SPLIT_END,X0
+	MOVE	X0,Y:PARALLEL_END
 	MOVE	#PARALLEL_CLEAR_SPLIT,X0
 	MOVE	X0,Y:PARALLEL_CLEAR
 	MOVE	#SERIAL_SKIP_SPLIT,X0
 	MOVE	X0,Y:SERIAL_SKIP
-
 	MOVE	#FIRST_CLOCKS_SPLIT,X0
 	MOVE	X0,Y:FIRST_CLOCKS
 	MOVE	#CLOCK_LINE_SPLIT,X0
@@ -740,8 +743,12 @@ CMP_LL	MOVE	#'__C',A		; Lower Left Amplifier = readout #0
 	MOVE	#'__E',A
 	CMP	X0,A
 	JNE	<CMP_LR
-EQ_LL	MOVE	#PARALLEL_DOWN,X0
-	MOVE	X0,Y:PARALLEL
+EQ_LL	MOVE	#PARALLEL_DOWN_START,X0
+	MOVE	X0,Y:PARALLEL_START
+	MOVE	#PARALLEL_DOWN_BIN,X0
+	MOVE	X0,Y:PARALLEL_BIN
+	MOVE	#PARALLEL_DOWN_END,X0
+	MOVE	X0,Y:PARALLEL_END
 	MOVE	#PARALLEL_CLEAR_DOWN,X0
 	MOVE	X0,Y:PARALLEL_CLEAR
 	MOVE	#SERIAL_SKIP_LEFT,X0
@@ -765,8 +772,12 @@ CMP_LR	MOVE	#'__D',A		; Lower Right Amplifier = readout #1
 	MOVE	#'__F',A
 	CMP	X0,A
 	JNE	<CMP_UR
-EQ_LR	MOVE	#PARALLEL_DOWN,X0
-	MOVE	X0,Y:PARALLEL
+EQ_LR	MOVE	#PARALLEL_DOWN_START,X0
+	MOVE	X0,Y:PARALLEL_START
+	MOVE	#PARALLEL_DOWN_BIN,X0
+	MOVE	X0,Y:PARALLEL_BIN
+	MOVE	#PARALLEL_DOWN_END,X0
+	MOVE	X0,Y:PARALLEL_END
 	MOVE	#PARALLEL_CLEAR_DOWN,X0
 	MOVE	X0,Y:PARALLEL_CLEAR
 	MOVE	#SERIAL_SKIP_RIGHT,X0
@@ -790,8 +801,12 @@ CMP_UR	MOVE	#'__B',A		; Upper Right Amplifier = readout #2
 	MOVE	#'__G',A
 	CMP	X0,A
 	JNE	<CMP_UL
-EQ_UR	MOVE	#PARALLEL_UP,X0
-	MOVE	X0,Y:PARALLEL
+EQ_UR	MOVE	#PARALLEL_UP_START,X0
+	MOVE	X0,Y:PARALLEL_START
+	MOVE	#PARALLEL_UP_BIN,X0
+	MOVE	X0,Y:PARALLEL_BIN
+	MOVE	#PARALLEL_UP_END,X0
+	MOVE	X0,Y:PARALLEL_END
 	MOVE	#PARALLEL_CLEAR_UP,X0
 	MOVE	X0,Y:PARALLEL_CLEAR
 	MOVE	#SERIAL_SKIP_RIGHT,X0
@@ -815,8 +830,12 @@ CMP_UL	MOVE	#'__A',A		; Upper Left Amplifier = readout #3
 	MOVE	#'__H',A
 	CMP	X0,A
 	JNE	<ERROR
-EQ_UL	MOVE	#PARALLEL_UP,X0
-	MOVE	X0,Y:PARALLEL
+EQ_UL	MOVE	#PARALLEL_UP_START,X0
+	MOVE	X0,Y:PARALLEL_START
+	MOVE	#PARALLEL_UP_BIN,X0
+	MOVE	X0,Y:PARALLEL_BIN
+	MOVE	#PARALLEL_UP_END,X0
+	MOVE	X0,Y:PARALLEL_END
 	MOVE	#PARALLEL_CLEAR_UP,X0
 	MOVE	X0,Y:PARALLEL_CLEAR
 	MOVE	#SERIAL_SKIP_LEFT,X0
@@ -871,6 +890,10 @@ SET_PIXEL_TIME
 
 ;
 ; $Log: not supported by cvs2svn $
+; Revision 1.5  2011/10/19 10:41:10  cjm
+; Changed CLEAR_SWITCHES so it only loops over #2 video boards rather than #15,
+; which previously has corrupted DAC values.
+;
 ; Revision 1.4  2011/09/23 14:23:18  cjm
 ; Commented out CLR_CCD subroutine, and call in START_EXPOSURE.
 ; Rewritten directly in CLEAR (CLR) command implementation. Removed checking for
