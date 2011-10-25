@@ -1,7 +1,7 @@
        COMMENT *
-	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/bif486/bif486.waveforms,v 1.8 2011-10-20 13:28:51 cjm Exp $
-	Id: 	 $Id: bif486.waveforms,v 1.8 2011-10-20 13:28:51 cjm Exp $
-	Version: $Revision: 1.8 $
+	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/bif486/bif486.waveforms,v 1.9 2011-10-25 11:18:44 cjm Exp $
+	Id: 	 $Id: bif486.waveforms,v 1.9 2011-10-25 11:18:44 cjm Exp $
+	Version: $Revision: 1.9 $
 Waveform tables for Fairchild 486 4k x 4k CCD back-side CCD with the ARC 
 	four readout camera head board. 
 Generated from scratch from the spec sheet.
@@ -429,9 +429,9 @@ END_SERIALS_EXPOSE
 
 SERIAL_CLEAR		; Serial clocking waveform for clearing both ends
 	DC	END_SERIAL_CLEAR-SERIAL_CLEAR-1
-	DC	CLK2+SER_DLY+00+RG+000+000+H3+000+000
-	DC	CLK2+SER_DLY+00+RG+000+H2L+H3+H1R+000
-	DC	CLK2+SER_DLY+SG+00+H1L+H2L+00+H1R+H2R
+	DC	CLK2+SER_DLY+00+00+000+000+H3+000+000
+	DC	CLK2+SER_DLY+00+00+000+H2L+H3+H1R+000
+	DC	CLK2+SER_DLY+SG+RG+H1L+H2L+00+H1R+H2R
 	DC	CLK2+SER_DLY+SG+00+H1L+000+00+000+H2R
 	DC	CLK2+SER_DLY+SG+00+H1L+000+H3+000+H2R
 END_SERIAL_CLEAR
@@ -450,12 +450,10 @@ END_RESET_VIDEO
 ; This generated from scratch from CCD486 spec sheet
 FIRST_CLOCKS_LEFT
  	DC	END_FIRST_CLOCKS_LEFT-FIRST_CLOCKS_LEFT-1
-	DC	CLK2+SER_DLY+00+00+000+000+H3+000+000
+	DC	CLK2+SER_DLY+00+RG+000+000+H3+000+000
 	DC	CLK2+SER_DLY+00+00+000+H2L+H3+000+H2R
 	DC	CLK2+SER_DLY+00+00+000+H2L+H3+000+H2R ; duplicate to make horizontal waveforms 1200ns long (4x300ns)
-	DC	CLK2+SER_DLY+00+00+000+H2L+00+000+H2R
-	DC	CLK2+SER_DLY+SG+RG+H1L+H2L+00+H1R+H2R
-	DC	CLK2+SER_DLY+SG+00+H1L+000+00+H1R+000
+	DC	CLK2+SER_DLY+SG+00+000+H2L+00+000+H2R
 ; last line should have short delay here for binning 1 only, as RESET_VIDEO comes next
 END_FIRST_CLOCKS_LEFT
 
@@ -481,9 +479,11 @@ END_CLOCK_LINE_LEFT
 ; output video available following high-low transition of SG
 CHARGE_DUMP_LEFT
  	DC	END_CHARGE_DUMP_LEFT-CHARGE_DUMP_LEFT-1
+	DC	CLK2+SER_DLY+SG+00+H1L+H2L+00+H1R+H2R
+	DC	CLK2+SER_DLY+SG+00+H1L+000+00+H1R+000
 	DC	CLK2+SER_DLY+SG+00+H1L+000+00+H1R+000 ; duplicate to make horizontal waveforms 1200ns long (4x300ns)
 	DC	CLK2+SER_DLY+SG+00+H1L+000+H3+H1R+000
-	DC	CLK2+$010000+00+00+000+000+H3+000+000
+	DC	CLK2+SER_DLY+00+00+000+000+H3+000+000
 INTEGRATE_SIGNAL_LEFT ; Copied from E2V231
 	DC	VIDEO+INT_TIM+%0001011		; Integrate
 	DC	VIDEO+$000000+%0011011		; Stop, A/D is sampling
@@ -665,6 +665,13 @@ END_DACS
 
 ;
 ; $Log: not supported by cvs2svn $
+; Revision 1.8  2011/10/20 13:28:51  cjm
+; Split the PARALLEL waveforms into 3, _START, _BIN and _END,
+; so parallel binning works properly.
+; Changed _RIGHT and _SPLIT serial clocks to match the _LEFT ones.
+; SG is now turned on in the FIRST_ waveforms, the RG gate is pulsed
+; coindicent with SG.
+;
 ; Revision 1.7  2011/10/19 10:28:28  cjm
 ; First version which correctly reads out (from topleft only).
 ; Parallel up now contains serial clocking to get the serial clocks in the right state (H1 and H2 high).
