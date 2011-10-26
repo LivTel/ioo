@@ -1,7 +1,7 @@
        COMMENT *
-	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/bif486/bif486.waveforms,v 1.9 2011-10-25 11:18:44 cjm Exp $
-	Id: 	 $Id: bif486.waveforms,v 1.9 2011-10-25 11:18:44 cjm Exp $
-	Version: $Revision: 1.9 $
+	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/bif486/bif486.waveforms,v 1.10 2011-10-26 16:46:43 cjm Exp $
+	Id: 	 $Id: bif486.waveforms,v 1.10 2011-10-26 16:46:43 cjm Exp $
+	Version: $Revision: 1.10 $
 Waveform tables for Fairchild 486 4k x 4k CCD back-side CCD with the ARC 
 	four readout camera head board. 
 Generated from scratch from the spec sheet.
@@ -81,10 +81,10 @@ VOG	EQU	 -2.5	; Output Gate
 
 ; Video offset variables
 OFFSET	EQU	$400
-OFFSET0	EQU	OFFSET
-OFFSET1	EQU	OFFSET
-OFFSET2	EQU	OFFSET
-OFFSET3	EQU	OFFSET
+OFFSET0	EQU	$510  ; Bottom Left  
+OFFSET1	EQU	$3F6  ; Bottom Right
+OFFSET2	EQU	$4A0  ; Top Right
+OFFSET3	EQU	$500  ; Top Left
 
 ;SXMIT	EQU	$00F0C0				; Transmit A/Ds = 0 to 3
 ;SXMIT	EQU	$00F040				; Transmit A/Ds = 0 to 1
@@ -122,18 +122,18 @@ PARALLEL_UP_BIN
 	DC	CLK3+P_DLY+VTG+000+000+V3L+000+000+V3U ; duplicate of line above to get 300us pulse width
 	DC	CLK3+P_DLY+VTG+000+V2L+V3L+000+V2U+V3U
 ; diddly keep VTG high here
-	DC	CLK3+P_DLY+000+000+V2L+000+000+V2U+000
-	DC	CLK3+P_DLY+000+000+V2L+000+000+V2U+000 ; duplicate of line above to get 200us pulse width
-	DC	CLK3+P_DLY+000+000+V2L+000+000+V2U+000 ; duplicate of line above to get 200us pulse width
-	DC	CLK3+P_DLY+000+000+V2L+000+000+V2U+000 ; duplicate of line above to get 200us pulse width
-	DC	CLK3+P_DLY+000+000+V2L+000+000+V2U+000 ; duplicate of line above to get 200us pulse width
-	DC	CLK3+P_DLY+000+000+000+000+000+000+000
+	DC	CLK3+P_DLY+VTG+000+V2L+000+000+V2U+000
+	DC	CLK3+P_DLY+VTG+000+V2L+000+000+V2U+000 ; duplicate of line above to get 200us pulse width
+	DC	CLK3+P_DLY+VTG+000+V2L+000+000+V2U+000 ; duplicate of line above to get 200us pulse width
+	DC	CLK3+P_DLY+VTG+000+V2L+000+000+V2U+000 ; duplicate of line above to get 200us pulse width
+	DC	CLK3+P_DLY+VTG+000+V2L+000+000+V2U+000 ; duplicate of line above to get 200us pulse width
+	DC	CLK3+P_DLY+VTG+000+000+000+000+000+000
 ; copied from PARALLEL_UP_START
-	DC	CLK3+P_DLY+000+V1L+000+000+V1U+000+000
-	DC	CLK3+P_DLY+000+V1L+000+000+V1U+000+000 ; duplicate of line above to get 300us pulse width
-	DC	CLK3+P_DLY+000+V1L+000+000+V1U+000+000 ; duplicate of line above to get 300us pulse width
-	DC	CLK3+P_DLY+000+V1L+000+000+V1U+000+000 ; duplicate of line above to get 300us pulse width
-	DC	CLK3+P_DLY+000+V1L+000+000+V1U+000+000 ; duplicate of line above to get 300us pulse width
+	DC	CLK3+P_DLY+VTG+V1L+000+000+V1U+000+000
+	DC	CLK3+P_DLY+VTG+V1L+000+000+V1U+000+000 ; duplicate of line above to get 300us pulse width
+	DC	CLK3+P_DLY+VTG+V1L+000+000+V1U+000+000 ; duplicate of line above to get 300us pulse width
+	DC	CLK3+P_DLY+VTG+V1L+000+000+V1U+000+000 ; duplicate of line above to get 300us pulse width
+	DC	CLK3+P_DLY+VTG+V1L+000+000+V1U+000+000 ; duplicate of line above to get 300us pulse width
 	DC	CLK3+P_DLY+VTG+V1L+000+V3L+V1U+000+V3U
 	DC	CLK3+P_DLY+VTG+000+000+V3L+000+000+V3U
 	DC	CLK3+P_DLY+VTG+000+000+V3L+000+000+V3U ; duplicate of line above to get 300us pulse width
@@ -452,8 +452,9 @@ FIRST_CLOCKS_LEFT
  	DC	END_FIRST_CLOCKS_LEFT-FIRST_CLOCKS_LEFT-1
 	DC	CLK2+SER_DLY+00+RG+000+000+H3+000+000
 	DC	CLK2+SER_DLY+00+00+000+H2L+H3+000+H2R
-	DC	CLK2+SER_DLY+00+00+000+H2L+H3+000+H2R ; duplicate to make horizontal waveforms 1200ns long (4x300ns)
 	DC	CLK2+SER_DLY+SG+00+000+H2L+00+000+H2R
+	DC	CLK2+SER_DLY+SG+00+H1L+H2L+00+H1R+H2R
+	DC	CLK2+SER_DLY+SG+00+H1L+H2L+00+H1R+H2R
 ; last line should have short delay here for binning 1 only, as RESET_VIDEO comes next
 END_FIRST_CLOCKS_LEFT
 
@@ -462,16 +463,13 @@ END_FIRST_CLOCKS_LEFT
 ; We should keep SG high throughout CLOCK_LINE, 
 CLOCK_LINE_LEFT
 	DC	END_CLOCK_LINE_LEFT-CLOCK_LINE_LEFT-1
-	DC	CLK2+SER_DLY+SG+00+H1L+000+00+H1R+000 ; diddly do we need this?
-	DC	CLK2+SER_DLY+SG+00+H1L+000+00+H1R+000 ; duplicate to make horizontal waveforms 1200ns long (4x300ns)
+	DC	CLK2+SER_DLY+SG+00+H1L+000+00+H1R+000 
 	DC	CLK2+SER_DLY+SG+00+H1L+000+H3+H1R+000
 	DC	CLK2+SER_DLY+SG+00+000+000+H3+000+000
-	DC	CLK2+SER_DLY+SG+00+000+000+H3+000+000 ; duplicate to make horizontal waveforms 1200ns long (4x300ns)
 	DC	CLK2+SER_DLY+SG+00+000+H2L+H3+000+H2R
 	DC	CLK2+SER_DLY+SG+00+000+H2L+00+000+H2R
-	DC	CLK2+SER_DLY+SG+00+000+H2L+00+000+H2R ; duplicate to make horizontal waveforms 1200ns long (4x300ns)
 	DC	CLK2+SER_DLY+SG+00+H1L+H2L+00+H1R+H2R
-	DC	CLK2+SER_DLY+SG+00+H1L+000+00+H1R+000 ; Consider short delay here, as RESET_VIDEO comes next
+	DC	CLK2+SER_DLY+SG+00+H1L+H2L+00+H1R+H2R ; 
 END_CLOCK_LINE_LEFT
 
 ; part of serial waveform (end thereof)
@@ -479,11 +477,8 @@ END_CLOCK_LINE_LEFT
 ; output video available following high-low transition of SG
 CHARGE_DUMP_LEFT
  	DC	END_CHARGE_DUMP_LEFT-CHARGE_DUMP_LEFT-1
-	DC	CLK2+SER_DLY+SG+00+H1L+H2L+00+H1R+H2R
-	DC	CLK2+SER_DLY+SG+00+H1L+000+00+H1R+000
-	DC	CLK2+SER_DLY+SG+00+H1L+000+00+H1R+000 ; duplicate to make horizontal waveforms 1200ns long (4x300ns)
-	DC	CLK2+SER_DLY+SG+00+H1L+000+H3+H1R+000
-	DC	CLK2+SER_DLY+00+00+000+000+H3+000+000
+	DC	CLK2+SER_DLY+00+00+H1L+000+00+H1R+000
+	DC	CLK2+SER_DLY+00+00+H1L+000+H3+H1R+000
 INTEGRATE_SIGNAL_LEFT ; Copied from E2V231
 	DC	VIDEO+INT_TIM+%0001011		; Integrate
 	DC	VIDEO+$000000+%0011011		; Stop, A/D is sampling
@@ -497,11 +492,12 @@ END_CHARGE_DUMP_LEFT
 ; This generated from scratch from CCD486 spec sheet
 FIRST_CLOCKS_RIGHT
  	DC	END_FIRST_CLOCKS_RIGHT-FIRST_CLOCKS_RIGHT-1
-	DC	CLK2+SER_DLY+00+00+000+000+H3+000+000
+	DC	CLK2+SER_DLY+00+RG+000+000+H3+000+000
 	DC	CLK2+SER_DLY+00+00+H1L+000+H3+H1R+000
-	DC	CLK2+SER_DLY+00+00+H1L+000+H3+H1R+000 ; duplicate to make horizontal waveforms 1200ns long (4x300ns)
 	DC	CLK2+SER_DLY+00+00+H1L+000+00+H1R+000
-	DC	CLK2+SER_DLY+SG+RG+H1L+H2L+00+H1R+H2R
+	DC	CLK2+SER_DLY+00+00+H1L+000+00+H1R+000
+	DC	CLK2+SER_DLY+SG+00+H1L+H2L+00+H1R+H2R
+	DC	CLK2+SER_DLY+SG+00+000+H2L+00+000+H2R
 	DC	CLK2+SER_DLY+SG+00+000+H2L+00+000+H2R
 ; last line should have short delay here for binning 1 only, as RESET_VIDEO comes next
 END_FIRST_CLOCKS_RIGHT
@@ -510,28 +506,24 @@ END_FIRST_CLOCKS_RIGHT
 ; This called for NSBIN-1. No RG, SG remains high 
 CLOCK_LINE_RIGHT
  	DC	END_CLOCK_LINE_RIGHT-CLOCK_LINE_RIGHT-1
-	DC	CLK2+SER_DLY+SG+00+000+H2L+00+000+H2R 
 	DC	CLK2+SER_DLY+SG+00+000+H2L+H3+000+H2R
 	DC	CLK2+SER_DLY+SG+00+000+000+H3+000+000
-	DC	CLK2+SER_DLY+SG+00+000+000+H3+000+000 ; duplicate to make horizontal waveforms 1200ns long (4x300ns)
 	DC	CLK2+SER_DLY+SG+00+H1L+000+H3+H1R+000
-	DC	CLK2+SER_DLY+SG+00+H1L+000+00+H1R+000
 	DC	CLK2+SER_DLY+SG+00+H1L+000+00+H1R+000 
 	DC	CLK2+SER_DLY+SG+00+H1L+H2L+00+H1R+H2R
-	DC	CLK2+SER_DLY+SG+00+000+H2L+00+000+H2R ; consider short delay as RESET_VIDEO must come next (binning 2)
+	DC	CLK2+SER_DLY+SG+00+000+H2L+00+000+H2R
 END_CLOCK_LINE_RIGHT
 
 ; part of serial waveform (end thereof)
 ; output video available following high-low transition of SG
 CHARGE_DUMP_RIGHT
  	DC	END_CHARGE_DUMP_RIGHT-CHARGE_DUMP_RIGHT-1
-	DC	CLK2+SER_DLY+SG+00+000+H2L+00+000+H2R ; duplicate to make horizontal waveforms 1200ns long (4x300ns)
-	DC	CLK2+SER_DLY+SG+00+000+H2L+H3+000+H2R
-	DC	CLK2+$010000+00+00+000+000+H3+000+000 
+	DC	CLK2+SER_DLY+00+00+000+H2L+H3+000+H2R
+	DC	CLK2+SER_DLY+00+00+000+H2L+H3+000+H2R
 INTEGRATE_SIGNAL_RIGHT ; Copied from E2V231
 	DC	VIDEO+INT_TIM+%0001011		; Integrate
 	DC	VIDEO+$000000+%0011011		; Stop, A/D is sampling
-	DC	VIDEO+$000000+%1110100
+	DC	VIDEO+$000000+%1110100 
 END_CHARGE_DUMP_RIGHT
 
 ; **************  Waveform generating code for SPLIT = Both  **********
@@ -542,13 +534,11 @@ END_CHARGE_DUMP_RIGHT
 ; right shift right
 FIRST_CLOCKS_SPLIT
  	DC	END_FIRST_CLOCKS_SPLIT-FIRST_CLOCKS_SPLIT-1
-	DC	CLK2+SER_DLY+00+00+000+000+H3+000+000
+	DC	CLK2+SER_DLY+00+RG+000+000+H3+000+000
 	DC	CLK2+SER_DLY+00+00+000+H2L+H3+H1R+000
-	DC	CLK2+SER_DLY+00+00+000+H2L+H3+H1R+000 ; duplicate to make horizontal waveforms 1200ns long (4x300ns)
 	DC	CLK2+SER_DLY+00+00+000+H2L+00+H1R+000
-	DC	CLK2+SER_DLY+SG+RG+H1L+H2L+00+H1R+H2R
-	DC	CLK2+SER_DLY+SG+00+H1L+000+00+000+H2R
-; last line should have short delay here for binning 1 only, as RESET_VIDEO comes next
+	DC	CLK2+SER_DLY+SG+00+H1L+H2L+00+H1R+H2R
+	DC	CLK2+SER_DLY+SG+00+H1L+H2L+00+000+H2R
 END_FIRST_CLOCKS_SPLIT
 
 ; This generated from scratch from CCD486 spec sheet
@@ -557,12 +547,10 @@ CLOCK_LINE_SPLIT
 	DC	CLK2+SER_DLY+SG+00+H1L+000+00+000+H2R 
 	DC	CLK2+SER_DLY+SG+00+H1L+000+H3+000+H2R
 	DC	CLK2+SER_DLY+SG+00+000+000+H3+000+000
-	DC	CLK2+SER_DLY+SG+00+000+000+H3+000+000 ; duplicate to make horizontal waveforms 1200ns long (4x300ns)
 	DC	CLK2+SER_DLY+SG+00+000+H2L+H3+H1R+000
 	DC	CLK2+SER_DLY+SG+00+000+H2L+00+H1R+000
-	DC	CLK2+SER_DLY+SG+00+000+H2L+00+H1R+000
 	DC	CLK2+SER_DLY+SG+00+H1L+H2L+00+H1R+H2R
-	DC	CLK2+SER_DLY+SG+00+H1L+000+00+000+H2R ; consider short delay as RESET_VIDEO must come next (binning 2)
+	DC	CLK2+SER_DLY+SG+00+H1L+H2L+00+000+H2R ;
 END_CLOCK_LINE_SPLIT
 
 ; part of serial waveform (end thereof)
@@ -570,9 +558,8 @@ END_CLOCK_LINE_SPLIT
 ; output video available following high-low transition of SG 
 CHARGE_DUMP_SPLIT
  	DC	END_CHARGE_DUMP_SPLIT-CHARGE_DUMP_SPLIT-1
-	DC	CLK2+SER_DLY+SG+00+H1L+000+00+000+H2R ; duplicate to make horizontal waveforms 1200ns long (4x300ns)
-	DC	CLK2+SER_DLY+SG+00+H1L+000+H3+000+H2R
-	DC	CLK2+$010000+00+00+000+000+H3+000+000
+	DC	CLK2+SER_DLY+00+00+H1L+000+00+000+H2R ; 
+	DC	CLK2+SER_DLY+00+00+H1L+000+H3+000+H2R
 INTEGRATE_SIGNAL_SPLIT ; Copied from E2V231
 	DC	VIDEO+INT_TIM+%0001011		; Integrate
 	DC	VIDEO+$000000+%0011011		; Stop, A/D is sampling
@@ -665,6 +652,9 @@ END_DACS
 
 ;
 ; $Log: not supported by cvs2svn $
+; Revision 1.9  2011/10/25 11:18:44  cjm
+; Changes to SERIAL_CLEAR, FIRST_CLOCKS_LEFT and delays in CHARGE_DUMP_LEFT.
+;
 ; Revision 1.8  2011/10/20 13:28:51  cjm
 ; Split the PARALLEL waveforms into 3, _START, _BIN and _END,
 ; so parallel binning works properly.
