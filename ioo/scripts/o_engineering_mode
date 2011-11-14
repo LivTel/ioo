@@ -1,0 +1,31 @@
+#!/bin/csh
+# $Header: /space/home/eng/cjm/cvs/ioo/scripts/o_engineering_mode,v 1.1 2011-11-14 11:07:13 cjm Exp $
+# Version: $Revision: 1.1 $
+# By $Author: cjm $
+# Change the icc into engineering mode - kill all robotic control processes
+# Usage:
+#	scs_engineering_mode
+# To return to robotic control, reboot the icc.
+echo "Switching to engineering mode."
+echo "This will only succeed if you are root."
+#
+# Kill any running processes
+#
+if ( -x /icc/bin/scripts/killhup.csh ) then
+    echo "Trying to kill AutoBooter."
+    /icc/bin/scripts/killhup.csh AutoBooter
+    echo "Trying to kill ngat.o.O."
+    /icc/bin/scripts/killhup.csh ngat.o.O
+    echo "Trying to kill DpRt."
+    /icc/bin/scripts/killhup.csh DpRt
+    echo "Trying to kill icsd_inet."
+    /icc/bin/scripts/killhup.csh icsd_inet
+else
+    echo "killhup not found:ENGINEERING mode FAILED."
+endif
+#
+# $Log: not supported by cvs2svn $
+# Revision 1.1  2008/10/22 10:39:51  cjm
+# Initial revision
+#
+#

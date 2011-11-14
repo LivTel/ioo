@@ -1,0 +1,148 @@
+#!/bin/csh
+# $Header: /space/home/eng/cjm/cvs/ioo/scripts/o_tar_install,v 1.1 2011-11-14 11:07:09 cjm Exp $
+# Version: $Revision: 1.1 $
+# By $Author: cjm $
+# Install a deployment tar created by o_make_deployment
+# Usage:
+#	o_tar_install <machine>
+if ( ${#argv} != 1 ) then
+	echo "Please specify a deployment machine."
+	echo "$0 <machine>"
+	exit 1
+endif
+set machine_name = "$1"
+if ( "${machine_name}" == "-help") then
+	echo "$0 <machine>"
+	exit 0
+endif
+set current_dir         = `pwd`
+set icc                 = icc
+set deployment_tar 	= "o_deployment_${machine_name}.tar"
+#
+# Ensure new installation files are not under /icc (which gets deleted)
+#
+echo "${current_dir}" | /bin/grep -q '/icc'
+set grep_status = $status
+if( ${grep_status} == 0 ) then
+    echo "Installation files under /icc. Move ALL file to ~eng/tmp and try again."
+    exit 1
+endif
+#
+# Check new installation is in current_dir
+#
+set file_list = "${deployment_tar}.gz icc_cshrc icc_cshrc_edit.awk"
+foreach file ( ${file_list} )
+    if( ! -e ${file} ) then
+        echo "Failed to find ${file}. New installation not ready to install."
+        exit 1
+    endif
+end
+#
+# Kill any running processes
+#
+if ( -x /icc/bin/scripts/killhup.csh ) then
+    echo "Trying to kill AutoBooter."
+    /icc/bin/scripts/killhup.csh AutoBooter
+    echo "Trying to kill ngat.o.O."
+    /icc/bin/scripts/killhup.csh ngat.o.O
+    echo "Trying to kill DpRt."
+    /icc/bin/scripts/killhup.csh DpRt
+    echo "Trying to kill icsd_inet."
+    /icc/bin/scripts/killhup.csh icsd_inet
+else
+    echo "killhup not found:FAILED to stop running processess."
+endif
+#
+# Kill nfs server - /icc/tmp is usually mounted for the rcs machine
+#
+echo "Stopping NFS server (/icc/tmp is exported)..."
+if( "${HOSTTYPE}" == "sun4" ) then
+    /etc/init.d/nfs.server stop
+else if ( "${HOSTTYPE}" == "i386-linux" ) then
+    /etc/init.d/nfs stop
+else
+    echo "Illegal hosttype ${HOSTTYPE}."
+    exit 1
+endif
+#
+# Delete old installation
+#
+if( -d /${icc}/bin ) then
+    echo "Deleting /${icc}/bin directory."
+    rm -rf /${icc}/bin/*
+endif
+#
+# Create new top level directory (if it does not already exist
+# test for presence of /space, if it exists make /icc -> /space/icc
+# Otherwise assume one filesystem for whole disk
+#
+if( ! -d /${icc} ) then
+	mkdir /${icc}
+endif
+#
+# Extract new installation
+#
+echo "Copying deployment tar ${current_dir}/${deployment_tar}.gz to /."
+cp ${current_dir}/${deployment_tar}.gz /
+cd /
+echo "Gunziping deployment tar ${deployment_tar}.gz."
+gunzip ${deployment_tar}.gz
+echo "Extracting deployment tar."
+tar xvf ${deployment_tar}
+echo "Removing deployment tar."
+rm -f ${deployment_tar}
+#
+# Change ownership of kernel modules
+#
+#if ( "${HOSTTYPE}" == "i386-linux" ) then
+#    echo "Changing ownership of kernel modules to root:root."
+#    set kernel_release = `uname -r`
+#    chown -R root:root /lib/modules/${kernel_release}/kernel/drivers/astropci
+#endif
+#
+# Init script setup
+#
+# Init script already copied as /etc/init.d/autobooter
+#echo "Setting up autobooter initialisation script."
+#set dir_list = "/etc/rc0.d /etc/rc1.d /etc/rc2.d /etc/rc4.d /etc/rc6.d"
+#foreach dir ( ${dir_list} )
+#    cd ${dir}
+#    if( ! -e K01autobooter ) then
+#	ln -s ../init.d/autobooter K01autobooter
+#    endif
+#end
+#set dir_list = "/etc/rc3.d /etc/rc5.d"
+#foreach dir ( ${dir_list} )
+#    cd ${dir}
+#    if( ! -e S99autobooter ) then
+#	ln -s ../init.d/autobooter S99autobooter
+#    endif
+#end
+#echo "Setting up autobooter script."
+#chmod u+x /etc/init.d/autobooter
+#chown root:sys /etc/init.d/autobooter
+#
+# Reseting / ownership (to stop /var/log/messages "pam_timestamp_check: pam_timestamp: `/' owner UID != 0"
+# and "pam_timestamp_check: pam_timestamp: `/' permissions are lax"
+#
+echo "Reseting up / ownership."
+chown root:root /
+chown root:root /etc
+chown root:root /etc/init.d
+chmod go-w /
+#
+# Set up /icc ownership
+#
+echo "Setting up /icc ownership."
+chown -R eng:ltdev /icc
+#
+# Editing ~eng .cshrc
+#
+echo "Editing eng .cshrc"
+cat ~eng/.cshrc | awk -f ${current_dir}/icc_cshrc_edit.awk > ~eng/.cshrc.tmp
+cat ~eng/.cshrc.tmp ${current_dir}/icc_cshrc > ~eng/.cshrc
+rm -f ~eng/.cshrc.tmp
+#
+# Finished
+#
+echo "Installation completed, please 'reboot'."
