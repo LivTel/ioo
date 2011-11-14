@@ -1,0 +1,65 @@
+#!/bin/csh
+# filter_change <filter number>
+# Move the filter wheel so filter <filter number> can be changed.
+# <filter number> is the 0-based index in the current.filter.properties 0-11
+# The numbers in the wheel go from 1-12
+# If we drive the filter wheel to 0-based position 8, 0-based position 0 is at the filter change position
+# $Revision: 1.1 $
+if ( $#argv < 1 ) then
+   echo "filter_change [-load] [-reset] <filter number>"
+   echo "<filter number> is the 0-based index in the current.filter.properties, from 0-11."
+   exit 1
+endif
+set test_dir = '/icc/bin/o/ccd/test/i386-linux/'
+alias test_dsp_download "${test_dir}/test_dsp_download"
+alias test_filter_wheel "${test_dir}/test_filter_wheel"
+set do_load = 0
+set do_reset = 0
+set filter_index_to_change = -1
+foreach arg ($argv )
+	if ( "${arg}" == "-load" ) then
+	    set do_load = 1
+	else if ( "${arg}" == "-reset" ) then
+	    set do_reset = 1
+	else
+	    set filter_index_to_change = ${arg}
+	endif
+end
+if ( ${filter_index_to_change} < 0 ) then   
+   echo "filter_change [-load] [-reset] <filter number>"
+   echo "<filter number> is the 0-based index in the current.filter.properties, from 0-11."
+   exit 1
+endif
+if ( ${do_load} == 1 ) then
+   echo "Downloading utility board dsp code."
+   test_dsp_download -interface_device pci -board utility -filename /icc/bin/o/dsp/util.lod
+   set test_status = $status
+   if ( ${test_status} != 0 ) then
+       echo "test_dsp_download failed."
+       exit 1
+    endif
+endif
+if( ${do_reset} == 1 ) then
+    	echo "Reseting filter wheel."
+	test_filter_wheel -nosetup -noshutdown -log_level $log_Level} -reset
+	set test_status = $status
+	if ( ${test_status} != 0 ) then
+		echo "test_filter_wheel -reset failed with error code ${test_status} ."
+		exit 1
+	endif
+endif
+set move_to_position = `echo "( ( ${filter_index_to_change} + 8 ) %12)" | bc`
+echo "Moving filter wheel so position ${filter_index_to_change} (0-based) is in the filter change position."
+echo "Therefore driving to ${move_to_position} (0-based)."
+test_filter_wheel -nosetup -noshutdown -log_level $log_Level} -move -position ${move_to_position}
+set test_status = $status
+if ( ${test_status} != 0 ) then
+	echo "Moving to position ${position} failed."
+	echo "test_filter_wheel -move -position ${move_to_position} failed with error code ${test_status} ."
+	exit 1
+endif
+set viewport_position = `echo "( ${move_to_position} + 1 )" | bc`
+echo "Dirk should see ${viewport_position} (1-based) through the viewport."
+#
+# $Log: not supported by cvs2svn $
+#
