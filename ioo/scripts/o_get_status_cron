@@ -1,0 +1,99 @@
+#!/bin/csh
+# stuff used when called from a cron job
+# Logs O temperatures, heater ADUs and voltages
+# $Header: /space/home/eng/cjm/cvs/ioo/scripts/o_get_status_cron,v 1.1 2011-11-22 18:11:13 cjm Exp $
+#echo 1
+if ( ${?LT_HOME} == 0 ) then
+    setenv LT_HOME /icc
+endif
+#echo 2
+if ( ${?LT_BIN_HOME} == 0 ) then
+    setenv LT_BIN_HOME ${LT_HOME}/bin
+endif
+#echo 3
+if ( ${?LT_LIB_HOME} == 0 ) then
+    setenv HOSTTYPE i386-linux
+    setenv LT_LIB_HOME ${LT_BIN_HOME}/lib/${HOSTTYPE}
+endif
+#echo 4
+if ( ${?LD_LIBRARY_PATH} ) then
+   setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}":"$LT_LIB_HOME
+else
+   setenv LD_LIBRARY_PATH $LT_LIB_HOME
+endif
+#echo 5
+if ( ${?JAVA_HOME} == 0 ) then
+    setenv JAVA_HOME /usr/java/jdk1.6.0_16
+endif
+#echo 6
+if ( ${?CLASSPATH} == 0 ) then
+   setenv CLASSPATH ".:/icc/bin/javalib/ngat_o.jar:/icc/bin/javalib/ngat_fits.jar:/icc/bin/javalib/ngat_math.jar:/icc/bin/javalib/ngat_message_base.jar:/icc/bin/javalib/ngat_message_inst_dp.jar:/icc/bin/javalib/ngat_message_iss_inst.jar:/icc/bin/javalib/ngat_net.jar:/icc/bin/javalib/ngat_phase2.jar:/icc/bin/javalib/ngat_swing.jar:/icc/bin/javalib/ngat_util.jar:/icc/bin/javalib/ngat_util_logging.jar"
+endif
+#echo 7
+set interface = pci
+#echo 8
+set date_doy_string = `date +"%j"`
+set log_filename = "${LT_HOME}/log/o_get_status_log_${date_doy_string}.txt"
+#echo 9
+set ccd_machine = "o1"
+set port = 7979
+#echo 10
+set status_level = 1
+#echo 11
+set output_filename = "${LT_HOME}/log/o_get_status_command_output.txt"
+#echo 12
+set csv_filename = "${LT_HOME}/log/o_get_status_totals_${date_doy_string}.csv"
+if ( ! -e ${csv_filename} ) then
+    echo "date,date,red temperature,blue temperature,red heater adus,blue heater adus,red utility board temp adus,blue utility board temp adus,env temp 0,env temp 1,env temp 2,env temp 3,env temp 4,humidity,air flow, air pressure"  >> ${csv_filename}
+endif
+echo "----------------------------------------------------------------------" >> ${log_filename}
+#
+# Send command to O
+#
+java ngat.o.test.SendGetStatusCommand -ip ${ccd_machine} -c ${port} -level ${status_level}  > ${output_filename}
+set getstatus_status = $status
+#echo 20
+if( ${getstatus_status} == 0) then
+#echo 21
+    echo -n "java SendISSCommandFile returned:"${getstatus_status} >> ${log_filename}
+    cat ${output_filename} >> ${log_filename}
+    date
+    date >> ${log_filename}
+    set date_string = `date +"%G-%m-%dT%H:%M:%S"`
+    set date_string_s = `date +"%s"`
+# temperature
+    set temperature = `cat ${output_filename} | grep '^Temperature : ' | sed "s/Temperature : \(.*\)/\1/g"`
+    echo "temperature = ${temperature}"
+    echo "temperature = ${temperature}"  >> ${log_filename}
+# heater adus
+   set heater_adu = `cat ${output_filename} | grep 'Heater ADU : ' | sed "s/Heater ADU : \(.*\)/\1/g"`
+   echo "heater_adu = ${heater_adu}"
+   echo "heater_adu = ${heater_adu}"  >> ${log_filename}
+# SDSU utility board adus
+   set utility_board_adu = `cat ${output_filename} | grep 'Utility Board Temperature ADU : ' | sed "s/Utility Board Temperature ADU : \(.*\)/\1/g"`
+   echo "utility_board_adu = ${utility_board_adu}"
+   echo "utility_board_adu = ${utility_board_adu}"  >> ${log_filename}
+# SDSU power supply high adus
+   set psu_high_adu = `cat ${output_filename} | grep 'High Voltage Supply ADU : ' | sed "s/High Voltage Supply ADU : \(.*\)/\1/g"`
+   echo "psu_high_adu = ${psu_high_adu}"
+   echo "psu_high_adu = ${psu_high_adu}"  >> ${log_filename}
+# SDSU power supply low adus
+   set psu_low_adu = `cat ${output_filename} | grep '^Low Voltage Supply ADU : ' | sed "s/Low Voltage Supply ADU : \(.*\)/\1/g"`
+   echo "psu_low_adu = ${psu_low_adu}"
+   echo "psu_low_adu = ${psu_low_adu}"  >> ${log_filename}
+# SDSU power supply minus low adus
+   set psu_minus_low_adu = `cat ${output_filename} | grep 'Minus Low Voltage Supply ADU : ' | sed "s/Minus Low Voltage Supply ADU : \(.*\)/\1/g"`
+   echo "psu_minus_low_adu = ${psu_minus_low_adu}"
+   echo "psu_minus_low_adu = ${psu_minus_low_adu}"  >> ${log_filename}
+# All SDSU power supply adus
+   echo "${date_string},${date_string_s},${psu_high_adu},${psu_low_adu},${psu_minus_low_adu}" >> ${LT_HOME}/log/o_get_status_sdsu_power_supply_adu_${date_doy_string}.csv
+# totals csv
+   echo "${date_string},${date_string_s},${temperature},${heater_adu},${utility_board_adu}" >> ${csv_filename}
+else
+    echo -n "java ngat.o.test.SendGetStatusCommand returned:"${getstatus_status} >> ${log_filename}
+    cat ${output_filename} >> ${log_filename}
+endif
+echo "----------------------------------------------------------------------" >> ${log_filename}
+#
+# $Log
+#
