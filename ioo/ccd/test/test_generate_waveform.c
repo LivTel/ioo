@@ -1,5 +1,5 @@
 /* test_setup_startup.c
- * $Header: /space/home/eng/cjm/cvs/ioo/ccd/test/test_generate_waveform.c,v 1.3 2011-02-07 17:07:52 cjm Exp $
+ * $Header: /space/home/eng/cjm/cvs/ioo/ccd/test/test_generate_waveform.c,v 1.4 2011-11-23 11:03:02 cjm Exp $
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,7 +28,7 @@
  * 	[-pta|-pixel_table_address <address>]
  * </pre>
  * @author $Author: cjm $
- * @version $Revision: 1.3 $
+ * @version $Revision: 1.4 $
  */
 /* hash definitions */
 /**
@@ -61,7 +61,7 @@
 /**
  * Revision control system identifier.
  */
-static char rcsid[] = "$Id: test_generate_waveform.c,v 1.3 2011-02-07 17:07:52 cjm Exp $";
+static char rcsid[] = "$Id: test_generate_waveform.c,v 1.4 2011-11-23 11:03:02 cjm Exp $";
 /**
  * How much information to print out when using the text interface.
  */
@@ -366,10 +366,11 @@ static int Decode_PXL_TBL_Value(int value)
 	int delay,board,start_ad,end_ad,clock_value,video_value,amplifier_circuit,i;
 
 	/* convert to bytes */
-	byte_list[0] = value & 0xFF;
-	byte_list[1] = (value>>8) & 0xFF;
+	byte_list[0] = value & 0xFF;         /* 0-7 or 1-8 */
+	byte_list[1] = (value>>8) & 0xFF;    
 	byte_list[2] = (value>>16) & 0xFF;
 	/* delay bits */
+	/* diddly seem to come out twice as large as they should do in some cases i.e. 10k rather than 5k */
 	delay = 0;
 	if(((value>>23)&0x1) == 1)/* bit 23 set? */
 	{
@@ -884,6 +885,9 @@ static void Help(void)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.3  2011/02/07 17:07:52  cjm
+** Now reads last pixel table entry.
+**
 ** Revision 1.2  2009/10/05 11:07:00  cjm
 ** Added bitwise video output print.
 **
