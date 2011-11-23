@@ -1,0 +1,28 @@
+#!/bin/awk -f
+BEGIN {
+	position_list[0] = 0
+	position_list[1] = 0
+	position_list[2] = 0
+	position_list[3] = 0
+	position_list[4] = 0
+	position_list[5] = 0
+	position_list[6] = 0
+	position_list[7] = 0
+	position_list[8] = 0
+	position_list[9] = 0
+	position_list[10] = 0
+	position_list[11] = 0
+}
+
+/Moving to position .* succeeded./ { 
+	position_list[$4] ++
+}
+
+END {
+  for(i=0; i < 12; i++ ) {
+	print i " " position_list[i]
+  }
+}
+#
+# $Log: not supported by cvs2svn $
+#

@@ -1,0 +1,32 @@
+# <o_install:start>
+# Do not delete the above comment, it delimits the cshrc updated by the o_tar_install script.
+# part of lt_environment, so we can call scripts
+setenv LT_HOME /icc
+setenv LT_BIN_HOME ${LT_HOME}/bin
+if ( $?CLASSPATH == 0 ) then
+    setenv CLASSPATH "."
+endif
+foreach file ( ${LT_BIN_HOME}/javalib/*.jar ${LT_BIN_HOME}/o/java )
+    echo ${CLASSPATH} | grep -q ${file} > /dev/null
+    if( ${status} != 0 ) then
+	setenv CLASSPATH "${CLASSPATH}:${file}"
+    endif
+end
+if ( $?LD_LIBRARY_PATH == 0 ) then
+    setenv LD_LIBRARY_PATH "."
+endif
+foreach dir ( ${LT_BIN_HOME}/lib/${HOSTTYPE} )
+    echo $LD_LIBRARY_PATH | grep $dir > /dev/null
+    if ( $status != 0 ) then
+	setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:${dir}
+    endif
+end
+
+# Useful command aliass
+alias delete_log_files 		'/icc/bin/scripts/delete_log_files.csh'
+alias o_reboot       		'/icc/bin/scripts/o_reboot'
+alias o_engineering_mode 	'/icc/bin/scripts/o_engineering_mode'
+alias icsgui           		'/icc/bin/ccs_gui/java/icsgui'
+alias myps             		'ps -e -o pid,pcpu,vsz,ruser,args'
+# Do not delete the next comment, it delimits the cshrc updated by the o_tar_install script.
+# <o_install:end>

@@ -1,0 +1,32 @@
+DEPLOYMENT README
+$Header: /space/home/eng/cjm/cvs/ioo/scripts/README.DEPLOYMENT,v 1.1 2011-11-23 11:17:08 cjm Exp $
+Version: $Revision: 1.1 $
+By $Author: cjm $
+
+O Installation
+--------------
+Note, all logs are deleted during installation. Any configuration changes from the default will
+also be lost as all properties file in the /icc/bin tree are overwritten with the original version.
+To preserve changes, copy the properties files (*.properties) somewhere safe before installation.
+Better yet, update the originals on the ARI development account.
+
+Note the FITS images are no longer deleted. To remove all the data frames: 'rm -rf /icc/tmp'
+before installation.
+
+===================================================================================
+= ENSURE the deployment is for the same machine architecture as the deployment OS =
+===================================================================================
+
+To install O:
+-------------
+1. Download from http://ltdevsrv.livjm.ac.uk/~dev/o/deployment/:
+	icc_cshrc
+	icc_cshrc_edit.awk
+	README.DEPLOYMENT
+	o_tar_install
+	o_deployment_<machine name>.tar.gz
+	Put the files in ~eng/download/<todays date>
+2. Login as root.
+3. ./o_tar_install <machine name>
+4. cd /
+5. reboot
