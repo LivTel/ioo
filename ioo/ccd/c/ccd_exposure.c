@@ -1,13 +1,13 @@
 /* ccd_exposure.c
 ** low level ccd library
-** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ccd_exposure.c,v 1.1 2011-09-28 13:07:53 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ccd_exposure.c,v 1.2 2011-11-23 10:59:52 cjm Exp $
 */
 /**
  * ccd_exposure.c contains routines for performing an exposure with the SDSU CCD Controller. There is a
  * routine that does the whole job in one go, or several routines can be called to do parts of an exposure.
  * An exposure can be paused and resumed, or it can be stopped or aborted.
  * @author SDSU, Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 /**
  * This hash define is needed before including source files give us POSIX.4/IEEE1003.1b-1993 prototypes
@@ -159,7 +159,7 @@ struct Exposure_Struct
 /**
  * Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ccd_exposure.c,v 1.1 2011-09-28 13:07:53 cjm Exp $";
+static char rcsid[] = "$Id: ccd_exposure.c,v 1.2 2011-11-23 10:59:52 cjm Exp $";
 /**
  * Internal exposure data (library wide).
  * @see #Exposure_Struc
@@ -270,7 +270,8 @@ void CCD_Exposure_Data_Initialise(CCD_Interface_Handle_T* handle)
  * <li>It checks to ensure CCD Setup has been successfully completed using CCD_Setup_Get_Setup_Complete.
  * <li>The controller is told whether to open the shutter or not during the exposure, depending on the value
  * 	of the open_shutter parameter.
- * <li>The exposure length is modifed by adding the shutter transfer delay and subtracting the shutter close delay.
+ * <li>The exposure length is modifed by adding the shutter transfer delay and subtracting the shutter close delay,
+ *     if open_shutter is TRUE.
  * <li>The modified length of exposure is sent to the controller using CCD_DSP_Command_SET.
  * <li>The timing board SHDEL variable (delay between sending shutter close and starting readout) is configured
  *     using CCD_DSP_Command_WRM to be the sum of the shutter close delay and readout delay.
@@ -447,22 +448,32 @@ int CCD_Exposure_Expose(CCD_Interface_Handle_T* handle,int clear_array,int open_
 		sprintf(Exposure_Error_String,"CCD_Exposure_Expose:Aborted");
 		return FALSE;
 	}
-/* write the time to memory so that SEX can read it */
+/* Save the exposure length for FITS headers etc */
 	handle->Exposure_Data.Exposure_Length = exposure_time;
 #if LOGGING > 4
 	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
 			      "CCD_Exposure_Expose(handle=%p):Original exposure length(%d).",
 			      handle,exposure_time);
 #endif
-	handle->Exposure_Data.Modified_Exposure_Length = exposure_time+Exposure_Data.Shutter_Trigger_Delay-
-		Exposure_Data.Shutter_Close_Delay;
+	/* if we are using the shutter modify the exposure length by various shutter delays */
+	if(open_shutter)
+	{
+		handle->Exposure_Data.Modified_Exposure_Length = exposure_time+Exposure_Data.Shutter_Trigger_Delay-
+			Exposure_Data.Shutter_Close_Delay;
 #if LOGGING > 4
-	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
-			      "CCD_Exposure_Expose(handle=%p):Modified exposure length:%d = %d + %d - %d.",
-			      handle,handle->Exposure_Data.Modified_Exposure_Length,
-			      handle->Exposure_Data.Exposure_Length,Exposure_Data.Shutter_Trigger_Delay,
-			      Exposure_Data.Shutter_Close_Delay);
+		CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
+				      "CCD_Exposure_Expose(handle=%p):Modified exposure length:%d = %d + %d - %d.",
+				      handle,handle->Exposure_Data.Modified_Exposure_Length,
+				      handle->Exposure_Data.Exposure_Length,Exposure_Data.Shutter_Trigger_Delay,
+				      Exposure_Data.Shutter_Close_Delay);
 #endif
+	}
+	else
+	{
+		/* for biases and darks the modified exposure length is the exposure length */
+		handle->Exposure_Data.Modified_Exposure_Length = exposure_time;
+	}
+	/* actually write the modified exposure length to the timing board, to be used by the SDSU controller */
 	if(!CCD_DSP_Command_SET(handle,handle->Exposure_Data.Modified_Exposure_Length))
 	{
 		Exposure_Expose_Delete_Fits_Images(filename_list,filename_count);
@@ -1816,7 +1827,7 @@ static int Exposure_DeInterlace(int ncols,int nrows,unsigned short *old_iptr,
 			/* for the first half of the rows.
 			** Note the middle row will be missed, this is OK as it
 			** does not need to be flipped if it is in the middle */
-			for(y=0;y<(nrows/2);y++)
+			for(y=0;y<nrows;y++)
 			{
 				/* for the first half of the columns.
 				** Note the middle column will be missed, this is OK as it
@@ -1827,7 +1838,7 @@ static int Exposure_DeInterlace(int ncols,int nrows,unsigned short *old_iptr,
 					tempval = *(old_iptr+(y*ncols)+x);
 					/* Copy image[ncols-(x+1),nrows-(y+1)] to image[x,y] */
 					*(old_iptr+(y*ncols)+x) = *(old_iptr+((nrows-(y+1))*ncols)+(ncols-(x+1)));
-					/* Copy tempval = image[ncols-(x+1),nrows-(y+1)] */
+					/* Copy tempval to image[ncols-(x+1),nrows-(y+1)] */
 					*(old_iptr+((nrows-(y+1))*ncols)+(ncols-(x+1))) = tempval;
 				}
 			}
@@ -2330,6 +2341,9 @@ static int fexist(char *filename)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.1  2011/09/28 13:07:53  cjm
+** Initial revision
+**
 ** Revision 0.36  2009/02/05 11:40:27  cjm
 ** Swapped Bitwise for Absolute logging levels.
 **
