@@ -1,12 +1,12 @@
 /* ccd_dsp.c
 ** ccd library
-** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ccd_dsp.c,v 1.1 2011-08-24 16:59:03 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ccd_dsp.c,v 1.2 2011-11-23 10:59:52 cjm Exp $
 */
 /**
  * ccd_dsp.c contains all the SDSU CCD Controller commands. Commands are passed to the 
  * controller using the <a href="ccd_interface.html">CCD_Interface_</a> calls.
  * @author SDSU, Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 /**
  * This hash define is needed before including source files give us POSIX.4/IEEE1003.1b-1993 prototypes
@@ -44,7 +44,7 @@
 /**
  * Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ccd_dsp.c,v 1.1 2011-08-24 16:59:03 cjm Exp $";
+static char rcsid[] = "$Id: ccd_dsp.c,v 1.2 2011-11-23 10:59:52 cjm Exp $";
 
 /* defines */
 /**
@@ -607,6 +607,9 @@ int CCD_DSP_Command_ABR(CCD_Interface_Handle_T* handle)
  * clocks out any stored charge on the CCD, leaving the CCD ready for an exposure.
  * If mutex locking has been compiled in, the routine is mutexed over sending the command to the controller
  * and receiving a reply from it.
+ * Note you should call this twice to clock out all the charge on the CCD. This is because CLR only does
+ * 1024 parallel clocks per call, if we try to do 2049 it takes too long and CLR returns TOUT (timeout).
+ * See the DSP code for details.
  * @param handle The address of a CCD_Interface_Handle_T that holds the device connection specific information.
  * @return The routine returns DON if the command succeeded and FALSE if the command failed.
  * @see #DSP_Send_Clr
@@ -2077,6 +2080,36 @@ char *CCD_DSP_Print_Mem_Space(enum CCD_DSP_MEM_SPACE mem_space)
 }
 
 /**
+ * Return a descriptive string based on the specified deinterlace type.
+ * @param deinterlace The deinterlace type.
+ * @return A descriptive string, one of: "Single","Flip X","Flip Y","Flip XY",
+ *         "Split Parallel","Split Serial","Split Quad","UNKNOWN".
+ * @see #CCD_DSP_DEINTERLACE_TYPE
+ */
+char *CCD_DSP_Print_DeInterlace(enum CCD_DSP_DEINTERLACE_TYPE deinterlace)
+{
+	switch(deinterlace)
+	{
+		case CCD_DSP_DEINTERLACE_SINGLE:
+			return "Single";
+		case CCD_DSP_DEINTERLACE_FLIP_X:
+			return "Flip X";
+		case CCD_DSP_DEINTERLACE_FLIP_Y:
+			return "Flip Y";
+		case CCD_DSP_DEINTERLACE_FLIP_XY:
+			return "Flip XY";
+		case CCD_DSP_DEINTERLACE_SPLIT_PARALLEL:
+			return "Split Parallel";
+		case CCD_DSP_DEINTERLACE_SPLIT_SERIAL:
+			return "Split Serial";
+		case CCD_DSP_DEINTERLACE_SPLIT_QUAD:
+			return "Split Quad";
+		default:
+			return "UNKNOWN";
+	}
+}
+
+/**
  * This routine returns the current stste of the Abort flag.
  * The Abort flag is defined in DSP_Data and is set to true when
  * the user wants to stop execution mid-commend.
@@ -2594,6 +2627,7 @@ static int DSP_Send_Rex(CCD_Interface_Handle_T* handle,int *reply_value)
  * @see ccd_exposure.html#CCD_Exposure_Set_Exposure_Start_Time
  * @see ccd_exposure.html#CCD_Exposure_Set_Exposure_Status
  * @see ccd_exposure.html#CCD_Exposure_Get_Start_Exposure_Offset_Time
+ * @see ccd_exposure.html#CCD_Exposure_Shutter_Trigger_Delay_Get
  * @see ccd_exposure.html#CCD_Exposure_Get_Readout_Remaining_Time
  * @see ccd_interface.html#CCD_Interface_Handle_T
  */
@@ -2637,10 +2671,11 @@ static int DSP_Send_Sex(CCD_Interface_Handle_T* handle,struct timespec start_tim
 			else if(remaining_sec > -1)
 			{
 				remaining_ns = (start_time.tv_nsec - current_time.tv_nsec);
-			/* we need to allow time for propogation of the SEX command
-			** allow offset milliseconds to do this. */
-				remaining_ns -= CCD_Exposure_Get_Start_Exposure_Offset_Time(handle)*
-					CCD_GLOBAL_ONE_MILLISECOND_NS;
+			/* we need to allow time for the propogation of the SEX command
+			** and the shutter trigger delay. */
+				remaining_ns -= (CCD_Exposure_Shutter_Trigger_Delay_Get()+
+						 CCD_Exposure_Get_Start_Exposure_Offset_Time())*
+					        CCD_GLOBAL_ONE_MILLISECOND_NS;
 				if(remaining_ns < 0)
 				{
 					remaining_sec--;
@@ -2667,7 +2702,7 @@ static int DSP_Send_Sex(CCD_Interface_Handle_T* handle,struct timespec start_tim
 	}/* end if */
 /* switch status to exposing and store the actual time the exposure is going to start */
 /* If the exposure length is small, we go directly into READOUT status. */
-	if(exposure_length < CCD_Exposure_Get_Readout_Remaining_Time(handle))
+	if(exposure_length < CCD_Exposure_Get_Readout_Remaining_Time())
 		exposure_status = CCD_EXPOSURE_STATUS_READOUT;
 	else
 		exposure_status = CCD_EXPOSURE_STATUS_EXPOSE;
@@ -3129,5 +3164,8 @@ static int DSP_String_To_Manual_Command(char *command_string)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.1  2011/08/24 16:59:03  cjm
+** Initial revision
+**
 **
 */
