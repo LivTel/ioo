@@ -1,13 +1,13 @@
 ; filter_wheel_isr.asm
        COMMENT * 
-	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/util/filter_wheel_isr.asm,v 1.4 2011-08-18 16:43:34 cjm Exp $
+	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/util/filter_wheel_isr.asm,v 1.5 2011-12-01 12:08:24 cjm Exp $
 	This include file is called from the 0.8ms SERVICE routine.
 	It evaluates the digital inputs DIG_IN, and may set digital outputs DIG_OUT.
 	It runs only if we are currently doing a filter wheel operation.
 	This source file should be included in utilappl.asm, near "UPD_DIG". Ideally, it should
 	come after the digital inputs are moved from RD_DIG to DIG_IN, but before
 	the outputs are moved from DIG_OUT to WR_DIG.
-	Version: $Revision: 1.4 $
+	Version: $Revision: 1.5 $
 	Author: $Author: cjm $
 	*
 
@@ -108,8 +108,7 @@ FW_ISR_MOVING_IN
 	JCLR	#DIG_IN_BIT_PROXIMITY_4_ON,Y:<DIG_IN,FW_ISR_MOVED_IN
 	JCLR	#DIG_IN_BIT_PROXIMITY_5_ON,Y:<DIG_IN,FW_ISR_MOVED_IN
 	JCLR	#DIG_IN_BIT_PROXIMITY_6_ON,Y:<DIG_IN,FW_ISR_MOVED_IN
-; if./ccd_read_memory -interface_device pci -board utility -space y -address 0x33
-; FW_TIMEOUT_INDEX >= Y:FW_TIMEOUT_COUNT move timeout
+; if FW_TIMEOUT_INDEX >= Y:FW_TIMEOUT_COUNT move timeout
 	MOVE	Y:FW_TIMEOUT_INDEX,A			; A = FW_TIMEOUT_INDEX
 	MOVE	Y:FW_TIMEOUT_COUNT,X0
 	CMP	X0,A					; Is FW_TIMEOUT_INDEX < Y:FW_TIMEOUT_COUNT
@@ -237,6 +236,9 @@ FW_ISR_END
 
        COMMENT * 
 	$Log: not supported by cvs2svn $
+	Revision 1.4  2011/08/18 16:43:34  cjm
+	First working version of proximity counting software.
+
 	Revision 1.3  2011/07/26 14:00:21  cjm
 	Rewritten. Clutch permanently engaged, position not checked.
 	Now counting in and out of proximity patterns, absolute and relative
