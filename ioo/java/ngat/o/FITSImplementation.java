@@ -1,5 +1,5 @@
 // FITSImplementation.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/FITSImplementation.java,v 1.1 2011-11-23 10:55:24 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/FITSImplementation.java,v 1.2 2011-12-20 11:38:02 cjm Exp $
 package ngat.o;
 
 import java.lang.*;
@@ -20,14 +20,14 @@ import ngat.util.logging.*;
  * use the hardware  libraries as this is needed to generate FITS files.
  * @see HardwareImplementation
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class FITSImplementation extends HardwareImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: FITSImplementation.java,v 1.1 2011-11-23 10:55:24 cjm Exp $");
+	public final static String RCSID = new String("$Id: FITSImplementation.java,v 1.2 2011-12-20 11:38:02 cjm Exp $");
 	/**
 	 * Internal constant used when the order number offset defined in the property
 	 * 'o.get_fits.order_number_offset' is not found or is not a valid number.
@@ -212,6 +212,7 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 	 * @see #ccd
 	 * @see #oFitsHeader
 	 * @see #oFitsHeaderDefaults
+	 * @see #getCCDRDOUTValue
 	 * @see HardwareImplementation#ccd
 	 * @see OStatus#getPropertyBoolean
 	 * @see OStatus#getPropertyDouble
@@ -237,7 +238,7 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 		String filterWheelString = null;
 		String filterWheelIdString = null;
 		Vector defaultFitsHeaderList = null;
-		int iValue,filterWheelPosition,xBin,yBin,windowFlags,heaterADU;
+		int iValue,filterWheelPosition,xBin,yBin,windowFlags,heaterADU,preScan, postScan;
 		double doubleValue = 0.0;
 		double instDFoc,filtDFoc,myDFoc,bssFoc;
 		boolean filterWheelEnable;
@@ -358,7 +359,15 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 			cardImage = oFitsHeader.get("CONFNAME");
 			cardImage.setValue(status.getConfigName());
 		// PRESCAN
+			cardImage = oFitsHeader.get("PRESCAN");
+			preScan = oFitsHeaderDefaults.getValueInteger("PRESCAN."+status.getNumberColumns(xBin)+"."+
+								      getCCDRDOUTValue()+"."+xBin);
+			cardImage.setValue(new Integer(preScan));
 		// POSTSCAN
+			cardImage = oFitsHeader.get("POSTSCAN");
+			postScan = oFitsHeaderDefaults.getValueInteger("POSTSCAN."+status.getNumberColumns(xBin)+"."+
+								       getCCDRDOUTValue()+"."+xBin);
+			cardImage.setValue(new Integer(postScan));
 		// CCDXIMSI
 			cardImage = oFitsHeader.get("CCDXIMSI");
 			cardImage.setValue(new Integer(oFitsHeaderDefaults.getValueInteger("CCDXIMSI")/xBin));
@@ -1214,4 +1223,7 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2011/11/23 10:55:24  cjm
+// Initial revision
+//
 //
