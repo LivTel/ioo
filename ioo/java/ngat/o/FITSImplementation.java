@@ -1,5 +1,5 @@
 // FITSImplementation.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/FITSImplementation.java,v 1.3 2012-01-04 10:27:36 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/FITSImplementation.java,v 1.4 2012-01-04 10:28:31 cjm Exp $
 package ngat.o;
 
 import java.lang.*;
@@ -20,14 +20,14 @@ import ngat.util.logging.*;
  * use the hardware  libraries as this is needed to generate FITS files.
  * @see HardwareImplementation
  * @author Chris Mottram
- * @version $Revision: 1.3 $
+ * @version $Revision: 1.4 $
  */
 public class FITSImplementation extends HardwareImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: FITSImplementation.java,v 1.3 2012-01-04 10:27:36 cjm Exp $");
+	public final static String RCSID = new String("$Id: FITSImplementation.java,v 1.4 2012-01-04 10:28:31 cjm Exp $");
 	/**
 	 * Internal constant used when the order number offset defined in the property
 	 * 'o.get_fits.order_number_offset' is not found or is not a valid number.
@@ -191,7 +191,7 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 	 * These are:
 	 * OBSTYPE, RUNNUM, EXPNUM, EXPTOTAL, DATE, DATE-OBS, UTSTART, MJD, EXPTIME, 
 	 * FILTER1, FILTERI1, FILTER2, FILTERI2, CONFIGID, CONFNAME, 
-	 * PRESCAN, POSTSCAN, CCDXIMSI, CCDYIMSI, CCDSCALE, CCDRDOUT,
+	 * PRESCAN, POSTSCAN, GAIN, READNOIS, EPERDN, CCDXIMSI, CCDYIMSI, CCDSCALE, CCDRDOUT,
 	 * CCDXBIN, CCDYBIN, CCDSTEMP, CCDATEMP, CCDWMODE, CALBEFOR, CALAFTER, INSTDFOC, FILTDFOC, MYDFOCUS,
 	 * SATWELL, SATADC, SATURATN.
 	 * Windowing keywords CCDWXOFF, CCDWYOFF, CCDWXSIZ, CCDWYSIZ are not implemented at the moment.
@@ -1235,6 +1235,9 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.3  2012/01/04 10:27:36  cjm
+// Added GAIN, READNOIS, and EPERDN code to setFitsHeaders as they all vary by readout amplifier.
+//
 // Revision 1.2  2011/12/20 11:38:02  cjm
 // PRESCAN and POSTSCAN now modified by ncols/amplifier/binning setup.
 //
