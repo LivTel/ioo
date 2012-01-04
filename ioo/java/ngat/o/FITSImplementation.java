@@ -1,5 +1,5 @@
 // FITSImplementation.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/FITSImplementation.java,v 1.2 2011-12-20 11:38:02 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/FITSImplementation.java,v 1.3 2012-01-04 10:27:36 cjm Exp $
 package ngat.o;
 
 import java.lang.*;
@@ -20,14 +20,14 @@ import ngat.util.logging.*;
  * use the hardware  libraries as this is needed to generate FITS files.
  * @see HardwareImplementation
  * @author Chris Mottram
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 public class FITSImplementation extends HardwareImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: FITSImplementation.java,v 1.2 2011-12-20 11:38:02 cjm Exp $");
+	public final static String RCSID = new String("$Id: FITSImplementation.java,v 1.3 2012-01-04 10:27:36 cjm Exp $");
 	/**
 	 * Internal constant used when the order number offset defined in the property
 	 * 'o.get_fits.order_number_offset' is not found or is not a valid number.
@@ -368,6 +368,18 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 			postScan = oFitsHeaderDefaults.getValueInteger("POSTSCAN."+status.getNumberColumns(xBin)+"."+
 								       getCCDRDOUTValue()+"."+xBin);
 			cardImage.setValue(new Integer(postScan));
+		// GAIN
+			cardImage = oFitsHeader.get("GAIN");
+			doubleValue = oFitsHeaderDefaults.getValueInteger("GAIN."+getCCDRDOUTValue());
+			cardImage.setValue(new Double(doubleValue));
+		// READNOIS
+			cardImage = oFitsHeader.get("READNOIS");
+			doubleValue = oFitsHeaderDefaults.getValueInteger("READNOIS."+getCCDRDOUTValue());
+			cardImage.setValue(new Double(doubleValue));
+		// EPERDN
+			cardImage = oFitsHeader.get("EPERDN");
+			doubleValue = oFitsHeaderDefaults.getValueInteger("EPERDN."+getCCDRDOUTValue());
+			cardImage.setValue(new Double(doubleValue));
 		// CCDXIMSI
 			cardImage = oFitsHeader.get("CCDXIMSI");
 			cardImage.setValue(new Integer(oFitsHeaderDefaults.getValueInteger("CCDXIMSI")/xBin));
@@ -1223,6 +1235,9 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.2  2011/12/20 11:38:02  cjm
+// PRESCAN and POSTSCAN now modified by ncols/amplifier/binning setup.
+//
 // Revision 1.1  2011/11/23 10:55:24  cjm
 // Initial revision
 //
