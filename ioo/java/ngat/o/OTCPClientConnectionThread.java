@@ -1,5 +1,5 @@
 // OTCPClientConnectionThread.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/OTCPClientConnectionThread.java,v 1.1 2011-11-23 10:55:24 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/OTCPClientConnectionThread.java,v 1.2 2012-01-05 17:01:23 cjm Exp $
 package ngat.o;
 
 import java.lang.*;
@@ -13,21 +13,21 @@ import ngat.message.base.*;
 /**
  * The OTCPClientConnectionThread extends TCPClientConnectionThread. 
  * It implements the generic ISS/DP(RT) instrument command protocol with multiple acknowledgements. 
- * O starts one of these threads each time it wishes to send a message to the ISS/DP(RT).
+ * O starts one of these threads each time it wishes to send a message to the ISS/DP(RT)/BSS.
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class OTCPClientConnectionThread extends TCPClientConnectionThreadMA
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: OTCPClientConnectionThread.java,v 1.1 2011-11-23 10:55:24 cjm Exp $");
+	public final static String RCSID = new String("$Id: OTCPClientConnectionThread.java,v 1.2 2012-01-05 17:01:23 cjm Exp $");
 	/**
 	 * The commandThread was spawned by the O to deal with a O command request. 
 	 * As part of the running of
 	 * the commandThread, this client connection thread was created. We need to know the server thread so
-	 * that we can pass back any acknowledge times from the ISS/DpRt back to the O client (ISS/IcsGUI etc).
+	 * that we can pass back any acknowledge times from the ISS/DpRt/BSS back to the O client (ISS/IcsGUI etc).
 	 */
 	private OTCPServerConnectionThread commandThread = null;
 	/**
@@ -117,4 +117,7 @@ public class OTCPClientConnectionThread extends TCPClientConnectionThreadMA
 }
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2011/11/23 10:55:24  cjm
+// Initial revision
+//
 //
