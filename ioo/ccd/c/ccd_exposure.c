@@ -1,13 +1,13 @@
 /* ccd_exposure.c
 ** low level ccd library
-** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ccd_exposure.c,v 1.2 2011-11-23 10:59:52 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ccd_exposure.c,v 1.3 2012-01-11 15:04:55 cjm Exp $
 */
 /**
  * ccd_exposure.c contains routines for performing an exposure with the SDSU CCD Controller. There is a
  * routine that does the whole job in one go, or several routines can be called to do parts of an exposure.
  * An exposure can be paused and resumed, or it can be stopped or aborted.
  * @author SDSU, Chris Mottram
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 /**
  * This hash define is needed before including source files give us POSIX.4/IEEE1003.1b-1993 prototypes
@@ -159,7 +159,7 @@ struct Exposure_Struct
 /**
  * Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ccd_exposure.c,v 1.2 2011-11-23 10:59:52 cjm Exp $";
+static char rcsid[] = "$Id: ccd_exposure.c,v 1.3 2012-01-11 15:04:55 cjm Exp $";
 /**
  * Internal exposure data (library wide).
  * @see #Exposure_Struc
@@ -1722,6 +1722,7 @@ static int Exposure_Expose_Post_Readout_Window(CCD_Interface_Handle_T* handle,un
  * readout port, the data will not be received in row-column order and will need deinterlacing.
  * The deinterlacing algorithms work on the principle that the ccd will read out the data in a 
  * predetermined order depending on the type of readout being implemented. Here's how they look:
+ * diddly change split parallel so both amplifiers are on the same side.
  * <pre>                                                                          
  *   split-parallel               split-serial            split-quad         
  *  ----------------            ----------------        ----------------     
@@ -1732,7 +1733,7 @@ static int Exposure_Expose_Post_Readout_Window(CCD_Interface_Handle_T* handle,un
  * |                |          |        |       |      |        |       |    
  * |                |          |        |       |      |        |       |    
  * |                |          |   1    |       |      |   1    |   2   |    
- * |<--------  1    |          |<------ |       |      |<-----  |  ---->|    
+ * |     1  ------->|          |<------ |       |      |<-----  |  ---->|    
  *  ----------------            ----------------        ----------------     
  * </pre>
  * <em>Note: This routine assumes CCD_GLOBAL_BYTES_PER_PIXEL == 2 e.g. 16 bits per pixel.</em>
@@ -1750,6 +1751,7 @@ static int Exposure_Expose_Post_Readout_Window(CCD_Interface_Handle_T* handle,un
  * 	CCD_DSP_DEINTERLACE_SPLIT_QUAD.
  * @return If everything was successful TRUE is returned, otherwise FALSE is returned.
  * @see ccd_global.html#CCD_GLOBAL_BYTES_PER_PIXEL
+ * @see ccd_dsp.html#CCD_DSP_Print_DeInterlace
  * @see ccd_setup.html#CCD_DSP_DEINTERLACE_TYPE
  */
 static int Exposure_DeInterlace(int ncols,int nrows,unsigned short *old_iptr,
@@ -1758,8 +1760,8 @@ static int Exposure_DeInterlace(int ncols,int nrows,unsigned short *old_iptr,
 	unsigned short *new_iptr = NULL;
 
 #if LOGGING > 4
-	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"Exposure_DeInterlace:Started with type %d.",
-			      deinterlace_type);
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"Exposure_DeInterlace:Started with type %s.",
+			      CCD_DSP_Print_DeInterlace(deinterlace_type));
 #endif
 	switch(deinterlace_type)
 	{
@@ -1847,7 +1849,7 @@ static int Exposure_DeInterlace(int ncols,int nrows,unsigned short *old_iptr,
 		/* SPLIT PARALLEL READOUT */
 		case CCD_DSP_DEINTERLACE_SPLIT_PARALLEL:
 		{
-			int i;
+			int i,j,counter,begin,end;
 
 			if(((float)nrows/2) != (int)nrows/2)
 			{
@@ -1864,11 +1866,25 @@ static int Exposure_DeInterlace(int ncols,int nrows,unsigned short *old_iptr,
 					"image not deinterlaced.",ncols,nrows);
 				return FALSE;
 			}
-			for(i=0;i<(ncols*nrows)/2;i++)
+			/* SPLIT_PARALLEL with both right amplifiers */
+			i = 0;
+			j = 0;
+			counter = 0;
+			while(i<ncols*nrows)
 			{
-				*(new_iptr+i) = *(old_iptr+(2*i));
-				*(new_iptr+(ncols*nrows)-i-1) = *(old_iptr+(2*i)+1);
-			}
+				if(counter%ncols == 0)
+				{
+					end     = (ncols*nrows)-(ncols*j)-1;
+					begin   = (ncols*j)+0;
+					j++; /*number of completed rows*/
+					counter=0; /*reset for next convergece*/
+				}
+				*(new_iptr+begin+counter)       = *(old_iptr+i); 
+				i++;
+				*(new_iptr+end-ncols+1+counter)     = *(old_iptr+i); 
+				i++;
+				counter++;
+			}/* end while */
 			memcpy(old_iptr,new_iptr,ncols*nrows*CCD_GLOBAL_BYTES_PER_PIXEL);
 			free(new_iptr);
 			return TRUE;
@@ -2341,6 +2357,10 @@ static int fexist(char *filename)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.2  2011/11/23 10:59:52  cjm
+** Added Modified Exposure time which is set based on shuttering effects.
+** Fixed de-interlacing.
+**
 ** Revision 1.1  2011/09/28 13:07:53  cjm
 ** Initial revision
 **
