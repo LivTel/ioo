@@ -1,5 +1,5 @@
 // TWILIGHT_CALIBRATEImplementation.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/TWILIGHT_CALIBRATEImplementation.java,v 1.1 2011-11-23 10:55:24 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/TWILIGHT_CALIBRATEImplementation.java,v 1.2 2012-01-11 14:55:18 cjm Exp $
 package ngat.o;
 
 import java.io.*;
@@ -18,6 +18,8 @@ import ngat.message.ISS_INST.TWILIGHT_CALIBRATE;
 import ngat.message.ISS_INST.TWILIGHT_CALIBRATE_ACK;
 import ngat.message.ISS_INST.TWILIGHT_CALIBRATE_DP_ACK;
 import ngat.message.ISS_INST.TWILIGHT_CALIBRATE_DONE;
+import ngat.message.RCS_BSS.*;
+import ngat.phase2.*;
 import ngat.util.*;
 import ngat.util.logging.*;
 
@@ -28,14 +30,21 @@ import ngat.util.logging.*;
  * The exposure length is dynamically adjusted as the sky gets darker or brighter. TWILIGHT_CALIBRATE commands
  * should be sent to O just after sunset and just before sunrise.
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: TWILIGHT_CALIBRATEImplementation.java,v 1.1 2011-11-23 10:55:24 cjm Exp $");
+	public final static String RCSID = new String("$Id: TWILIGHT_CALIBRATEImplementation.java,v 1.2 2012-01-11 14:55:18 cjm Exp $");
+	/**
+	 * The number of different binning factors we should min/best/max count data for.
+	 * @see #minMeanCounts
+	 * @see #maxMeanCounts
+	 * @see #bestMeanCounts
+	 */
+	protected final static int BIN_COUNT 	     = 4;
 	/**
 	 * Initial part of a key string, used to create a list of potential twilight calibrations to
 	 * perform from a Java property file.
@@ -66,6 +75,21 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 	 * perform from a Java property file.
 	 */
 	protected final static String LIST_KEY_AMPLIFIER_STRING = ".window_amplifier";
+	/**
+	 * Middle part of a key string, used to create a list of potential twilight calibrations to
+	 * perform from a Java property file.
+	 */
+	protected final static String LIST_KEY_SLIDE_STRING = ".slide";
+	/**
+	 * Final part of a key string, used to create a list of potential twilight calibrations to
+	 * perform from a Java property file.
+	 */
+	protected final static String LIST_KEY_LOWER_STRING = ".lower";
+	/**
+	 * Final part of a key string, used to create a list of potential twilight calibrations to
+	 * perform from a Java property file.
+	 */
+	protected final static String LIST_KEY_UPPER_STRING = ".upper";
 	/**
 	 * Final part of a key string, used to create a list of potential twilight calibrations to
 	 * perform from a Java property file.
@@ -113,21 +137,21 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 	protected final static int TIME_OF_NIGHT_SUNRISE = 2;
 	/**
 	 * A possible state of a frame taken by this command. 
-	 * The frame did not have enough counts to be useful, i.e. the mean counts were less than minMeanCounts.
+	 * The frame did not have enough counts to be useful, i.e. the mean counts were less than minMeanCounts[bin].
 	 * @see #minMeanCounts
 	 */
 	protected final static int FRAME_STATE_UNDEREXPOSED 	= 0;
 	/**
 	 * A possible state of a frame taken by this command. 
-	 * The mean counts for the frame were sensible, i.e. the mean counts were more than minMeanCounts and less
-	 * than maxMeanCounts.
+	 * The mean counts for the frame were sensible, i.e. the mean counts were more than minMeanCounts[bin] and less
+	 * than maxMeanCounts[bin].
 	 * @see #minMeanCounts
 	 * @see #maxMeanCounts
 	 */
 	protected final static int FRAME_STATE_OK 		= 1;
 	/**
 	 * A possible state of a frame taken by this command. 
-	 * The frame had too many counts to be useful, i.e. the mean counts were higher than maxMeanCounts.
+	 * The frame had too many counts to be useful, i.e. the mean counts were higher than maxMeanCounts[bin].
 	 * @see #maxMeanCounts
 	 */
 	protected final static int FRAME_STATE_OVEREXPOSED 	= 2;
@@ -206,16 +230,22 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 	private String temporaryFITSFilename = null;
 	/**
 	 * The minimum mean counts. A &quot;good&quot; frame will have a mean counts greater than this number.
+	 * A list, indexed by binning factor, as the F486 has different saturation values at different binnings.
+	 * The array must be BIN_COUNT size long.
 	 */
-	private int minMeanCounts = 0;
+	private int minMeanCounts[] = {0,0,0,0};
 	/**
 	 * The best mean counts. The &quot;ideal&quot; frame will have a mean counts of this number.
+	 * A list, indexed by binning factor, as the F486 has different saturation values at different binnings.
+	 * The array must be BIN_COUNT size long.
 	 */
-	private int bestMeanCounts = 0;
+	private int bestMeanCounts[] = {0,0,0,0};
 	/**
 	 * The maximum mean counts. A &quot;good&quot; frame will have a mean counts less than this number.
+	 * A list, indexed by binning factor, as the F486 has different saturation values at different binnings.
+	 * The array must be BIN_COUNT size long.
 	 */
-	private int maxMeanCounts = 0;
+	private int maxMeanCounts[] = {0,0,0,0};
 	/**
 	 * The last relative filter sensitivity used for calculating exposure lengths.
 	 */
@@ -435,8 +465,9 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 	 * <li>maximum exposure length
 	 * <li>temporary FITS filename
 	 * <li>saved state filename
-	 * <li>minimum mean counts
-	 * <li>maximum mean counts
+	 * <li>minimum mean counts (for each binning factor)
+	 * <li>best mean counts (for each binning factor)
+	 * <li>maximum mean counts (for each binning factor)
 	 * </ul>
 	 * The following methods are then called to load more calibration data:
 	 * <ul>
@@ -491,15 +522,18 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 		// saved state filename
 			propertyName = LIST_KEY_STRING+"state_filename";
 			stateFilename = status.getProperty(propertyName);
-		// minimum mean counts
-			propertyName = LIST_KEY_STRING+"mean_counts.min";
-			minMeanCounts = status.getPropertyInteger(propertyName);
-		// best mean counts
-			propertyName = LIST_KEY_STRING+"mean_counts.best";
-			bestMeanCounts = status.getPropertyInteger(propertyName);
-		// maximum mean counts
-			propertyName = LIST_KEY_STRING+"mean_counts.max";
-			maxMeanCounts = status.getPropertyInteger(propertyName);
+			for(int binIndex = 0; binIndex < BIN_COUNT; binIndex ++)
+			{
+				// minimum mean counts
+				propertyName = LIST_KEY_STRING+"mean_counts.min."+(binIndex + 1);
+				minMeanCounts[binIndex] = status.getPropertyInteger(propertyName);
+				// best mean counts
+				propertyName = LIST_KEY_STRING+"mean_counts.best."+(binIndex + 1);
+				bestMeanCounts[binIndex] = status.getPropertyInteger(propertyName);
+				// maximum mean counts
+				propertyName = LIST_KEY_STRING+"mean_counts.max."+(binIndex + 1);
+				maxMeanCounts[binIndex] = status.getPropertyInteger(propertyName);
+			}// end for on binIndex
 		}
 		catch (Exception e)
 		{
@@ -529,8 +563,13 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 	 * 	data in twilightCalibrateDone is filled in.
 	 * @see #calibrationList
 	 * @see #getFilterSensitivity
+	 * @see #parseSlidePositionString
+	 * @see #slidePositionToString
 	 * @see #LIST_KEY_STRING
 	 * @see #LIST_KEY_CALIBRATION_STRING
+	 * @see #LIST_KEY_SLIDE_STRING
+	 * @see #LIST_KEY_LOWER_STRING
+	 * @see #LIST_KEY_UPPER_STRING
 	 * @see #LIST_KEY_FILTER_STRING
 	 * @see #LIST_KEY_BIN_STRING
 	 * @see #LIST_KEY_AMPLIFIER_STRING
@@ -545,7 +584,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 		TWILIGHT_CALIBRATECalibration calibration = null;
 		String timeOfNightString = null;
 		String filter = null;
-		int index,bin;
+		int index,bin,lowerSlide,upperSlide;
 		long frequency;
 		double filterSensitivity;
 		boolean done,useWindowAmplifier;
@@ -576,6 +615,16 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 											LIST_KEY_CALIBRATION_STRING+
 											timeOfNightString+index+
 											LIST_KEY_AMPLIFIER_STRING);
+					lowerSlide = parseSlidePositionString(status.getProperty(LIST_KEY_STRING+
+									LIST_KEY_CALIBRATION_STRING+
+									timeOfNightString+index+
+									LIST_KEY_SLIDE_STRING+
+									LIST_KEY_LOWER_STRING));
+					upperSlide = parseSlidePositionString(status.getProperty(LIST_KEY_STRING+
+									LIST_KEY_CALIBRATION_STRING+
+									timeOfNightString+index+
+									LIST_KEY_SLIDE_STRING+
+									LIST_KEY_UPPER_STRING));
 				}
 				catch(Exception e)
 				{
@@ -592,6 +641,8 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 				{
 					calibration.setBin(bin);
 					calibration.setUseWindowAmplifier(useWindowAmplifier);
+					calibration.setLowerSlide(lowerSlide);
+					calibration.setUpperSlide(upperSlide);
 					calibration.setFilter(filter);
 					calibration.setFrequency(frequency);
 				}
@@ -633,6 +684,8 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 					":Loaded calibration "+index+
 					"\n\tbin:"+calibration.getBin()+
 					":use window amplifier:"+calibration.useWindowAmplifier()+
+					":upper slide:"+slidePositionToString(calibration.getUpperSlide())+
+					":lower slide:"+slidePositionToString(calibration.getLowerSlide())+
 					":filter:"+calibration.getFilter()+
 					":frequency:"+calibration.getFrequency()+".");
 			}
@@ -788,6 +841,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 	 * @param twilightCalibrateCommand The instance of TWILIGHT_CALIBRATE we are currently running.
 	 * @param twilightCalibrateDone The instance of TWILIGHT_CALIBRATE_DONE to fill in with errors we receive.
 	 * @return The method returns true if it succeeds, false if it fails. Currently always returns true.
+	 * @see #slidePositionToString
 	 * @see #calibrationList
 	 * @see #twilightCalibrateState
 	 */
@@ -796,7 +850,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 	{
 		TWILIGHT_CALIBRATECalibration calibration = null;
 		String filter = null;
-		int bin;
+		int bin,lowerSlide,upperSlide;
 		long lastTime;
 		boolean useWindowAmplifier;
 
@@ -805,16 +859,21 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 			calibration = (TWILIGHT_CALIBRATECalibration)(calibrationList.get(i));
 			bin = calibration.getBin();
 			useWindowAmplifier = calibration.useWindowAmplifier();
+			lowerSlide = calibration.getLowerSlide();
+			upperSlide = calibration.getUpperSlide();
 			filter = calibration.getFilter();
-			lastTime = twilightCalibrateState.getLastTime(bin,useWindowAmplifier,filter);
+			lastTime = twilightCalibrateState.getLastTime(bin,useWindowAmplifier,
+								      lowerSlide,upperSlide,filter);
 			calibration.setLastTime(lastTime);
 			o.log(Logging.VERBOSITY_VERBOSE,
-				"Command:"+twilightCalibrateCommand.getClass().getName()+":Calibration:"+
-				"\n\tbin:"+calibration.getBin()+
-				":use window amplifier:"+calibration.useWindowAmplifier()+
-				":filter:"+calibration.getFilter()+
-				":frequency:"+calibration.getFrequency()+
-				"\n\t\tnow has last time set to:"+lastTime+".");
+			      "Command:"+twilightCalibrateCommand.getClass().getName()+":Calibration:"+
+			      "\n\tbin:"+calibration.getBin()+
+			      ":use window amplifier:"+calibration.useWindowAmplifier()+
+			      ":upper slide:"+slidePositionToString(calibration.getUpperSlide())+
+			      ":lower slide:"+slidePositionToString(calibration.getLowerSlide())+
+			      ":filter:"+calibration.getFilter()+
+			      ":frequency:"+calibration.getFrequency()+
+			      "\n\t\tnow has last time set to:"+lastTime+".");
 		}
 		return true;
 	}
@@ -830,7 +889,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 	 * <li>If the new exposure length is too short, it is reset to the minimum exposure length.
 	 * <li>If the new exposure length is too long, the fact is logged and the method returns.
 	 * <li><b>sendBasicAck</b> is called to stop the client timing out before the config is completed.
-	 * <li><b>doConfig</b> is called for the relevant binning factor/filter set to be setup.
+	 * <li><b>doConfig</b> is called for the relevant binning factor/slides/filter set to be setup.
 	 * <li><b>sendBasicAck</b> is called to stop the client timing out before the first frame is completed.
 	 * <li><b>doOffsetList</b> is called to go through the telescope RA/DEC offsets and take frames at
 	 * 	each offset.
@@ -847,29 +906,34 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 	 * @see #lastFilterSensitivity
 	 * @see #lastBin
 	 * @see #calibrationFrameCount
+	 * @see #slidePositionToString
 	 */
 	protected boolean doCalibration(TWILIGHT_CALIBRATE twilightCalibrateCommand,
 			TWILIGHT_CALIBRATE_DONE twilightCalibrateDone,TWILIGHT_CALIBRATECalibration calibration)
 	{
 		String filter = null;
-		int bin;
+		int bin,lowerSlide,upperSlide;
 		long lastTime,frequency;
 		long now;
 		double filterSensitivity;
 		boolean useWindowAmplifier;
 
 		o.log(Logging.VERBOSITY_VERBOSE,
-			"Command:"+twilightCalibrateCommand.getClass().getName()+
-			":doCalibrate:"+
-			"\n\tbin:"+calibration.getBin()+
-			":use window amplifier:"+calibration.useWindowAmplifier()+
-			":filter:"+calibration.getFilter()+
-			":frequency:"+calibration.getFrequency()+
-			":filter sensitivity:"+calibration.getFilterSensitivity()+
-			":last time:"+calibration.getLastTime()+".");
+		      "Command:"+twilightCalibrateCommand.getClass().getName()+
+		      ":doCalibrate:"+
+		      "\n\tbin:"+calibration.getBin()+
+		      ":use window amplifier:"+calibration.useWindowAmplifier()+
+		      ":upper slide:"+slidePositionToString(calibration.getUpperSlide())+
+		      ":lower slide:"+slidePositionToString(calibration.getLowerSlide())+
+		      ":filter:"+calibration.getFilter()+
+		      ":frequency:"+calibration.getFrequency()+
+		      ":filter sensitivity:"+calibration.getFilterSensitivity()+
+		      ":last time:"+calibration.getLastTime()+".");
 	// get copy of calibration data
 		bin = calibration.getBin();
 		useWindowAmplifier = calibration.useWindowAmplifier();
+		upperSlide = calibration.getUpperSlide();
+		lowerSlide = calibration.getLowerSlide();
 		filter = calibration.getFilter();
 		frequency = calibration.getFrequency();
 		lastTime = calibration.getLastTime();
@@ -884,6 +948,8 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 			      ":doCalibrate:"+
 			      "\n\tbin:"+calibration.getBin()+
 			      ":use window amplifier:"+calibration.useWindowAmplifier()+
+			      ":upper slide:"+slidePositionToString(calibration.getUpperSlide())+
+			      ":lower slide:"+slidePositionToString(calibration.getLowerSlide())+
 			      ":filter:"+calibration.getFilter()+
 			      ":frequency:"+calibration.getFrequency()+
 			      ":last time:"+lastTime+
@@ -902,29 +968,33 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 		if(exposureLength < minExposureLength)
 		{
 			o.log(Logging.VERBOSITY_VERBOSE,
-				"Command:"+twilightCalibrateCommand.getClass().getName()+
-				":doCalibrate:"+
-				"\n\tbin:"+calibration.getBin()+
-				":use window amplifier:"+calibration.useWindowAmplifier()+
-				":filter:"+calibration.getFilter()+
-				":frequency:"+calibration.getFrequency()+
-				":last time:"+lastTime+
-				"\n\tcalculated exposure length:"+exposureLength+
-				" too short, using minimum:"+minExposureLength+".");
+			      "Command:"+twilightCalibrateCommand.getClass().getName()+
+			      ":doCalibrate:"+
+			      "\n\tbin:"+calibration.getBin()+
+			      ":use window amplifier:"+calibration.useWindowAmplifier()+
+			      ":upper slide:"+slidePositionToString(calibration.getUpperSlide())+
+			      ":lower slide:"+slidePositionToString(calibration.getLowerSlide())+
+			      ":filter:"+calibration.getFilter()+
+			      ":frequency:"+calibration.getFrequency()+
+			      ":last time:"+lastTime+
+			      "\n\tcalculated exposure length:"+exposureLength+
+			      " too short, using minimum:"+minExposureLength+".");
 			exposureLength = minExposureLength;
 		}
 		if(exposureLength > maxExposureLength)
 		{
 			o.log(Logging.VERBOSITY_VERBOSE,
-				"Command:"+twilightCalibrateCommand.getClass().getName()+
-				":doCalibrate:"+
-				"\n\tbin:"+calibration.getBin()+
-				":use window amplifier:"+calibration.useWindowAmplifier()+
-				":filter:"+calibration.getFilter()+
-				":frequency:"+calibration.getFrequency()+
-				":last time:"+lastTime+
-				"\n\tcalculated exposure length:"+exposureLength+
-				" too long, using maximum:"+maxExposureLength+".");
+			      "Command:"+twilightCalibrateCommand.getClass().getName()+
+			      ":doCalibrate:"+
+			      "\n\tbin:"+calibration.getBin()+
+			      ":use window amplifier:"+calibration.useWindowAmplifier()+
+			      ":upper slide:"+slidePositionToString(calibration.getUpperSlide())+
+			      ":lower slide:"+slidePositionToString(calibration.getLowerSlide())+
+			      ":filter:"+calibration.getFilter()+
+			      ":frequency:"+calibration.getFrequency()+
+			      ":last time:"+lastTime+
+			      "\n\tcalculated exposure length:"+exposureLength+
+			      " too long, using maximum:"+maxExposureLength+".");
 			exposureLength = maxExposureLength;
 		}
 		if((now+exposureLength+frameOverhead) > 
@@ -943,20 +1013,21 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 	// send an ack before the frame, so the client doesn't time out during configuration
 		if(sendBasicAck(twilightCalibrateCommand,twilightCalibrateDone,frameOverhead) == false)
 			return false;
-	// configure CCD camera
-		if(doConfig(twilightCalibrateCommand,twilightCalibrateDone,bin,useWindowAmplifier,filter) == false)
+	// configure slide/filter/CCD camera
+		if(doConfig(twilightCalibrateCommand,twilightCalibrateDone,bin,useWindowAmplifier,
+			    lowerSlide,upperSlide,filter) == false)
 			return false;
 	// send an ack before the frame, so the client doesn't time out during the first exposure
 		if(sendBasicAck(twilightCalibrateCommand,twilightCalibrateDone,exposureLength+frameOverhead) == false)
 			return false;
 	// do the frames with this configuration
 		calibrationFrameCount = 0;
-		if(doOffsetList(twilightCalibrateCommand,twilightCalibrateDone) == false)
+		if(doOffsetList(twilightCalibrateCommand,twilightCalibrateDone,bin) == false)
 			return false;
 	// update state, if we completed the whole calibration.
 		if(calibrationFrameCount == offsetList.size())
 		{
-			twilightCalibrateState.setLastTime(bin,useWindowAmplifier,filter);
+			twilightCalibrateState.setLastTime(bin,useWindowAmplifier,lowerSlide,upperSlide,filter);
 			try
 			{
 				twilightCalibrateState.save(stateFilename);
@@ -971,23 +1042,28 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 				twilightCalibrateDone.setSuccessful(false);
 				return false;
 			}
-			lastTime = twilightCalibrateState.getLastTime(bin,useWindowAmplifier,filter);
+			lastTime = twilightCalibrateState.getLastTime(bin,useWindowAmplifier,
+								      lowerSlide,upperSlide,filter);
 			calibration.setLastTime(lastTime);
 			o.log(Logging.VERBOSITY_VERBOSE,
-				"Command:"+twilightCalibrateCommand.getClass().getName()+
-				":doCalibrate:Calibration successfully completed:"+
-				"\n\tbin:"+calibration.getBin()+
-				":use window amplifier:"+calibration.useWindowAmplifier()+
-				":filter:"+calibration.getFilter()+".");
+			      "Command:"+twilightCalibrateCommand.getClass().getName()+
+			      ":doCalibrate:Calibration successfully completed:"+
+			      "\n\tbin:"+calibration.getBin()+
+			      ":use window amplifier:"+calibration.useWindowAmplifier()+
+			      ":upper slide:"+slidePositionToString(calibration.getUpperSlide())+
+			      ":lower slide:"+slidePositionToString(calibration.getLowerSlide())+
+			      ":filter:"+calibration.getFilter()+".");
 		}// end if done calibration
 		else
 		{
 			o.log(Logging.VERBOSITY_VERBOSE,
-				"Command:"+twilightCalibrateCommand.getClass().getName()+
-				":doCalibrate:Calibration NOT completed:"+
-				"\n\tbin:"+calibration.getBin()+
-				":use window amplifier:"+calibration.useWindowAmplifier()+
-				":filter:"+calibration.getFilter()+".");
+			      "Command:"+twilightCalibrateCommand.getClass().getName()+
+			      ":doCalibrate:Calibration NOT completed:"+
+			      "\n\tbin:"+calibration.getBin()+
+			      ":use window amplifier:"+calibration.useWindowAmplifier()+
+			      ":upper slide:"+slidePositionToString(calibration.getUpperSlide())+
+			      ":lower slide:"+slidePositionToString(calibration.getLowerSlide())+
+			      ":filter:"+calibration.getFilter()+".");
 		}
 		return true;
 	}
@@ -999,6 +1075,8 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 	 * @param bin The binning factor to use.
 	 * @param useWindowAmplifier Boolean specifying whether to use the default amplifier (false), or the
 	 *                           amplifier used for windowing readouts (true).
+	 * @param lowerSlide The position the lower filter slide should be in.
+	 * @param upperSlide The position the upper filter slide should be in.
 	 * @param filter The type of filter to use.
 	 * @return The method returns true if the calibration was done successfully, false if an error occured.
 	 * @see FITSImplementation#setFocusOffset
@@ -1007,7 +1085,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 	 */
 	protected boolean doConfig(TWILIGHT_CALIBRATE twilightCalibrateCommand,
 				   TWILIGHT_CALIBRATE_DONE twilightCalibrateDone,int bin,boolean useWindowAmplifier,
-				   String filter)
+				   int lowerSlide,int upperSlide,String filter)
 	{
 		CCDLibrarySetupWindow windowList[] = new CCDLibrarySetupWindow[CCDLibrary.SETUP_WINDOW_COUNT];
 		int numberColumns,numberRows,amplifier,deInterlaceSetting;
@@ -1062,6 +1140,9 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 				o.log(Logging.VERBOSITY_VERY_TERSE,this.getClass().getName()+
 					":doConfig:Filter wheels not enabled:Filter wheels NOT moved.");
 			}
+			// send BEAM_STEER command to BSS to position dichroics.
+			if(beamSteer(twilightCalibrateCommand,twilightCalibrateDone,lowerSlide,upperSlide) == false)
+				return false;
 		}
 		catch(Exception e)
 		{
@@ -1118,7 +1199,64 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 	// Store name of configuration used in status object.
 	// This is queried when saving FITS headers to get the CONFNAME value.
 		status.setConfigName("TWILIGHT_CALIBRATION:"+twilightCalibrateCommand.getId()+
-					":"+bin+":"+useWindowAmplifier+":"+filter);
+				     ":"+bin+":"+useWindowAmplifier+":"+
+				     slidePositionToString(upperSlide)+":"+
+				     slidePositionToString(lowerSlide)+":"+filter);
+		return true;
+	}
+
+	/**
+	 * Send a ngat.message.RCS_BSS.BEAM_STEER command to the BSS to move the dichroics to the correct position.
+	 * @param twilightCalibrateCommand The instance of TWILIGHT_CALIBRATE we are currently running.
+	 * @param twilightCalibrateDone The instance of TWILIGHT_CALIBRATE_DONE to fill in with errors we receive.
+	 * @param lowerSlide The position the lower filter slide should be in.
+	 * @param upperSlide The position the upper filter slide should be in.
+	 * @return The method returns true if the BEAM_STEER command returned successfully, false if an error occured.
+	 * @see O#sendBSSCommand(RCS_TO_BSS,OTCPServerConnectionThread,boolean)
+	 */
+	protected boolean beamSteer(TWILIGHT_CALIBRATE twilightCalibrateCommand,
+				   TWILIGHT_CALIBRATE_DONE twilightCalibrateDone,int lowerSlide,int upperSlide)
+	{
+		BEAM_STEER beamSteer = null;
+		RCS_TO_BSS_DONE rcsToBSSDone = null;
+		XBeamSteeringConfig beamSteeringConfig = null;
+		XOpticalSlideConfig opticalSlideConfig = null;
+
+		o.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+
+		      ":beamSteer:Sending BEAM_STEER to BSS with lower slide "+slidePositionToString(lowerSlide)+
+		      "and upper slide "+slidePositionToString(upperSlide)+".");
+		beamSteer =  new ngat.message.RCS_BSS.BEAM_STEER(twilightCalibrateCommand.getId());
+		beamSteeringConfig = new XBeamSteeringConfig();
+		beamSteer.setBeamConfig(beamSteeringConfig);
+		// upper slide
+		opticalSlideConfig = new XOpticalSlideConfig();
+		opticalSlideConfig.setSlide(XOpticalSlideConfig.SLIDE_UPPER);
+		opticalSlideConfig.setPosition(upperSlide);
+		beamSteeringConfig.setUpperSlideConfig(opticalSlideConfig);
+		// lower slide
+		opticalSlideConfig = new XOpticalSlideConfig();
+		opticalSlideConfig.setSlide(XOpticalSlideConfig.SLIDE_LOWER);
+		opticalSlideConfig.setPosition(lowerSlide);
+		beamSteeringConfig.setLowerSlideConfig(opticalSlideConfig);
+		// log contents of command
+		o.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+
+		      ":beamSteer:BEAM_STEER beam steering config now contains:"+beamSteeringConfig.toString()+".");
+		o.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+":beamSteer:Sending BEAM_STEER to BSS.");
+		// send command
+		rcsToBSSDone = o.sendBSSCommand(beamSteer,serverConnectionThread,true);
+		// check successful reply
+		if(rcsToBSSDone.getSuccessful() == false)
+		{
+			o.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+
+			      ":beamSteer:BEAM_STEER returned an error:"+rcsToBSSDone.getErrorString());
+			o.error(this.getClass().getName()+":beamSteer:"+
+				twilightCalibrateCommand.getClass().getName()+":"+rcsToBSSDone.getErrorString());
+			twilightCalibrateDone.setErrorNum(OConstants.O_ERROR_CODE_BASE+2323);
+			twilightCalibrateDone.setErrorString(rcsToBSSDone.getErrorString());
+			twilightCalibrateDone.setSuccessful(false);
+			return false;
+		}
+		o.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+":beamSteer:BEAM_STEER sent successfully.");
 		return true;
 	}
 
@@ -1127,6 +1265,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 	 * get a frame for each offset.
 	 * @param twilightCalibrateCommand The instance of TWILIGHT_CALIBRATE we are currently running.
 	 * @param twilightCalibrateDone The instance of TWILIGHT_CALIBRATE_DONE to fill in with errors we receive.
+	 * @param bin The binning factor we are doing the exposure at, used to select the correct min/best/max counts.
 	 * @return The method returns true when the offset list is terminated, false if an error occured.
 	 * @see #offsetList
 	 * @see #doFrame
@@ -1134,7 +1273,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 	 * @see ngat.message.ISS_INST.OFFSET_RA_DEC
 	 */
 	protected boolean doOffsetList(TWILIGHT_CALIBRATE twilightCalibrateCommand,
-					TWILIGHT_CALIBRATE_DONE twilightCalibrateDone)
+					TWILIGHT_CALIBRATE_DONE twilightCalibrateDone,int bin)
 	{
 		TWILIGHT_CALIBRATEOffset offset = null;
 		OFFSET_RA_DEC offsetRaDecCommand = null;
@@ -1172,7 +1311,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 				return false;
 			}
 		// do exposure at this offset
-			if(doFrame(twilightCalibrateCommand,twilightCalibrateDone) == false)
+			if(doFrame(twilightCalibrateCommand,twilightCalibrateDone,bin) == false)
 				return false;
 			offsetListIndex++;
 		}// end for on offset list
@@ -1216,6 +1355,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 	 * </ul>
 	 * @param twilightCalibrateCommand The instance of TWILIGHT_CALIBRATE we are currently running.
 	 * @param twilightCalibrateDone The instance of TWILIGHT_CALIBRATE_DONE to fill in with errors we receive.
+	 * @param bin The binning factor we are doing the exposure at, used to select the correct min/best/max counts.
 	 * @return The method returns true if no errors occured, false if an error occured.
 	 * @see FITSImplementation#testAbort
 	 * @see FITSImplementation#setFitsHeaders
@@ -1242,7 +1382,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 	 * @see #FRAME_STATE_NAME_LIST
 	 */
 	protected boolean doFrame(TWILIGHT_CALIBRATE twilightCalibrateCommand,
-		TWILIGHT_CALIBRATE_DONE twilightCalibrateDone)
+				  TWILIGHT_CALIBRATE_DONE twilightCalibrateDone,int bin)
 	{
 		File temporaryFile = null;
 		File newFile = null;
@@ -1336,9 +1476,9 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 			reducedFilename = twilightCalibrateDone.getFilename();
 		// get mean counts and set frame state.
 			meanCounts = twilightCalibrateDone.getMeanCounts();
-			if(meanCounts > maxMeanCounts)
+			if(meanCounts > maxMeanCounts[bin])
 				frameState = FRAME_STATE_OVEREXPOSED;
-			else if(meanCounts < minMeanCounts)
+			else if(meanCounts < minMeanCounts[bin])
 				frameState = FRAME_STATE_UNDEREXPOSED;
 			else
 				frameState = FRAME_STATE_OK;
@@ -1448,7 +1588,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 				return false;
 		// multiply exposure Length by scale factor 
 		// to scale current mean counts to best mean counts
-			exposureLength = (int)(((float) exposureLength) * (((float)bestMeanCounts)/meanCounts));
+			exposureLength = (int)(((float) exposureLength) * (((float)(bestMeanCounts[bin]))/meanCounts));
 		// If the calculated exposure length is out of the acceptable range,
 	        // but the last attempt was not at the range limit or 
                 // the last attempt was at the limit but acceptable, 
@@ -1685,6 +1825,95 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 	}
 
 	/**
+	 * Return whether the slidePosition integer parameter is a valid IOpticalSlideConfig POSITION.
+	 * Note POSITION_UNKNOWN is classed as valid in this method.
+	 * @param slidePosition An integer, representing an optical slide config position.
+	 * @return Returns true if slidePosition is a valid IOpticalSlideConfig POSITION, false otherwise.
+	 * @see ngat.phase2.IOpticalSlideConfig#POSITION_DI_RB
+	 * @see ngat.phase2.IOpticalSlideConfig#POSITION_AL_MIRROR
+	 * @see ngat.phase2.IOpticalSlideConfig#POSITION_CLEAR
+	 * @see ngat.phase2.IOpticalSlideConfig#POSITION_DI_BR
+	 * @see ngat.phase2.IOpticalSlideConfig#POSITION_UNKNOWN
+	 */
+	protected static boolean isOpticalSlideConfigPosition(int slidePosition)
+	{
+		if(slidePosition == IOpticalSlideConfig.POSITION_DI_RB)
+			return true;
+		if(slidePosition == IOpticalSlideConfig.POSITION_AL_MIRROR)
+			return true;
+		if(slidePosition == IOpticalSlideConfig.POSITION_CLEAR)
+			return true;
+		if(slidePosition == IOpticalSlideConfig.POSITION_DI_BR)
+			return true;
+		if(slidePosition == IOpticalSlideConfig.POSITION_UNKNOWN)
+			return true;
+		return false;
+	}
+
+	/**
+	 * Method to convert a slide position integer defined in ngat.phase2.IOpticalSlideConfig to a human readable
+	 * string. If an unknown integer is supplied, "UNKNOWN" is returned.
+	 * @param slidePosition A slide position, as defined in ngat.phase2.IOpticalSlideConfig.
+	 * @return A string representing the slide position, one of: 
+	 *         CLEAR | MIRROR_AL | DICHROIC_RED_BLUE | DICHROIC_BLUE_RED | UNKNOWN
+	 * @see ngat.phase2.IOpticalSlideConfig#POSITION_DI_RB
+	 * @see ngat.phase2.IOpticalSlideConfig#POSITION_AL_MIRROR
+	 * @see ngat.phase2.IOpticalSlideConfig#POSITION_CLEAR
+	 * @see ngat.phase2.IOpticalSlideConfig#POSITION_DI_BR
+	 * @see ngat.phase2.IOpticalSlideConfig#POSITION_UNKNOWN
+	 */
+	protected static String slidePositionToString(int slidePosition)
+	{
+		switch(slidePosition)
+		{
+			case IOpticalSlideConfig.POSITION_DI_RB:
+				return "DICHROIC_RED_BLUE";
+			case IOpticalSlideConfig.POSITION_AL_MIRROR:
+				return "MIRROR_AL";
+			case IOpticalSlideConfig.POSITION_CLEAR:
+				return "CLEAR";
+			case IOpticalSlideConfig.POSITION_DI_BR:
+				return "DICHROIC_BLUE_RED";
+			default:
+				return "UNKNOWN";
+		}
+	}
+
+	/**
+	 * Method to parse a slide position string, and return a suitable ngat.phase2.IOpticalSlideConfig slide
+	 * position integer.
+	 * @param s A string describing the slide position, one of: 
+	 *        CLEAR | MIRROR_AL | DICHROIC_RED_BLUE | DICHROIC_BLUE_RED | UNKNOWN.
+	 * @return An IOpticalSlideConfig slide position integer, one of:
+	 *        POSITION_DI_RB | POSITION_AL_MIRROR | POSITION_CLEAR | POSITION_DI_BR | POSITION_UNKNOWN.
+	 * @exception IllegalArgumentException Throwm if the string supplied is not a legal slide position.
+	 * @see ngat.phase2.IOpticalSlideConfig#POSITION_DI_RB
+	 * @see ngat.phase2.IOpticalSlideConfig#POSITION_AL_MIRROR
+	 * @see ngat.phase2.IOpticalSlideConfig#POSITION_CLEAR
+	 * @see ngat.phase2.IOpticalSlideConfig#POSITION_DI_BR
+	 * @see ngat.phase2.IOpticalSlideConfig#POSITION_UNKNOWN
+	 */
+	protected static int parseSlidePositionString(String s) throws IllegalArgumentException
+	{
+		if(s.equals("DICHROIC_RED_BLUE"))
+			return IOpticalSlideConfig.POSITION_DI_RB;
+		else if(s.equals("MIRROR_AL"))
+			return IOpticalSlideConfig.POSITION_AL_MIRROR;
+		else if(s.equals("CLEAR"))
+			return IOpticalSlideConfig.POSITION_CLEAR;
+		else if(s.equals("DICHROIC_BLUE_RED"))
+			return IOpticalSlideConfig.POSITION_DI_BR;
+		else if(s.equals("UNKNOWN"))
+			return IOpticalSlideConfig.POSITION_UNKNOWN;
+		else
+		{
+			throw new IllegalArgumentException("TWILIGHT_CALIBRATEImplementation:"+
+							   "parseSlidePositionString:Illegal Slide Position String:"+
+							   s);
+		}
+	}
+
+	/**
 	 * Private inner class that deals with loading and interpreting the saved state of calibrations
 	 * (the TWILIGHT_CALIBRATE calibration database).
 	 */
@@ -1736,20 +1965,35 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 		 * @param useWindowAmplifier Whether we are using the default amplifier (false) or the amplifier
 		 *        used for windowing (true).
 		 * @param filter The filter type string used for this calibration.
+		 * @param lowerSlide The lower slide position used for this calibration. One ofthe constants defined in
+		 *        ngat.phase2.IOpticalSlideConfig: 
+		 *        POSITION_DI_RB | POSITION_AL_MIRROR | POSITION_CLEAR | POSITION_DI_BR | POSITION_UNKNOWN.
+		 * @param upperSlide The upper slide position used for this calibration. One ofthe constants defined in
+		 *        ngat.phase2.IOpticalSlideConfig: 
+		 *        POSITION_DI_RB | POSITION_AL_MIRROR | POSITION_CLEAR | POSITION_DI_BR | POSITION_UNKNOWN.
 		 * @return The number of milliseconds since the EPOCH, the last time a calibration with these
 		 * 	parameters was completed. If this calibraion has not been performed before, zero
 		 * 	is returned.
 		 * @see #LIST_KEY_STRING
 		 * @see #LIST_KEY_LAST_TIME_STRING
+		 * @see TWILIGHT_CALIBRATEImplementation#slidePositionToString
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_DI_RB
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_AL_MIRROR
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_CLEAR
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_DI_BR
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_UNKNOWN
 		 */
-		public long getLastTime(int bin,boolean useWindowAmplifier,String filter)
+		public long getLastTime(int bin,boolean useWindowAmplifier,int lowerSlide,int upperSlide,String filter)
 		{
 			long time;
 
 			try
 			{
 				time = properties.getLong(LIST_KEY_STRING+LIST_KEY_LAST_TIME_STRING+bin+"."+
-							  useWindowAmplifier+"."+filter);
+					       useWindowAmplifier+"."+
+					       TWILIGHT_CALIBRATEImplementation.slidePositionToString(lowerSlide)+"."+
+					       TWILIGHT_CALIBRATEImplementation.slidePositionToString(upperSlide)+"."+
+					       filter);
 			}
 			catch(NGATPropertyException e)/* assume failure due to key not existing */
 			{
@@ -1764,17 +2008,32 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 		 * @param bin The binning factor used for this calibration.
 		 * @param useWindowAmplifier Whether we are using the default amplifier (false) or the amplifier
 		 *        used for windowing (true).
+		 * @param lowerSlide The lower slide position used for this calibration. One ofthe constants defined in
+		 *        ngat.phase2.IOpticalSlideConfig: 
+		 *        POSITION_DI_RB | POSITION_AL_MIRROR | POSITION_CLEAR | POSITION_DI_BR | POSITION_UNKNOWN.
+		 * @param upperSlide The upper slide position used for this calibration. One ofthe constants defined in
+		 *        ngat.phase2.IOpticalSlideConfig: 
+		 *        POSITION_DI_RB | POSITION_AL_MIRROR | POSITION_CLEAR | POSITION_DI_BR | POSITION_UNKNOWN.
 		 * @param filter The filter type string used for this calibration.
 		 * @see #LIST_KEY_STRING
 		 * @see #LIST_KEY_LAST_TIME_STRING
+		 * @see TWILIGHT_CALIBRATEImplementation#slidePositionToString
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_DI_RB
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_AL_MIRROR
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_CLEAR
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_DI_BR
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_UNKNOWN
 		 */
-		public void setLastTime(int bin,boolean useWindowAmplifier,String filter)
+		public void setLastTime(int bin,boolean useWindowAmplifier,int lowerSlide,int upperSlide,String filter)
 		{
 			long now;
 
 			now = System.currentTimeMillis();
 			properties.setProperty(LIST_KEY_STRING+LIST_KEY_LAST_TIME_STRING+bin+"."+
-					       useWindowAmplifier+"."+filter,new String(""+now));
+					       useWindowAmplifier+"."+
+					       TWILIGHT_CALIBRATEImplementation.slidePositionToString(lowerSlide)+"."+
+					       TWILIGHT_CALIBRATEImplementation.slidePositionToString(upperSlide)+"."+
+					       filter,new String(""+now));
 		}
 	}// end class TWILIGHT_CALIBRATESavedState
 
@@ -1794,6 +2053,24 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 		 * If true, we use the window amplifier.
 		 */
 		protected boolean useWindowAmplifier;
+		/**
+		 * What position the lower slide should be in. Uses constants in ngat.phase2.IOpticalSlideConfig.
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_DI_RB
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_AL_MIRROR
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_CLEAR
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_DI_BR
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_UNKNOWN
+		 */
+		protected int lowerSlide;
+		/**
+		 * What position the upper slide should be in. Uses constants in ngat.phase2.IOpticalSlideConfig.
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_DI_RB
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_AL_MIRROR
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_CLEAR
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_DI_BR
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_UNKNOWN
+		 */
+		protected int upperSlide;
 		/**
 		 * The filter to use in the filter wheel.
 		 */
@@ -1866,6 +2143,82 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 		public boolean useWindowAmplifier()
 		{
 			return useWindowAmplifier;
+		}
+
+		/**
+		 * Set the lower slide position.
+		 * @param s The lower slide position, one of the constants defined in ngat.phase2.IOpticalSlideConfig:
+		 *   POSITION_DI_RB | POSITION_AL_MIRROR | POSITION_CLEAR | POSITION_DI_BR | POSITION_UNKNOWN
+		 * @see #lowerSlide
+		 * @see TWILIGHT_CALIBRATEImplementation#isOpticalSlideConfigPosition
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_DI_RB
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_AL_MIRROR
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_CLEAR
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_DI_BR
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_UNKNOWN
+		 */
+		public void setLowerSlide(int s) throws IllegalArgumentException
+		{
+			if(!TWILIGHT_CALIBRATEImplementation.isOpticalSlideConfigPosition(s))
+			{
+				throw new IllegalArgumentException(this.getClass().getName()+
+								   ":setLowerSlide:Illegal slide position:"+s);
+			}
+			lowerSlide = s;
+		}
+
+		/**
+		 * Get the lower slide position for this twilight calibration.
+		 * @return The lower slide position as an integer, one of: 
+		 *         POSITION_DI_RB | POSITION_AL_MIRROR | POSITION_CLEAR | POSITION_DI_BR | POSITION_UNKNOWN.
+		 * @see #lowerSlide
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_DI_RB
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_AL_MIRROR
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_CLEAR
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_DI_BR
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_UNKNOWN
+		 */
+		public int getLowerSlide()
+		{
+			return lowerSlide;
+		}
+
+		/**
+		 * Set the upper slide position.
+		 * @param s The upper slide position, one of the constants defined in ngat.phase2.IOpticalSlideConfig:
+		 *   POSITION_DI_RB | POSITION_AL_MIRROR | POSITION_CLEAR | POSITION_DI_BR | POSITION_UNKNOWN.
+		 * @see #upperSlide
+		 * @see TWILIGHT_CALIBRATEImplementation#isOpticalSlideConfigPosition
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_DI_RB
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_AL_MIRROR
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_CLEAR
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_DI_BR
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_UNKNOWN
+		 */
+		public void setUpperSlide(int s) throws IllegalArgumentException
+		{
+			if(!TWILIGHT_CALIBRATEImplementation.isOpticalSlideConfigPosition(s))
+			{
+				throw new IllegalArgumentException(this.getClass().getName()+
+								   ":setUpperSlide:Illegal slide position:"+s);
+			}
+			upperSlide = s;
+		}
+
+		/**
+		 * Get the upper slide position for this twilight calibration.
+		 * @return The upper slide position as an integer, one of: 
+		 *         POSITION_DI_RB | POSITION_AL_MIRROR | POSITION_CLEAR | POSITION_DI_BR | POSITION_UNKNOWN.
+		 * @see #upperSlide
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_DI_RB
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_AL_MIRROR
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_CLEAR
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_DI_BR
+		 * @see ngat.phase2.IOpticalSlideConfig#POSITION_UNKNOWN
+		 */
+		public int getUpperSlide()
+		{
+			return upperSlide;
 		}
 
 		/**
@@ -2055,4 +2408,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2011/11/23 10:55:24  cjm
+// Initial revision
+//
 //
