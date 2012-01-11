@@ -1,7 +1,7 @@
        COMMENT *
-	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/bif486/bif486.waveforms,v 1.11 2011-12-09 11:20:45 cjm Exp $
-	Id: 	 $Id: bif486.waveforms,v 1.11 2011-12-09 11:20:45 cjm Exp $
-	Version: $Revision: 1.11 $
+	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/bif486/bif486.waveforms,v 1.12 2012-01-11 14:42:47 cjm Exp $
+	Id: 	 $Id: bif486.waveforms,v 1.12 2012-01-11 14:42:47 cjm Exp $
+	Version: $Revision: 1.12 $
 Waveform tables for Fairchild 486 4k x 4k CCD back-side CCD with the ARC 
 	four readout camera head board. 
 Generated from scratch from the spec sheet.
@@ -82,8 +82,8 @@ VOG	EQU	 -2.5	; Output Gate
 ; Video offset variables
 OFFSET	EQU	$400
 OFFSET0	EQU	$510  ; Bottom Left  
-OFFSET1	EQU	$3F6  ; Bottom Right
-OFFSET2	EQU	$9B0  ; Top Right
+OFFSET1	EQU	$96B  ; Bottom Right
+OFFSET2	EQU	$9A1  ; Top Right
 OFFSET3	EQU	$500  ; Top Left
 
 ;SXMIT	EQU	$00F0C0				; Transmit A/Ds = 0 to 3
@@ -494,11 +494,9 @@ FIRST_CLOCKS_RIGHT
  	DC	END_FIRST_CLOCKS_RIGHT-FIRST_CLOCKS_RIGHT-1
 	DC	CLK2+SER_DLY+00+RG+000+000+H3+000+000
 	DC	CLK2+SER_DLY+00+00+H1L+000+H3+H1R+000
-;	DC	CLK2+SER_DLY+00+00+H1L+000+00+H1R+000
 	DC	CLK2+SER_DLY+00+00+H1L+000+00+H1R+000
 	DC	CLK2+SER_DLY+SG+00+H1L+H2L+00+H1R+H2R
 	DC	CLK2+SER_DLY+SG+00+000+H2L+00+000+H2R
-;	DC	CLK2+SER_DLY+SG+00+000+H2L+00+000+H2R
 ; last line should have short delay here for binning 1 only, as RESET_VIDEO comes next
 END_FIRST_CLOCKS_RIGHT
 
@@ -518,8 +516,8 @@ END_CLOCK_LINE_RIGHT
 ; output video available following high-low transition of SG
 CHARGE_DUMP_RIGHT
  	DC	END_CHARGE_DUMP_RIGHT-CHARGE_DUMP_RIGHT-1
+	DC	CLK2+SER_DLY+SG+00+000+H2L+H3+000+H2R
 	DC	CLK2+SER_DLY+00+00+000+H2L+H3+000+H2R
-;	DC	CLK2+SER_DLY+00+00+000+H2L+H3+000+H2R
 INTEGRATE_SIGNAL_RIGHT ; Copied from E2V231
 	DC	VIDEO+INT_TIM+%0001011		; Integrate
 	DC	VIDEO+$000000+%0011011		; Stop, A/D is sampling
@@ -652,6 +650,9 @@ END_DACS
 
 ;
 ; $Log: not supported by cvs2svn $
+; Revision 1.11  2011/12/09 11:20:45  cjm
+; Waveforms updated by IAS on december 2011 site trip.
+;
 ; Revision 1.10  2011/10/26 16:46:43  cjm
 ; Changes by IAS to improve readout.
 ;
