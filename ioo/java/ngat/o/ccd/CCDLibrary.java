@@ -1,5 +1,5 @@
 // CCDLibrary.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/ccd/CCDLibrary.java,v 1.1 2011-11-23 10:59:30 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/ccd/CCDLibrary.java,v 1.2 2012-01-11 15:03:50 cjm Exp $
 package ngat.o.ccd;
 
 import java.lang.*;
@@ -10,14 +10,14 @@ import ngat.util.logging.*;
 /**
  * This class supports an interface to the SDSU CCD Controller library, for controlling the FrodoSpec CCD.
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class CCDLibrary
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class
 	 */
-	public final static String RCSID = new String("$Id: CCDLibrary.java,v 1.1 2011-11-23 10:59:30 cjm Exp $");
+	public final static String RCSID = new String("$Id: CCDLibrary.java,v 1.2 2012-01-11 15:03:50 cjm Exp $");
 	// ccd_dsp.h
 	/* These constants should be the same as those in ccd_dsp.h */
 	/**
@@ -71,17 +71,17 @@ public class CCDLibrary
 	 */
 	public final static int DSP_AMPLIFIER_BOTTOM_RIGHT =            0x5f5f44;
 	/**
+	 * Set Output Source parameter, to make the controller read out images from both right amplifiers (_BD).
+	 * @see #setupDimensions
+	 * @link http://ltdevsrv.livjm.ac.uk/~dev/o/ccd/cdocs/ccd_dsp.html#CCD_DSP_AMPLIFIER
+	 */
+	public final static int DSP_AMPLIFIER_BOTH_RIGHT   =            0x5f4244;	
+	/**
 	 * Set Output Source parameter, to make the controller read out images from the all four amplifiers (ALL).
 	 * @see #setupDimensions
 	 * @link http://ltdevsrv.livjm.ac.uk/~dev/o/ccd/cdocs/ccd_dsp.html#CCD_DSP_AMPLIFIER
 	 */
 	public final static int DSP_AMPLIFIER_ALL          =            0x414c4c;
-	/**
-	 * Set Output Source parameter, to make the controller read out images from both (two) amplifiers.
-	 * This setting no longer exists in the DSP code?
-	 * @see #setupDimensions
-	 */
-	public final static int DSP_AMPLIFIER_BOTH 	=		0x5f4c52;
 
 	/* These constants should be the same as those in ccd_dsp.h */
 	/**
@@ -697,6 +697,7 @@ public class CCDLibrary
 	 * 	<li><a href="#DSP_AMPLIFIER_TOP_RIGHT">DSP_AMPLIFIER_TOP_RIGHT</a>
 	 * 	<li><a href="#DSP_AMPLIFIER_BOTTOM_LEFT">DSP_AMPLIFIER_BOTTOM_LEFT</a>
 	 * 	<li><a href="#DSP_AMPLIFIER_BOTTOM_RIGHT">DSP_AMPLIFIER_BOTTOM_RIGHT</a>
+	 * 	<li><a href="#DSP_AMPLIFIER_BOTH_RIGHT">DSP_AMPLIFIER_BOTH_RIGHT</a>
 	 * 	<li><a href="#DSP_AMPLIFIER_ALL">DSP_AMPLIFIER_ALL</a>
 	 * 	</ul>.
 	 * @exception CCDLibraryFormatException If the string was not an accepted value an exception is thrown.
@@ -711,6 +712,8 @@ public class CCDLibrary
 			return DSP_AMPLIFIER_BOTTOM_LEFT;
 		if(s.equals("DSP_AMPLIFIER_BOTTOM_RIGHT"))
 			return DSP_AMPLIFIER_BOTTOM_RIGHT;
+		if(s.equals("DSP_AMPLIFIER_BOTH_RIGHT"))
+			return DSP_AMPLIFIER_BOTH_RIGHT;
 		if(s.equals("DSP_AMPLIFIER_ALL"))
 			return DSP_AMPLIFIER_ALL;
 		throw new CCDLibraryFormatException("ngat.o.ccd.CCDLibrary","dspAmplifierFromString",s);
@@ -1259,9 +1262,12 @@ public class CCDLibrary
 	 * @param npbin The amount of binning applied to pixels in rows.This parameter will change internally
 	 *	nrows.
 	 * @param amplifier The amplifier to use when reading out CCD data. One of:
-	 * 	<a href="#DSP_AMPLIFIER_LEFT">DSP_AMPLIFIER_LEFT</a>,
-	 * 	<a href="#DSP_AMPLIFIER_RIGHT">DSP_AMPLIFIER_RIGHT</a> or
-	 * 	<a href="#DSP_AMPLIFIER_BOTH">DSP_AMPLIFIER_BOTH</a>.
+	 * 	<a href="#DSP_AMPLIFIER_TOP_LEFT">DSP_AMPLIFIER_TOP_LEFT</a>,
+	 * 	<a href="#DSP_AMPLIFIER_TOP_RIGHT">DSP_AMPLIFIER_TOP_RIGHT</a>,
+	 * 	<a href="#DSP_AMPLIFIER_BOTTOM_LEFT">DSP_AMPLIFIER_BOTTOM_LEFT</a>,
+	 * 	<a href="#DSP_AMPLIFIER_BOTTOM_RIGHT">DSP_AMPLIFIER_BOTTOM_RIGHT</a>,
+	 * 	<a href="#DSP_AMPLIFIER_BOTH_RIGHT">DSP_AMPLIFIER_BOTH_RIGHT</a> or 
+	 * 	<a href="#DSP_AMPLIFIER_ALL">DSP_AMPLIFIER_ALL</a>.
 	 * @param deinterlaceSetting The algorithm to use for deinterlacing the resulting data. The data needs to be
 	 * 	deinterlaced if the CCD is read out from multiple readouts.One of:
 	 * 	<a href="#DSP_DEINTERLACE_SINGLE">DSP_DEINTERLACE_SINGLE</a>,
@@ -1369,6 +1375,7 @@ public class CCDLibrary
 	 * @see #DSP_AMPLIFIER_TOP_RIGHT
 	 * @see #DSP_AMPLIFIER_BOTTOM_LEFT
 	 * @see #DSP_AMPLIFIER_BOTTOM_RIGHT
+	 * @see #DSP_AMPLIFIER_BOTH_RIGHT
 	 * @see #DSP_AMPLIFIER_ALL
 	 */
 	public int getAmplifier()
@@ -1670,4 +1677,7 @@ public class CCDLibrary
  
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2011/11/23 10:59:30  cjm
+// Initial revision
+//
 //
