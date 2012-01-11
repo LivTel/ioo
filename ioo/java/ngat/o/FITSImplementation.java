@@ -1,5 +1,5 @@
 // FITSImplementation.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/FITSImplementation.java,v 1.5 2012-01-04 12:03:06 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/FITSImplementation.java,v 1.6 2012-01-11 14:55:18 cjm Exp $
 package ngat.o;
 
 import java.lang.*;
@@ -20,14 +20,14 @@ import ngat.util.logging.*;
  * use the hardware  libraries as this is needed to generate FITS files.
  * @see HardwareImplementation
  * @author Chris Mottram
- * @version $Revision: 1.5 $
+ * @version $Revision: 1.6 $
  */
 public class FITSImplementation extends HardwareImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: FITSImplementation.java,v 1.5 2012-01-04 12:03:06 cjm Exp $");
+	public final static String RCSID = new String("$Id: FITSImplementation.java,v 1.6 2012-01-11 14:55:18 cjm Exp $");
 	/**
 	 * Internal constant used when the order number offset defined in the property
 	 * 'o.get_fits.order_number_offset' is not found or is not a valid number.
@@ -426,6 +426,24 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 		// CALAFTER
 			cardImage = oFitsHeader.get("CALAFTER");
 			// diddly cardImage.setValue(new Boolean(status.getCachedConfigCalibrateAfter()));
+		// ROTCENTX
+		// Value specified in config file is unbinned without bias offsets added
+			cardImage = oFitsHeader.get("ROTCENTX");
+			cardImage.setValue(new Integer((oFitsHeaderDefaults.getValueInteger("ROTCENTX")/xBin)+
+					   preScan));
+		// ROTCENTY
+		// Value specified in config file is unbinned 
+			cardImage = oFitsHeader.get("ROTCENTY");
+			cardImage.setValue(new Integer(oFitsHeaderDefaults.getValueInteger("ROTCENTY")/yBin));
+		// POICENTX
+		// Value specified in config file is unbinned without bias offsets added
+			cardImage = oFitsHeader.get("POICENTX");
+			cardImage.setValue(new Integer((oFitsHeaderDefaults.getValueInteger("POICENTX")/xBin)+
+					   preScan));
+		// POICENTY
+		// Value specified in config file is unbinned 
+			cardImage = oFitsHeader.get("POICENTY");
+			cardImage.setValue(new Integer(oFitsHeaderDefaults.getValueInteger("POICENTY")/yBin));
 		// INSTDFOC
 			cardImage = oFitsHeader.get("INSTDFOC");
 			cardImage.setValue(new Double(instDFoc));
@@ -531,7 +549,7 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 	 * 	error occurs the relevant fields are filled in with the error.
 	 * @return The routine returns a boolean to indicate whether the operation was completed
 	 *  	successfully.
-	 * @see O#sendBSSCommand
+	 * @see O#sendBSSCommand(INST_TO_BSS,OTCPServerConnectionThread)
 	 * @see O#getStatus
 	 * @see OStatus#getPropertyInteger
 	 * @see #oFitsHeader
@@ -1084,6 +1102,9 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 			case CCDLibrary.DSP_AMPLIFIER_BOTTOM_RIGHT:
 				deInterlaceString = "DSP_DEINTERLACE_FLIP_XY";
 				break;
+			case CCDLibrary.DSP_AMPLIFIER_BOTH_RIGHT:
+				deInterlaceString = "DSP_DEINTERLACE_SPLIT_PARALLEL";
+				break;
 			case CCDLibrary.DSP_AMPLIFIER_ALL:
 				deInterlaceString = "DSP_DEINTERLACE_SPLIT_QUAD";
 				break;
@@ -1109,6 +1130,7 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 	 * @see ngat.o.ccd.CCDLibrary#DSP_AMPLIFIER_TOP_RIGHT
 	 * @see ngat.o.ccd.CCDLibrary#DSP_AMPLIFIER_BOTTOM_LEFT
 	 * @see ngat.o.ccd.CCDLibrary#DSP_AMPLIFIER_BOTTOM_RIGHT
+	 * @see ngat.o.ccd.CCDLibrary#DSP_AMPLIFIER_BOTH_RIGHT
 	 * @see ngat.o.ccd.CCDLibrary#DSP_AMPLIFIER_ALL
 	 * @see #ccd
 	 */
@@ -1132,6 +1154,9 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 				break;
 			case CCDLibrary.DSP_AMPLIFIER_BOTTOM_RIGHT:
 				amplifierString = "BOTTOMRIGHT";
+				break;
+			case CCDLibrary.DSP_AMPLIFIER_BOTH_RIGHT:
+				amplifierString = "BOTHRIGHT";
 				break;
 			case CCDLibrary.DSP_AMPLIFIER_ALL:
 				amplifierString = "ALL";
@@ -1235,6 +1260,9 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.5  2012/01/04 12:03:06  cjm
+// Fixed GAIN/EPERDN/READNOIS getValue type.
+//
 // Revision 1.4  2012/01/04 10:28:31  cjm
 // Fixes comment.
 //
