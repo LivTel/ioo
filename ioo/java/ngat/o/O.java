@@ -1,5 +1,5 @@
 // O.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/O.java,v 1.1 2011-11-23 10:55:24 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/O.java,v 1.2 2012-01-11 14:55:18 cjm Exp $
 package ngat.o;
 
 import java.lang.*;
@@ -16,20 +16,21 @@ import ngat.util.logging.*;
 import ngat.o.ccd.*;
 import ngat.fits.*;
 import ngat.message.INST_BSS.*;
+import ngat.message.RCS_BSS.*;
 import ngat.message.ISS_INST.*;
 import ngat.message.INST_DP.*;
 
 /**
  * This class is the start point for the O Control System.
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class O
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: O.java,v 1.1 2011-11-23 10:55:24 cjm Exp $");
+	public final static String RCSID = new String("$Id: O.java,v 1.2 2012-01-11 14:55:18 cjm Exp $");
 	/**
 	 * Logger channel id.
 	 */
@@ -1402,6 +1403,104 @@ public class O
 	}
 
 	/**
+	 * Routine to send an RCS command from the instrument (this application/O) to the BSS. 
+	 * The command is only sent if bssUse is true, otherwise the result is faked. The routine
+	 * waits until the command's done message has been returned from the BSS and returns this.
+	 * If checkAbort is set and the commandThread is aborted this also stops waiting for the 
+	 * done message to be returned.
+	 * @param command The RCS command to send to the BSS.
+	 * @param commandThread The thread the passed in command (and this method) is running on.
+	 * @param checkAbort A boolean, set to true if we want to check for commandThread aborting.
+	 * 	This should be set to false when the command is being sent to the BSS in response
+	 * 	to an abort occuring.
+	 * @return The done message returned from te BSS, or an error message created by this routine
+	 * 	if the done was null.
+	 * @see #bssUse
+	 * @see #bssAddress
+	 * @see #bssPortNumber
+	 * @see OTCPClientConnectionThread
+	 * @see OTCPServerConnectionThread#getAbortProcessCommand
+	 */
+	public RCS_TO_BSS_DONE sendBSSCommand(RCS_TO_BSS command,OTCPServerConnectionThread commandThread,
+					       boolean checkAbort)
+	{
+		OTCPClientConnectionThread thread = null;
+		RCS_TO_BSS_DONE done = null;
+		boolean finished = false;
+
+		log(Logging.VERBOSITY_VERY_TERSE,
+			this.getClass().getName()+":sendBSSCommand:"+command.getClass().getName());
+		if(bssUse)
+		{
+			thread = new OTCPClientConnectionThread(bssAddress,bssPortNumber,command,commandThread);
+			thread.setO(this);
+			thread.start();
+			finished = false;
+			while(finished == false)
+			{
+				try
+				{
+					thread.join(100);// wait 100 millis for the thread to finish
+				}
+				catch(InterruptedException e)
+				{
+					error("sendBSSCommand:join interrupted:",e);
+				}
+				// If the thread has finished so has this loop
+				finished = (thread.isAlive() == false);
+				// check if the thread has been aborted, if checkAbort has been set.
+				if(checkAbort)
+				{
+					// If the commandThread has been aborted, stop processing this thread
+					if(commandThread.getAbortProcessCommand())
+						finished = true;
+				}
+			}
+			done = (RCS_TO_BSS_DONE)thread.getDone();
+			if(done == null)
+			{
+				// one reason the done is null is if we escaped from the loop
+				// because the O server thread was aborted.
+				if(commandThread.getAbortProcessCommand())
+				{
+					done = new RCS_TO_BSS_DONE(command.getId());
+					error(this.getClass().getName()+":sendBSSCommand:"+
+					      command.getClass().getName()+":Server thread Aborted");
+					done.setErrorNum(OConstants.O_ERROR_CODE_BASE+7);
+					done.setErrorString("sendBSSCommand:Server thread Aborted:"+
+							    command.getClass().getName());
+					done.setSuccessful(false);
+				}
+				else // a communication failure occured
+				{
+					done = new RCS_TO_BSS_DONE(command.getId());
+					error(this.getClass().getName()+":sendBSSCommand:"+
+					      command.getClass().getName()+":Getting Done failed");
+					done.setErrorNum(OConstants.O_ERROR_CODE_BASE+8);
+					done.setErrorString("sendBSSCommand:Getting Done failed:"+
+							    command.getClass().getName());
+					done.setSuccessful(false);
+				}
+			}
+		}
+		else // fake BSS DONE
+		{
+			log(Logging.VERBOSITY_VERY_TERSE,
+			    this.getClass().getName()+":sendBSSCommand:"+command.getClass().getName()+
+			    ":bssUse was false:Faking successful result.");
+			done = new RCS_TO_BSS_DONE(command.getId());
+			done.setErrorNum(OConstants.O_ERROR_CODE_NO_ERROR);
+			done.setErrorString("sendBSSCommand:bssUse was false:Faking successful result:"+
+					    command.getClass().getName());
+			done.setSuccessful(true);
+		}
+		log(Logging.VERBOSITY_VERY_TERSE,
+		    "Done:"+done.getClass().getName()+":successful:"+done.getSuccessful()+
+		    ":error number:"+done.getErrorNum()+":error string:"+done.getErrorString());
+		return done;
+	}
+
+	/**
 	 * Routine to send a command from the instrument (this application/O) to the DP(RT). The routine
 	 * waits until the command's done message has been returned from the DP(RT) and returns this.
 	 * If the commandThread is aborted this also stops waiting for the done message to be returned.
@@ -1827,4 +1926,7 @@ public class O
 }
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2011/11/23 10:55:24  cjm
+// Initial revision
+//
 //
