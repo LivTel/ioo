@@ -1,5 +1,5 @@
 /* test_exposure.c
- * $Header: /space/home/eng/cjm/cvs/ioo/ccd/test/test_exposure.c,v 1.1 2011-11-23 11:03:02 cjm Exp $
+ * $Header: /space/home/eng/cjm/cvs/ioo/ccd/test/test_exposure.c,v 1.2 2012-01-11 15:06:45 cjm Exp $
  */
 #include <stdio.h>
 #include <string.h>
@@ -32,7 +32,7 @@
  * 	[-t[ext_print_level] &lt;commands|replies|values|all&gt;][-h[elp]]
  * </pre>
  * @author $Author: cjm $
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 /* hash definitions */
 /**
@@ -79,7 +79,7 @@ enum COMMAND_ID
 /**
  * Revision control system identifier.
  */
-static char rcsid[] = "$Id: test_exposure.c,v 1.1 2011-11-23 11:03:02 cjm Exp $";
+static char rcsid[] = "$Id: test_exposure.c,v 1.2 2012-01-11 15:06:45 cjm Exp $";
 /**
  * How much information to print out when using the text interface.
  */
@@ -467,6 +467,11 @@ static int Parse_Arguments(int argc, char *argv[])
 					Amplifier = CCD_DSP_AMPLIFIER_TOP_RIGHT;
 					DeInterlace_Type = CCD_DSP_DEINTERLACE_FLIP_XY;
 				}
+				else if(strcmp(argv[i+1],"bothright")==0)
+				{
+					Amplifier = CCD_DSP_AMPLIFIER_BOTH_RIGHT;
+					DeInterlace_Type = CCD_DSP_DEINTERLACE_SPLIT_PARALLEL;
+				}
 				else if(strcmp(argv[i+1],"all")==0)
 				{
 					Amplifier = CCD_DSP_AMPLIFIER_ALL;
@@ -475,14 +480,14 @@ static int Parse_Arguments(int argc, char *argv[])
 				else
 				{
 					fprintf(stderr,"Parse_Arguments:Illegal Amplifier '%s', "
-						"<bottomleft|bottomright|topleft|topright|all> required.\n",argv[i+1]);
+						"<bottomleft|bottomright|topleft|topright|bothright|all> required.\n",argv[i+1]);
 					return FALSE;
 				}
 				i++;
 			}
 			else
 			{
-				fprintf(stderr,"Parse_Arguments:Amplifier requires <left|right|both>.\n");
+				fprintf(stderr,"Parse_Arguments:Amplifier requires one of: <bottomleft|bottomright|topleft|topright|bothright|all>.\n");
 				return FALSE;
 			}
 		}
@@ -921,7 +926,7 @@ static void Help(void)
 	fprintf(stdout,"\t[-g[ain] <1|2|4|9> <true|false>]\n");
 	fprintf(stdout,"\t[-xs[ize] <no. of pixels>][-ys[ize] <no. of pixels>]\n");
 	fprintf(stdout,"\t[-xb[in] <binning factor>][-yb[in] <binning factor>]\n");
-	fprintf(stdout,"\t[-a[mplifier] <bottomleft|bottomright|topleft|topright|all>]\n");
+	fprintf(stdout,"\t[-a[mplifier] <bottomleft|bottomright|topleft|topright|bothright|all>]\n");
 	fprintf(stdout,"\t[-w[indow] <no> <xstart> <ystart> <xend> <yend>]\n");
 	fprintf(stdout,"\t[-f[ilename] <filename>][-noclear|-nc]\n");
 	fprintf(stdout,"\t[-b[ias]][-d[ark] <exposure length>][-e[xpose] <exposure length>]\n");
@@ -1050,6 +1055,9 @@ static void Test_Fits_Header_Error(int status)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.1  2011/11/23 11:03:02  cjm
+** Initial revision
+**
 ** Revision 1.6  2009/02/05 11:40:55  cjm
 ** Swapped Bitwise for Absolute logging levels.
 **
