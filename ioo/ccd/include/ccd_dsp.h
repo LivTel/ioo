@@ -1,5 +1,5 @@
 /* ccd_dsp.h
-** $Header: /space/home/eng/cjm/cvs/ioo/ccd/include/ccd_dsp.h,v 1.1 2011-11-23 11:02:52 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/ioo/ccd/include/ccd_dsp.h,v 1.2 2012-01-11 15:06:22 cjm Exp $
 */
 #ifndef CCD_DSP_H
 #define CCD_DSP_H
@@ -140,6 +140,7 @@ enum CCD_DSP_DEINTERLACE_TYPE
  * <li>CCD_DSP_AMPLIFIER_TOP_RIGHT selects the top right amplifier.
  * <li>CCD_DSP_AMPLIFIER_BOTTOM_LEFT selects the bottom left amplifier.
  * <li>CCD_DSP_AMPLIFIER_BOTTOM_RIGHT selects the bottom right amplifier.
+ * <li>CCD_DSP_AMPLIFIER_BOTH_RIGHT selects the top and bottom right amplifier.
  * <li>CCD_DSP_AMPLIFIER_ALL selects all amplifiers.
  * </ul>
  * @see #CCD_DSP_SOS
@@ -151,6 +152,7 @@ enum CCD_DSP_AMPLIFIER
 	CCD_DSP_AMPLIFIER_TOP_RIGHT   =0x5f5f42, 	/* Ascii __B */
 	CCD_DSP_AMPLIFIER_BOTTOM_LEFT =0x5f5f43, 	/* Ascii __C */
 	CCD_DSP_AMPLIFIER_BOTTOM_RIGHT=0x5f5f44, 	/* Ascii __D */
+	CCD_DSP_AMPLIFIER_BOTH_RIGHT  =0x5f4244,        /* Ascii _BD */
 	CCD_DSP_AMPLIFIER_ALL         =0x414c4c  	/* Ascii ALL */
 };
 
@@ -159,7 +161,8 @@ enum CCD_DSP_AMPLIFIER
  */
 #define CCD_DSP_IS_AMPLIFIER(amplifier)	(((amplifier) == CCD_DSP_AMPLIFIER_TOP_LEFT)|| \
 	((amplifier) == CCD_DSP_AMPLIFIER_TOP_RIGHT)||((amplifier) == CCD_DSP_AMPLIFIER_BOTTOM_LEFT)|| \
-	((amplifier) == CCD_DSP_AMPLIFIER_BOTTOM_RIGHT)||((amplifier) == CCD_DSP_AMPLIFIER_ALL))
+	((amplifier) == CCD_DSP_AMPLIFIER_BOTTOM_RIGHT)||((amplifier) == CCD_DSP_AMPLIFIER_BOTH_RIGHT)|| \
+        ((amplifier) == CCD_DSP_AMPLIFIER_ALL))
 
 /* Various CCD_DSP routine return these values to indicate success/failure */
 /**
