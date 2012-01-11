@@ -1,4 +1,4 @@
-; $Header: /space/home/eng/cjm/cvs/ioo/sdsu/bif486/timCCDmisc.asm,v 1.6 2011-10-20 13:24:10 cjm Exp $
+; $Header: /space/home/eng/cjm/cvs/ioo/sdsu/bif486/timCCDmisc.asm,v 1.7 2012-01-11 09:59:06 cjm Exp $
 ; Copied from e2v230 version.
 ; Various changed imported from fif486 version
 ; Miscellaneous CCD control routines
@@ -704,7 +704,7 @@ L_CHARGE_DUMP
 ; Select the amplifier and readout mode
 ;   'SOS'  Amplifier_name = '__C', '__D', '__B', '__A' or 'ALL'
 ;   			 or '__E', '__F', '__G', '__H'
-
+; Now also '_BD': Upper and Lower right hand amplifiers.
 SELECT_OUTPUT_SOURCE
 	MOVE    X:(R3)+,Y0
 	MOVE	Y0,Y:<OS
@@ -829,7 +829,7 @@ CMP_UL	MOVE	#'__A',A		; Upper Left Amplifier = readout #3
 	JEQ	<EQ_UL
 	MOVE	#'__H',A
 	CMP	X0,A
-	JNE	<ERROR
+	JNE	<CMP_BR
 EQ_UL	MOVE	#PARALLEL_UP_START,X0
 	MOVE	X0,Y:PARALLEL_START
 	MOVE	#PARALLEL_UP_BIN,X0
@@ -851,6 +851,31 @@ EQ_UL	MOVE	#PARALLEL_UP_START,X0
 	MOVE	X0,Y:CHARGE_DUMP
 	BCLR	#SPLIT_S,X:STATUS
 	BCLR	#SPLIT_P,X:STATUS
+	RTS
+CMP_BR	MOVE	#'_BD',A		; Upper and Lower Right Amplifiers = readout #1 and #2
+	CMP	X0,A
+	JNE	<ERROR
+EQ_BR	MOVE	#PARALLEL_SPLIT_START,X0
+	MOVE	X0,Y:PARALLEL_START
+	MOVE	#PARALLEL_SPLIT_BIN,X0
+	MOVE	X0,Y:PARALLEL_BIN
+	MOVE	#PARALLEL_SPLIT_END,X0
+	MOVE	X0,Y:PARALLEL_END
+	MOVE	#PARALLEL_CLEAR_SPLIT,X0
+	MOVE	X0,Y:PARALLEL_CLEAR
+	MOVE	#SERIAL_SKIP_RIGHT,X0
+	MOVE	X0,Y:SERIAL_SKIP
+
+	MOVE	#FIRST_CLOCKS_RIGHT,X0
+	MOVE	X0,Y:FIRST_CLOCKS
+	MOVE	#CLOCK_LINE_RIGHT,X0
+	MOVE	X0,Y:CLOCK_LINE
+	MOVE	#$00F081,X0
+	MOVE	X0,Y:SXMIT
+	MOVE	#CHARGE_DUMP_RIGHT,X0
+	MOVE	X0,Y:CHARGE_DUMP
+	BCLR	#SPLIT_S,X:STATUS
+	BSET	#SPLIT_P,X:STATUS
 	RTS
 
 ; Set the pixel time by adjusting the reset and signal integration times
@@ -890,6 +915,12 @@ SET_PIXEL_TIME
 
 ;
 ; $Log: not supported by cvs2svn $
+; Revision 1.6  2011/10/20 13:24:10  cjm
+; Changed SELECT_OUTPUT_SOURCE so all three PARALLEL waveforms are updated,
+; so parallel binning works.
+; Also SERIAL_CLEAR and SERIALS_EXPOSE references needed changing from short constants,
+; due to the extra waveforms moving them further from the code reference.
+;
 ; Revision 1.5  2011/10/19 10:41:10  cjm
 ; Changed CLEAR_SWITCHES so it only loops over #2 video boards rather than #15,
 ; which previously has corrupted DAC values.
