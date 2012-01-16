@@ -1,6 +1,6 @@
 #!/bin/csh
-# $Header: /space/home/eng/cjm/cvs/ioo/scripts/o_make_deployment,v 1.1 2011-11-23 11:15:48 cjm Exp $
-# Version: $Revision: 1.1 $
+# $Header: /space/home/eng/cjm/cvs/ioo/scripts/o_make_deployment,v 1.2 2012-01-16 10:14:28 cjm Exp $
+# Version: $Revision: 1.2 $
 # By $Author: cjm $
 # Make a deployment tar file.
 # This contains:
@@ -87,7 +87,7 @@ echo "${dir_count} directories created."
 # Copy jars
 #
 echo "Copying jars..."
-set jar_list = "ngat_astrometry.jar ngat_dichroic.jar ngat_dichroic_test.jar ngat_fits.jar ngat_math.jar ngat_math_test.jar ngat_message_base.jar ngat_message_inst_bss.jar ngat_message_inst_dp.jar ngat_message_iss_inst.jar ngat_net.jar ngat_phase2.jar ngat_sound.jar ngat_swing.jar ngat_util.jar ngat_util_logging.jar ngat_o.jar"
+set jar_list = "ngat_astrometry.jar ngat_dichroic.jar ngat_dichroic_test.jar ngat_fits.jar ngat_math.jar ngat_math_test.jar ngat_message_base.jar ngat_message_inst_bss.jar ngat_message_rcs_bss.jar ngat_message_inst_dp.jar ngat_message_iss_inst.jar ngat_net.jar ngat_new_phase2.jar ngat_phase2.jar ngat_sound.jar ngat_swing.jar ngat_util.jar ngat_util_logging.jar ngat_o.jar"
 set jar_count = 0
 foreach jar ( ${jar_list} )
 	echo "jar : ${jar}"
@@ -411,4 +411,7 @@ echo "Download ${deployment_tar}.gz o_tar_install icc_cshrc icc_cshrc_edit.awk R
 echo "Deployment ready."
 #
 # $Log: not supported by cvs2svn $
+# Revision 1.1  2011/11/23 11:15:48  cjm
+# Initial revision
+#
 #
