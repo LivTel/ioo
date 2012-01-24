@@ -1,7 +1,7 @@
        COMMENT *
-	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/bif486/bif486.waveforms,v 1.12 2012-01-11 14:42:47 cjm Exp $
-	Id: 	 $Id: bif486.waveforms,v 1.12 2012-01-11 14:42:47 cjm Exp $
-	Version: $Revision: 1.12 $
+	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/bif486/bif486.waveforms,v 1.13 2012-01-24 09:39:21 cjm Exp $
+	Id: 	 $Id: bif486.waveforms,v 1.13 2012-01-24 09:39:21 cjm Exp $
+	Version: $Revision: 1.13 $
 Waveform tables for Fairchild 486 4k x 4k CCD back-side CCD with the ARC 
 	four readout camera head board. 
 Generated from scratch from the spec sheet.
@@ -33,8 +33,9 @@ NPCLR	EQU	1024    	; To clear the parallel register. Should be at least 2049, bu
 				; 1024 causes CLR to return TOUT.
 SH_DEL	EQU	100		; Delay in milliseconds between shutter
 				;   closing and image readout
-PRESCAN EQU	0		; PRESCAN - 18 according to data sheet
+PRESCAN EQU	3		; PRESCAN - 18 according to data sheet
 				; But PRESCAN is clocked over in RDCCD, why not set this to 0?
+				; Needs to be at least 3 due to pixel pipelining, to remove pixel wraparound
 PRESKIP EQU	0		; cjm PRESKIP
 NPAR	EQU	1		; Repeat number for SLOW_CLOCKS
 
@@ -249,7 +250,7 @@ PARALLEL_SPLIT_BIN
 	DC	CLK3+P_DLY+000+V1L+000+000+000+V2U+000 ; duplicate of line above to get 200us pulse width
 	DC	CLK3+P_DLY+000+V1L+000+000+000+V2U+000 ; duplicate of line above to get 200us pulse width
 	DC	CLK3+P_DLY+000+V1L+000+000+000+V2U+000 ; duplicate of line above to get 200us pulse width
-	DC	CLK3+P_DLY+000+000+000+000+000+000+000
+	DC	CLK3+P_DLY+000+V1L+V2L+000+V1U+V2U+000
 ; copied from PARALLEL_SPLIT_START
 	DC	CLK3+P_DLY+000+000+V2L+000+V1U+000+000
 	DC	CLK3+P_DLY+000+000+V2L+000+V1U+000+000 ; duplicate of line above to get 200us pulse width
@@ -650,6 +651,10 @@ END_DACS
 
 ;
 ; $Log: not supported by cvs2svn $
+; Revision 1.12  2012/01/11 14:42:47  cjm
+; Modified by ias to equalise OFFSET[1/2] for sensible bias levels when using
+; BOTH_RIGHT amplifiers. Some waveform mods to get noise to line up at the parallel clock speed.
+;
 ; Revision 1.11  2011/12/09 11:20:45  cjm
 ; Waveforms updated by IAS on december 2011 site trip.
 ;
