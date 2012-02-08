@@ -1,5 +1,5 @@
 // TWILIGHT_CALIBRATEImplementation.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/TWILIGHT_CALIBRATEImplementation.java,v 1.3 2012-01-17 15:26:34 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/TWILIGHT_CALIBRATEImplementation.java,v 1.4 2012-02-08 10:47:10 cjm Exp $
 package ngat.o;
 
 import java.io.*;
@@ -18,7 +18,6 @@ import ngat.message.ISS_INST.TWILIGHT_CALIBRATE;
 import ngat.message.ISS_INST.TWILIGHT_CALIBRATE_ACK;
 import ngat.message.ISS_INST.TWILIGHT_CALIBRATE_DP_ACK;
 import ngat.message.ISS_INST.TWILIGHT_CALIBRATE_DONE;
-import ngat.message.RCS_BSS.*;
 import ngat.phase2.*;
 import ngat.util.*;
 import ngat.util.logging.*;
@@ -30,14 +29,14 @@ import ngat.util.logging.*;
  * The exposure length is dynamically adjusted as the sky gets darker or brighter. TWILIGHT_CALIBRATE commands
  * should be sent to O just after sunset and just before sunrise.
  * @author Chris Mottram
- * @version $Revision: 1.3 $
+ * @version $Revision: 1.4 $
  */
 public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: TWILIGHT_CALIBRATEImplementation.java,v 1.3 2012-01-17 15:26:34 cjm Exp $");
+	public final static String RCSID = new String("$Id: TWILIGHT_CALIBRATEImplementation.java,v 1.4 2012-02-08 10:47:10 cjm Exp $");
 	/**
 	 * The number of different binning factors we should min/best/max count data for.
 	 * @see #minMeanCounts
@@ -1079,6 +1078,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 	 * @param filter The type of filter to use.
 	 * @return The method returns true if the calibration was done successfully, false if an error occured.
 	 * @see FITSImplementation#setFocusOffset
+	 * @see FITSImplementation#beamSteer
 	 * @see OStatus#getNumberColumns
 	 * @see OStatus#getNumberRows
 	 */
@@ -1140,13 +1140,12 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 					":doConfig:Filter wheels not enabled:Filter wheels NOT moved.");
 			}
 			// send BEAM_STEER command to BSS to position dichroics.
-			if(beamSteer(twilightCalibrateCommand,twilightCalibrateDone,lowerSlide,upperSlide) == false)
-				return false;
+		        beamSteer(twilightCalibrateCommand.getId(),lowerSlide,upperSlide);
 		}
 		catch(Exception e)
 		{
 			String errorString = new String(twilightCalibrateCommand.getId()+
-				":doConfig:Failed to configure CCD/filter wheel:");
+				":doConfig:Failed to configure CCD/filter wheel/BSS:");
 			o.error(this.getClass().getName()+":"+errorString,e);
 			twilightCalibrateDone.setErrorNum(OConstants.O_ERROR_CODE_BASE+2309);
 			twilightCalibrateDone.setErrorString(errorString);
@@ -1199,61 +1198,6 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 	// This is queried when saving FITS headers to get the CONFNAME value.
 		status.setConfigName("TWILIGHT_CALIBRATION:"+twilightCalibrateCommand.getId()+
 				     ":"+bin+":"+useWindowAmplifier+":"+upperSlide+":"+lowerSlide+":"+filter);
-		return true;
-	}
-
-	/**
-	 * Send a ngat.message.RCS_BSS.BEAM_STEER command to the BSS to move the dichroics to the correct position.
-	 * @param twilightCalibrateCommand The instance of TWILIGHT_CALIBRATE we are currently running.
-	 * @param twilightCalibrateDone The instance of TWILIGHT_CALIBRATE_DONE to fill in with errors we receive.
-	 * @param lowerSlide The position the lower filter slide should be in.
-	 * @param upperSlide The position the upper filter slide should be in.
-	 * @return The method returns true if the BEAM_STEER command returned successfully, false if an error occured.
-	 * @see O#sendBSSCommand(RCS_TO_BSS,OTCPServerConnectionThread,boolean)
-	 */
-	protected boolean beamSteer(TWILIGHT_CALIBRATE twilightCalibrateCommand,
-				   TWILIGHT_CALIBRATE_DONE twilightCalibrateDone,String lowerSlide,String upperSlide)
-	{
-		BEAM_STEER beamSteer = null;
-		RCS_TO_BSS_DONE rcsToBSSDone = null;
-		XBeamSteeringConfig beamSteeringConfig = null;
-		XOpticalSlideConfig opticalSlideConfig = null;
-
-		o.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+
-		      ":beamSteer:Sending BEAM_STEER to BSS with lower slide "+lowerSlide+
-		      "and upper slide "+upperSlide+".");
-		beamSteer =  new ngat.message.RCS_BSS.BEAM_STEER(twilightCalibrateCommand.getId());
-		beamSteeringConfig = new XBeamSteeringConfig();
-		beamSteer.setBeamConfig(beamSteeringConfig);
-		// upper slide
-		opticalSlideConfig = new XOpticalSlideConfig();
-		opticalSlideConfig.setSlide(XOpticalSlideConfig.SLIDE_UPPER);
-		opticalSlideConfig.setElementName(upperSlide);
-		beamSteeringConfig.setUpperSlideConfig(opticalSlideConfig);
-		// lower slide
-		opticalSlideConfig = new XOpticalSlideConfig();
-		opticalSlideConfig.setSlide(XOpticalSlideConfig.SLIDE_LOWER);
-		opticalSlideConfig.setElementName(lowerSlide);
-		beamSteeringConfig.setLowerSlideConfig(opticalSlideConfig);
-		// log contents of command
-		o.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+
-		      ":beamSteer:BEAM_STEER beam steering config now contains:"+beamSteeringConfig.toString()+".");
-		o.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+":beamSteer:Sending BEAM_STEER to BSS.");
-		// send command
-		rcsToBSSDone = o.sendBSSCommand(beamSteer,serverConnectionThread,true);
-		// check successful reply
-		if(rcsToBSSDone.getSuccessful() == false)
-		{
-			o.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+
-			      ":beamSteer:BEAM_STEER returned an error:"+rcsToBSSDone.getErrorString());
-			o.error(this.getClass().getName()+":beamSteer:"+
-				twilightCalibrateCommand.getClass().getName()+":"+rcsToBSSDone.getErrorString());
-			twilightCalibrateDone.setErrorNum(OConstants.O_ERROR_CODE_BASE+2323);
-			twilightCalibrateDone.setErrorString(rcsToBSSDone.getErrorString());
-			twilightCalibrateDone.setSuccessful(false);
-			return false;
-		}
-		o.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+":beamSteer:BEAM_STEER sent successfully.");
 		return true;
 	}
 
@@ -2248,6 +2192,10 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.3  2012/01/17 15:26:34  cjm
+// Changed upperSlide and lowerSlide from parsed integers to Strings, to match new parameters
+// to BEAM_STEER command.
+//
 // Revision 1.2  2012/01/11 14:55:18  cjm
 // Added per binning min/best/max counts.
 // Calibrations are now for a specific lower / upper slide configuration.
