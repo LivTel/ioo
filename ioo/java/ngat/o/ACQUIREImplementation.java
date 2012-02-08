@@ -1,5 +1,5 @@
 // ACQUIREImplementation.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/ACQUIREImplementation.java,v 1.1 2011-11-23 10:55:24 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/ACQUIREImplementation.java,v 1.2 2012-02-08 10:48:32 cjm Exp $
 package ngat.o;
 
 import java.io.*;
@@ -17,14 +17,14 @@ import ngat.util.logging.*;
  * This class provides the implementation for the ACQUIRE command sent to a server using the
  * Java Message System.
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class ACQUIREImplementation extends FITSImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: ACQUIREImplementation.java,v 1.1 2011-11-23 10:55:24 cjm Exp $");
+	public final static String RCSID = new String("$Id: ACQUIREImplementation.java,v 1.2 2012-02-08 10:48:32 cjm Exp $");
 	/**
 	 * How many arc-seconds in 1 second of RA. A double, of value 15.
 	 */
@@ -42,6 +42,14 @@ public class ACQUIREImplementation extends FITSImplementation implements JMSComm
 	 * Filter type string used for acquisition images.
 	 */
 	protected String filter = null;
+	/**
+	 * The lower dichroic slide position to attain before taking acquisition images.
+	 */
+	protected String lowerSlide = null;
+	/**
+	 * The upper dichroic slide position to attain before taking acquisition images.
+	 */
+	protected String upperSlide = null;
 	/**
 	 * Exposure length (in milliseconds) of acquisition images.
 	 */
@@ -334,6 +342,8 @@ public class ACQUIREImplementation extends FITSImplementation implements JMSComm
 	 * @exception NumberFormatException Thrown if the specified property is not a valid number.
 	 * @see #bin
 	 * @see #filter
+	 * @see #lowerSlide
+	 * @see #upperSlide
 	 * @see #exposureLength
 	 * @see #status
 	 * @see #frameOverhead
@@ -346,6 +356,8 @@ public class ACQUIREImplementation extends FITSImplementation implements JMSComm
 	{
 		bin = status.getPropertyInteger("o.acquire.bin");
 		filter = status.getProperty("o.acquire.filter");
+		lowerSlide = status.getProperty("o.acquire.slide.lower");
+		upperSlide = status.getProperty("o.acquire.slide.upper");
 	        if(acquisitionMode == TelescopeConfig.ACQUIRE_MODE_WCS)
 			exposureLength = status.getPropertyInteger("o.acquire.exposure_length.wcs");
 		if(acquisitionMode == TelescopeConfig.ACQUIRE_MODE_BRIGHTEST)
@@ -361,15 +373,17 @@ public class ACQUIREImplementation extends FITSImplementation implements JMSComm
 	 * <li>Some configuration is loaded from the properties files.
 	 * <li>setupDimensions is called to setup the CCDs windows/binning.
 	 * <li>filterWheelMove is called to move the filter wheel.
-	 * <li>setFocusOffset is called to set the focus offset for that filter setting.
+	 * <li>beamSteer is called to move the dichroics slides to a configured position.
+	 * <li>setFocusOffset is called to set the focus offset for that filter setting. This must be done after
+	 *     beamSteer for the right BSS offsets to be returned.
 	 * <li>incConfigId is called to increment the config's unique ID.
 	 * <li>The status's setConfigName is used to set a name for the config.
 	 * </ul>
-	 * @param id The string id of the command instance we are implementing. Used to send to 
-	 *           setFocusOffset for generating ISS command id's.
+	 * @param id The command ID string used as an ID string is commands.
 	 * @see #bin
 	 * @see #filter
 	 * @see FITSImplementation#setFocusOffset
+	 * @see FITSImplementation#beamSteer
 	 * @see #getAmplifier
 	 * @see #getDeInterlaceSetting
 	 * @see #ccd
@@ -389,7 +403,7 @@ public class ACQUIREImplementation extends FITSImplementation implements JMSComm
 	 * @exception IllegalArgumentException Thrown if the config is an illegal value.
 	 * @exception NumberFormatException Thrown if a config value is an illegal number.
 	 * @exception FileUtilitiesNativeException Thrown if incConfigId fails.
-	 * @exception Exception Thrown if setFocusOffset fails.
+	 * @exception Exception Thrown if setFocusOffset or beamSteer fails.
 	 */
 	protected void doConfig(String id) throws CCDLibraryFormatException,IllegalArgumentException,
 						  NumberFormatException,CCDLibraryNativeException, 
@@ -423,8 +437,9 @@ public class ACQUIREImplementation extends FITSImplementation implements JMSComm
 			o.log(Logging.VERBOSITY_VERY_TERSE,this.getClass().getName()+
 				":doConfig:Filter wheels not enabled:Filter wheels NOT moved.");
 		}
+		// send BEAM_STEER command to BSS to position dichroics.
+		beamSteer(id,lowerSlide,upperSlide);
 	// Issue ISS OFFSET_FOCUS commmand based on the optical thickness of the filter(s)
-		// diddly should we remove focus offsets?
 		if(filterWheelEnable)
 		{
 			setFocusOffset(id,filter);
@@ -439,7 +454,7 @@ public class ACQUIREImplementation extends FITSImplementation implements JMSComm
 		status.incConfigId();
 	// Store name of configuration used in status object.
 	// This is queried when saving FITS headers to get the CONFNAME value.
-		status.setConfigName("ACQUIRE:"+id+":"+bin+":"+filter);
+		status.setConfigName("ACQUIRE:"+id+":"+bin+":"+upperSlide+":"+lowerSlide+":"+filter);
 	}
 
 	/**
@@ -1171,4 +1186,7 @@ public class ACQUIREImplementation extends FITSImplementation implements JMSComm
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2011/11/23 10:55:24  cjm
+// Initial revision
+//
 //
