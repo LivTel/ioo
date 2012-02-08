@@ -1,5 +1,5 @@
 // FITSImplementation.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/FITSImplementation.java,v 1.6 2012-01-11 14:55:18 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/FITSImplementation.java,v 1.7 2012-02-08 10:46:10 cjm Exp $
 package ngat.o;
 
 import java.lang.*;
@@ -10,8 +10,10 @@ import java.util.Vector;
 import ngat.message.base.*;
 import ngat.message.ISS_INST.*;
 import ngat.message.INST_BSS.*;
+import ngat.message.RCS_BSS.*;
 import ngat.fits.*;
 import ngat.o.ccd.*;
+import ngat.phase2.*;
 import ngat.util.*;
 import ngat.util.logging.*;
 
@@ -20,14 +22,14 @@ import ngat.util.logging.*;
  * use the hardware  libraries as this is needed to generate FITS files.
  * @see HardwareImplementation
  * @author Chris Mottram
- * @version $Revision: 1.6 $
+ * @version $Revision: 1.7 $
  */
 public class FITSImplementation extends HardwareImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: FITSImplementation.java,v 1.6 2012-01-11 14:55:18 cjm Exp $");
+	public final static String RCSID = new String("$Id: FITSImplementation.java,v 1.7 2012-02-08 10:46:10 cjm Exp $");
 	/**
 	 * Internal constant used when the order number offset defined in the property
 	 * 'o.get_fits.order_number_offset' is not found or is not a valid number.
@@ -1256,10 +1258,64 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 		}
 		o.log(Logging.VERBOSITY_VERY_TERSE,this.getClass().getName()+":setFocusOffset:Finished.");
 	}
+
+	/**
+	 * Send a ngat.message.RCS_BSS.BEAM_STEER command to the BSS to move the dichroics to the correct position.
+	 * @param id The Id is used as the BEAM_STEER command's id.
+	 * @param lowerSlide The position the lower filter slide should be in.
+	 * @param upperSlide The position the upper filter slide should be in.
+	 * @return The method returns true if the BEAM_STEER command returned successfully, false if an error occured.
+	 * @exception Exception Thrown if the beam steer command fails, or returns an error.
+	 * @see O#sendBSSCommand(RCS_TO_BSS,OTCPServerConnectionThread,boolean)
+	 */
+	protected void beamSteer(String id,String lowerSlide,String upperSlide) throws Exception
+	{
+		BEAM_STEER beamSteer = null;
+		RCS_TO_BSS_DONE rcsToBSSDone = null;
+		XBeamSteeringConfig beamSteeringConfig = null;
+		XOpticalSlideConfig opticalSlideConfig = null;
+
+		o.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+
+		      ":beamSteer:Sending BEAM_STEER to BSS with lower slide "+lowerSlide+
+		      "and upper slide "+upperSlide+".");
+		beamSteer =  new ngat.message.RCS_BSS.BEAM_STEER(id);
+		beamSteeringConfig = new XBeamSteeringConfig();
+		beamSteer.setBeamConfig(beamSteeringConfig);
+		// upper slide
+		opticalSlideConfig = new XOpticalSlideConfig();
+		opticalSlideConfig.setSlide(XOpticalSlideConfig.SLIDE_UPPER);
+		opticalSlideConfig.setElementName(upperSlide);
+		beamSteeringConfig.setUpperSlideConfig(opticalSlideConfig);
+		// lower slide
+		opticalSlideConfig = new XOpticalSlideConfig();
+		opticalSlideConfig.setSlide(XOpticalSlideConfig.SLIDE_LOWER);
+		opticalSlideConfig.setElementName(lowerSlide);
+		beamSteeringConfig.setLowerSlideConfig(opticalSlideConfig);
+		// log contents of command
+		o.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+
+		      ":beamSteer:BEAM_STEER beam steering config now contains:"+beamSteeringConfig.toString()+".");
+		o.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+":beamSteer:Sending BEAM_STEER to BSS.");
+		// send command
+		rcsToBSSDone = o.sendBSSCommand(beamSteer,serverConnectionThread,true);
+		// check successful reply
+		if(rcsToBSSDone.getSuccessful() == false)
+		{
+			o.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+
+			      ":beamSteer:BEAM_STEER returned an error:"+rcsToBSSDone.getErrorString());
+			o.error(this.getClass().getName()+":beamSteer:"+id+":"+rcsToBSSDone.getErrorString());
+			throw new Exception(this.getClass().getName()+":beamSteer failed:"+
+					     rcsToBSSDone.getErrorString());
+		}
+		o.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+":beamSteer:BEAM_STEER sent successfully.");
+	}
 }
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.6  2012/01/11 14:55:18  cjm
+// setFitsHeaders: ROTCENT[XY] POICENT[XY] now scaled by binning/ prescan etc.
+// BOTH_RIGHT amplifier setting supported for FITS headers / parsing.
+//
 // Revision 1.5  2012/01/04 12:03:06  cjm
 // Fixed GAIN/EPERDN/READNOIS getValue type.
 //
