@@ -1,5 +1,5 @@
 // FITSImplementation.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/FITSImplementation.java,v 1.7 2012-02-08 10:46:10 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/FITSImplementation.java,v 1.8 2012-04-19 13:12:40 cjm Exp $
 package ngat.o;
 
 import java.lang.*;
@@ -22,14 +22,14 @@ import ngat.util.logging.*;
  * use the hardware  libraries as this is needed to generate FITS files.
  * @see HardwareImplementation
  * @author Chris Mottram
- * @version $Revision: 1.7 $
+ * @version $Revision: 1.8 $
  */
 public class FITSImplementation extends HardwareImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: FITSImplementation.java,v 1.7 2012-02-08 10:46:10 cjm Exp $");
+	public final static String RCSID = new String("$Id: FITSImplementation.java,v 1.8 2012-04-19 13:12:40 cjm Exp $");
 	/**
 	 * Internal constant used when the order number offset defined in the property
 	 * 'o.get_fits.order_number_offset' is not found or is not a valid number.
@@ -564,46 +564,56 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 		ngat.message.INST_BSS.GET_FITS_DONE getFitsDone = null;
 		String instrumentName = null;
 		int orderNumberOffset;
+		boolean bssUse;
 
-		instrumentName = status.getProperty("o.bss.instrument_name");
-		getFits = new ngat.message.INST_BSS.GET_FITS(command.getId());
-		getFits.setInstrumentName(instrumentName);
-		instToBSSDone = o.sendBSSCommand(getFits,serverConnectionThread);
-		if(instToBSSDone.getSuccessful() == false)
+		bssUse = status.getPropertyBoolean("o.net.bss.use");
+		if(bssUse)
 		{
-			o.error(this.getClass().getName()+":getFitsHeadersFromBSS:"+
-				command.getClass().getName()+":"+instToBSSDone.getErrorString());
-			done.setErrorNum(OConstants.O_ERROR_CODE_BASE+317);
-			done.setErrorString(instToBSSDone.getErrorString());
-			done.setSuccessful(false);
-			return false;
+			instrumentName = status.getProperty("o.bss.instrument_name");
+			getFits = new ngat.message.INST_BSS.GET_FITS(command.getId());
+			getFits.setInstrumentName(instrumentName);
+			instToBSSDone = o.sendBSSCommand(getFits,serverConnectionThread);
+			if(instToBSSDone.getSuccessful() == false)
+			{
+				o.error(this.getClass().getName()+":getFitsHeadersFromBSS:"+
+					command.getClass().getName()+":"+instToBSSDone.getErrorString());
+				done.setErrorNum(OConstants.O_ERROR_CODE_BASE+317);
+				done.setErrorString(instToBSSDone.getErrorString());
+				done.setSuccessful(false);
+				return false;
+			}
+			if((instToBSSDone instanceof ngat.message.INST_BSS.GET_FITS_DONE) == false)
+			{
+				o.error(this.getClass().getName()+":getFitsHeadersFromBSS:"+
+					command.getClass().getName()+":DONE was not instance of GET_FITS_DONE:"+
+					instToBSSDone.getClass().getName());
+				done.setErrorNum(OConstants.O_ERROR_CODE_BASE+319);
+				done.setErrorString("getFitsHeadersFromBSS:"+command.getClass().getName()+
+						    ":DONE was not instance of GET_FITS_DONE:"+
+						    instToBSSDone.getClass().getName());
+				done.setSuccessful(false);
+				return false;
+			}
+			// Get the returned FITS header information into the FitsHeader object.
+			getFitsDone = (ngat.message.INST_BSS.GET_FITS_DONE)instToBSSDone;
+			// get the order number offset
+			try
+			{
+				orderNumberOffset = status.getPropertyInteger("o.get_fits.bss.order_number_offset");
+			}
+			catch(NumberFormatException e)
+			{
+				orderNumberOffset = DEFAULT_ORDER_NUMBER_OFFSET;
+				o.error(this.getClass().getName()+
+					":getFitsHeadersFromBSS:Getting order number offset failed.",e);
+			}
+			oFitsHeader.addKeywordValueList(getFitsDone.getFitsHeader(),orderNumberOffset);
 		}
-		if((instToBSSDone instanceof ngat.message.INST_BSS.GET_FITS_DONE) == false)
+		else
 		{
-			o.error(this.getClass().getName()+":getFitsHeadersFromBSS:"+
-				command.getClass().getName()+":DONE was not instance of GET_FITS_DONE:"+
-				instToBSSDone.getClass().getName());
-			done.setErrorNum(OConstants.O_ERROR_CODE_BASE+319);
-			done.setErrorString("getFitsHeadersFromBSS:"+command.getClass().getName()+
-					    ":DONE was not instance of GET_FITS_DONE:"+
-					    instToBSSDone.getClass().getName());
-			done.setSuccessful(false);
-			return false;
+			o.log(Logging.VERBOSITY_VERY_TERSE,this.getClass().getName()+
+			      ":getFitsHeadersFromBSS:BSS not in use, no FITS headers added.");
 		}
-	// Get the returned FITS header information into the FitsHeader object.
-		getFitsDone = (ngat.message.INST_BSS.GET_FITS_DONE)instToBSSDone;
-	// get the order number offset
-		try
-		{
-			orderNumberOffset = status.getPropertyInteger("o.get_fits.bss.order_number_offset");
-		}
-		catch(NumberFormatException e)
-		{
-			orderNumberOffset = DEFAULT_ORDER_NUMBER_OFFSET;
-			o.error(this.getClass().getName()+":getFitsHeadersFromBSS:Getting order number offset failed.",
-				e);
-		}
-		oFitsHeader.addKeywordValueList(getFitsDone.getFitsHeader(),orderNumberOffset);
 		return true;
 	}
 
@@ -1208,6 +1218,7 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 		String filterIdName = null;
 		String filterTypeString = null;
 		float focusOffset = 0.0f;
+		boolean bssUse;
 
 		o.log(Logging.VERBOSITY_VERY_TERSE,this.getClass().getName()+":setFocusOffset:Started.");
 	// get instrument name to use for GET_FOCUS_OFFSET/OFFSET_FOCUS_CONTROL
@@ -1221,29 +1232,41 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 		filterIdName = status.getFilterIdName(filterId);
 		focusOffset += status.getFilterIdOpticalThickness(filterIdName);
 	// get Beam Steering System Offset
-		getFocusOffset = new GET_FOCUS_OFFSET(id);
-		getFocusOffset.setInstrumentName(instrumentName);
-		o.log(Logging.VERBOSITY_VERY_TERSE,this.getClass().getName()+
-		      ":setFocusOffset:Getting BSS focus offset for "+instrumentName+".");
-		instToBSSDone = o.sendBSSCommand(getFocusOffset,serverConnectionThread);
-		if(instToBSSDone.getSuccessful() == false)
+		bssUse = status.getPropertyBoolean("o.net.bss.use");
+		if(bssUse)
 		{
-			throw new Exception(this.getClass().getName()+":setFocusOffset:BSS GET_FOCUS_OFFSET failed:"+
-					    instrumentName+":"+instToBSSDone.getErrorString());
-		}
-		if((instToBSSDone instanceof GET_FOCUS_OFFSET_DONE) == false)
-		{
-			throw new Exception(this.getClass().getName()+":setFocusOffset:BSS GET_FOCUS_OFFSET("+
-					    instrumentName+") did not return instance of GET_FOCUS_OFFSET_DONE:"+
-					    instToBSSDone.getClass().getName());
-		}
-		getFocusOffsetDone = (GET_FOCUS_OFFSET_DONE)instToBSSDone;
-		o.log(Logging.VERBOSITY_VERY_TERSE,this.getClass().getName()+
-		      ":setFocusOffset:BSS focus offset for "+instrumentName+" was "+
-		      getFocusOffsetDone.getFocusOffset()+".");
-		focusOffset += getFocusOffsetDone.getFocusOffset();
+			getFocusOffset = new GET_FOCUS_OFFSET(id);
+			getFocusOffset.setInstrumentName(instrumentName);
+			o.log(Logging.VERBOSITY_VERY_TERSE,this.getClass().getName()+
+			      ":setFocusOffset:Getting BSS focus offset for "+instrumentName+".");
+			instToBSSDone = o.sendBSSCommand(getFocusOffset,serverConnectionThread);
+			if(instToBSSDone.getSuccessful() == false)
+			{
+				throw new Exception(this.getClass().getName()+
+						    ":setFocusOffset:BSS GET_FOCUS_OFFSET failed:"+
+						    instrumentName+":"+instToBSSDone.getErrorString());
+			}
+			if((instToBSSDone instanceof GET_FOCUS_OFFSET_DONE) == false)
+			{
+				throw new Exception(this.getClass().getName()+":setFocusOffset:BSS GET_FOCUS_OFFSET("+
+						    instrumentName+
+						    ") did not return instance of GET_FOCUS_OFFSET_DONE:"+
+						    instToBSSDone.getClass().getName());
+			}
+			getFocusOffsetDone = (GET_FOCUS_OFFSET_DONE)instToBSSDone;
+			o.log(Logging.VERBOSITY_VERY_TERSE,this.getClass().getName()+
+			      ":setFocusOffset:BSS focus offset for "+instrumentName+" was "+
+			      getFocusOffsetDone.getFocusOffset()+".");
+			focusOffset += getFocusOffsetDone.getFocusOffset();
 	// Cache the BSS focus offset for writing into the FITS headers
-		status.setBSSFocusOffset(getFocusOffsetDone.getFocusOffset());
+			status.setBSSFocusOffset(getFocusOffsetDone.getFocusOffset());
+		}
+		else
+		{
+			o.log(Logging.VERBOSITY_VERY_TERSE,this.getClass().getName()+
+			      ":setFocusOffset:BSS not in use, faking BSS GET_FOCUS_OFFSET to 0.0.");
+			status.setBSSFocusOffset(0.0f);
+		}
 	// send the overall focusOffset to the ISS using  OFFSET_FOCUS_CONTROL
 		offsetFocusControlCommand = new OFFSET_FOCUS_CONTROL(id);
 		offsetFocusControlCommand.setInstrumentName(instrumentName);
@@ -1274,44 +1297,60 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 		RCS_TO_BSS_DONE rcsToBSSDone = null;
 		XBeamSteeringConfig beamSteeringConfig = null;
 		XOpticalSlideConfig opticalSlideConfig = null;
+		boolean bssUse;
 
 		o.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+
 		      ":beamSteer:Sending BEAM_STEER to BSS with lower slide "+lowerSlide+
 		      "and upper slide "+upperSlide+".");
-		beamSteer =  new ngat.message.RCS_BSS.BEAM_STEER(id);
-		beamSteeringConfig = new XBeamSteeringConfig();
-		beamSteer.setBeamConfig(beamSteeringConfig);
-		// upper slide
-		opticalSlideConfig = new XOpticalSlideConfig();
-		opticalSlideConfig.setSlide(XOpticalSlideConfig.SLIDE_UPPER);
-		opticalSlideConfig.setElementName(upperSlide);
-		beamSteeringConfig.setUpperSlideConfig(opticalSlideConfig);
-		// lower slide
-		opticalSlideConfig = new XOpticalSlideConfig();
-		opticalSlideConfig.setSlide(XOpticalSlideConfig.SLIDE_LOWER);
-		opticalSlideConfig.setElementName(lowerSlide);
-		beamSteeringConfig.setLowerSlideConfig(opticalSlideConfig);
-		// log contents of command
-		o.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+
-		      ":beamSteer:BEAM_STEER beam steering config now contains:"+beamSteeringConfig.toString()+".");
-		o.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+":beamSteer:Sending BEAM_STEER to BSS.");
-		// send command
-		rcsToBSSDone = o.sendBSSCommand(beamSteer,serverConnectionThread,true);
-		// check successful reply
-		if(rcsToBSSDone.getSuccessful() == false)
+		bssUse = status.getPropertyBoolean("o.net.bss.use");
+		if(bssUse)
+		{
+			beamSteer =  new ngat.message.RCS_BSS.BEAM_STEER(id);
+			beamSteeringConfig = new XBeamSteeringConfig();
+			beamSteer.setBeamConfig(beamSteeringConfig);
+			// upper slide
+			opticalSlideConfig = new XOpticalSlideConfig();
+			opticalSlideConfig.setSlide(XOpticalSlideConfig.SLIDE_UPPER);
+			opticalSlideConfig.setElementName(upperSlide);
+			beamSteeringConfig.setUpperSlideConfig(opticalSlideConfig);
+			// lower slide
+			opticalSlideConfig = new XOpticalSlideConfig();
+			opticalSlideConfig.setSlide(XOpticalSlideConfig.SLIDE_LOWER);
+			opticalSlideConfig.setElementName(lowerSlide);
+			beamSteeringConfig.setLowerSlideConfig(opticalSlideConfig);
+			// log contents of command
+			o.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+
+			      ":beamSteer:BEAM_STEER beam steering config now contains:"+
+			      beamSteeringConfig.toString()+".");
+			o.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+
+			      ":beamSteer:Sending BEAM_STEER to BSS.");
+			// send command
+			rcsToBSSDone = o.sendBSSCommand(beamSteer,serverConnectionThread,true);
+			// check successful reply
+			if(rcsToBSSDone.getSuccessful() == false)
+			{
+				o.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+
+				      ":beamSteer:BEAM_STEER returned an error:"+rcsToBSSDone.getErrorString());
+				o.error(this.getClass().getName()+":beamSteer:"+id+":"+rcsToBSSDone.getErrorString());
+				throw new Exception(this.getClass().getName()+":beamSteer failed:"+
+						    rcsToBSSDone.getErrorString());
+			}
+			o.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+
+			      ":beamSteer:BEAM_STEER sent successfully.");
+		}
+		else
 		{
 			o.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+
-			      ":beamSteer:BEAM_STEER returned an error:"+rcsToBSSDone.getErrorString());
-			o.error(this.getClass().getName()+":beamSteer:"+id+":"+rcsToBSSDone.getErrorString());
-			throw new Exception(this.getClass().getName()+":beamSteer failed:"+
-					     rcsToBSSDone.getErrorString());
+			      ":beamSteer:BSS not in use: BEAM_STEER command not sent.");
 		}
-		o.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+":beamSteer:BEAM_STEER sent successfully.");
 	}
 }
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.7  2012/02/08 10:46:10  cjm
+// Added beamSteer method, so it can be called from both TWILIGHTCalibrate and ACQUIRE implementations.
+//
 // Revision 1.6  2012/01/11 14:55:18  cjm
 // setFitsHeaders: ROTCENT[XY] POICENT[XY] now scaled by binning/ prescan etc.
 // BOTH_RIGHT amplifier setting supported for FITS headers / parsing.
