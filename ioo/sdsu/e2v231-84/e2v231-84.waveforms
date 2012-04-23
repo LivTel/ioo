@@ -1,0 +1,816 @@
+       COMMENT *
+	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/e2v231-84/e2v231-84.waveforms,v 1.1 2012-04-23 14:45:27 cjm Exp $
+	Id: 	 $Id: e2v231-84.waveforms,v 1.1 2012-04-23 14:45:27 cjm Exp $
+	Version: $Revision: 1.1 $
+Waveform tables for CCD231-84.
+
+	*
+
+; Definitions of readout variables
+VIDEO	 EQU	$000000		; Video processor board switches
+CLK2	 EQU	$002000		; Clock driver board lower half
+CLK3	 EQU	$003000		; Clock driver board lower half
+DC0	 EQU	$000000         ; Video board DC bias supply DAC voltage address 
+DC1	 EQU	$100000
+CLKV	 EQU	$200000	        ; Clock driver board DAC voltage selection address 
+TDRT_DLY EQU	$900000		; spec 10us : 16x640ns (bit 23 set) = 0x900000 = 10240ns
+TOI_DLY	 EQU	$900000		; spec 10us : 16x640ns (bit 23 set) = 0x900000 = 10240ns
+TDTR_DLY EQU	$900000		; spec 10us : 16x640ns (bit 23 set) = 0x900000 = 10240ns
+TDRG_DLY EQU	$A00000		; spec 20us : 32x640ns (bit 23 set) = 0xA00000 = 20480ns
+TDGR_DLY EQU	$A00000		; spec 20us : 32x640ns (bit 23 set) = 0xA00000 = 20480ns
+SER_DLY	 EQU	$000000		; Serial register transfer delay
+R_DLY	 EQU	$000000		; Serial register transfer delay
+NSCLR	 EQU	2048		; To clear the serial register
+NPCLR	 EQU	2056    	; To clear the parallel register.
+SH_DEL	 EQU	100		; Delay in milliseconds between shutter
+				;   closing and image readout
+PRESCAN EQU	3		; PRESCAN - 18 according to data sheet
+				; But PRESCAN is clocked over in RDCCD, why not set this to 0?
+				; Needs to be at least 3 due to pixel pipelining, to remove pixel wraparound
+PRESKIP EQU	0		; 
+NPAR	EQU	1		; Repeat number for SLOW_CLOCKS
+
+INT_TIM	EQU	$060000		; Signal integration time for ~1 microsec/pixel (300ns delay)
+
+; CCD clock voltages
+RG_HI	EQU	12.0		; Reset Gate High
+RG_LO	EQU 	 0.0		; Reset Gate Low
+R_HI	EQU	10.0		; Readout Register Clock High
+R_LO	EQU	 1.0		; Readout Register Clock Low +1V w.r.t. image clock low: See P11, Note 10.
+
+SW_HI	EQU	10.0		; Summing Well High
+SW_LO	EQU	 1.0		; Summing Well Low +1V w.r.t. image clock low: See P11, Note 10.
+DG_HI	EQU     12.0		; Dump Gate High (See P11, Note 11)
+DG_LO	EQU      0.0		; Dump Gate Low
+I_HI	EQU	10.0		; Imaging Area Clocks High
+I_LO	EQU      0.0		; Imaging Area Clocks Low
+TG_HI	EQU	10.0		; Transfer Gate High
+TG_LO	EQU	 0.0		; Transfer Gate Low
+Vmax	EQU    +13.0		; Maximum clock driver voltage (see ARC-32 clock driver board docs)
+ZERO	EQU	 0.0		; Unused pins
+
+; Output video offset parameters
+OFFSET	EQU	$680		; 0 TO $FFF -> 12 bits
+OFFSET0	EQU	OFFSET
+OFFSET1	EQU	OFFSET
+OFFSET2	EQU	OFFSET
+OFFSET3	EQU	OFFSET
+
+; DC Bias voltages
+VOD	EQU	27.5		; Output Drain (from chip operating conditions, spec sheet says 29v)
+VRD	EQU	17.0		; Reset Drain
+VOG	EQU      2.0		; Output Gate
+VDD	EQU	29.0		; Dump Drain
+
+; Switch state bit definitions for the bottom half of ARC32 clock driver board
+RG	EQU	1	; All reset gates 			Pin #1
+R1L	EQU	2	; Readout Register Left, Phase 1	Pin #2
+R2L	EQU	4	; Readout Register Left, Phase 2	Pin #3
+R3L	EQU	8	; Readout Register Left, Phase 3	Pin #4
+R1R	EQU	$10	; Readout Register Right, Phase 1	Pin #5
+R2R	EQU	$20	; Readout Register Right, Phase 2	Pin #6
+R3R	EQU	$40	; Readout Register Right, Phase 3	Pin #7
+SWLL	EQU	$80	; Summing well, Lower Left		Pin #8
+SWUL	EQU	$100	; Summing well, Upper Left		Pin #9
+SWLR	EQU	$200	; Summing well, Lower Right		Pin #10
+SWUR	EQU	$400	; Summing well, Upper Right		Pin #11
+SW	EQU	SWLL+SWLR+SWUR+SWUL		; All clocked together
+
+; Bit definitions for top half of clock driver board, CLK3
+I1L	EQU	1	; Image clock, Lower, Phase 1		Pin #13
+I2L	EQU	2	; Image clock, Lower, Phase 2		Pin #14
+I3L	EQU	4	; Image clock, Lower, Phase 3		Pin #15
+I4L	EQU	8	; Image clock, Lower, Phase 4		Pin #16
+TGL	EQU	$10	; Transfer Gate Lower			Pin #17
+
+I1U	EQU	$20	; Image clock, Upper, Phase 1		Pin #18
+I2U	EQU	$40	; Image clock, Upper, Phase 2		Pin #19
+I3U	EQU	$80	; Image clock, Upper, Phase 3		Pin #33
+I4U	EQU	$100	; Image clock, Upper, Phase 4		Pin #34
+TGU	EQU	$200	; Transfer Gate Upper			Pin #35
+
+DG	EQU	$400	; Dump Gate Lower and Upper		Pin #36
+
+; Not connected: pins #12, #37
+
+; Fast Clocks:	RG+R1L+R2L+R3L+R1R+R2R+R3R+SW
+; Slow Clocks:	I1L+I2L+I3L+I4L+TGL+I1U+I2U+I3U+I4U+TGU+DG
+
+;  ***  Definitions for Y: memory waveform tables  *****
+;  ****************  Tables for parallel transfer  ****************
+
+; clock names -> spec sheet
+; I1L = A1/B1
+; I2L = A2/B2
+; I3L = A3/B3
+; I4L = A4/B4
+; I1U = C1/D1
+; I2U = C2/D2
+; I3U = C3/D3
+; I4U = C4/D4
+; TGL = TGA
+; TGU = TGD
+
+; toi : 10us
+; tdrt: 10us
+; tdtr: 10us
+; tdrg: 20us
+; tdgr: 20us
+
+; CLK3 setup:
+; full waveform:
+; DC	CLK3+DELAY+I1L+I2L+I3L+I4L+TGL+I1U+I2U+I3U+I4U+TGU+DG
+; empty waveform:
+; DC	CLK3+0000000+000+000+000+000+000+000+000+000+000+000+00
+
+; PARALLEL_UP: ABCD go up towards Register/Amplifier GH, See data sheet, table top of P14
+; I1 = C1/D1/A4/B4 = I1U+I4L+TGU
+; I2 = C2/D2/A3/B3 = I2U+I3L
+; I3 = C3/D3/A2/B2 = I3U+I2L
+; I4 = C4/D4/A1/B1 = I4U+I1L
+; TGD = TGU = I1; TGA = TGL = low
+PARALLEL_UP_START
+ 	DC	END_PARALLEL_UP_START-PARALLEL_UP_START-1
+	DC	CLK2+R_DLY+RG+R1L+R2L+000+R1R+R2R+000+00 ;  setup serial waveforms correctly. R1 and R2 high. SW?
+	DC	VIDEO+%0011000		; DC restore and reset integrator
+; 0: tdrt: 00+I2+I3+00
+	DC	CLK3+TDRT_DLY+000+I2L+I3L+000+000+000+I2U+I3U+000+000+00
+; 1: toi : 00+I2+I3+I4
+	DC	CLK3+TOI_DLY+I1L+I2L+I3L+000+000+000+I2U+I3U+I4U+000+00
+; 2: toi : 00+00+I3+I4
+	DC	CLK3+TOI_DLY+I1L+I2L+000+000+000+000+000+I3U+I4U+000+00
+; 3: toi : I1+00+I3+I4
+	DC	CLK3+TOI_DLY+I1L+I2L+000+I4L+000+I1U+000+I3U+I4U+TGU+00
+; 4: toi : I1+00+00+I4
+	DC	CLK3+TOI_DLY+I1L+000+000+I4L+000+I1U+000+000+I4U+TGU+00
+; 5: toi : I1+I2+00+I4
+	DC	CLK3+TOI_DLY+I1L+000+I3L+I4L+000+I1U+I2U+000+I4U+TGU+00
+; 6: toi : I1+I2+00+00
+	DC	CLK3+TOI_DLY+000+000+I3L+I4L+000+I1U+I2U+000+000+TGU+00
+; 7: toi : I1+I2+I3+00
+	DC	CLK3+TOI_DLY+000+I2L+I3L+I4L+000+I1U+I2U+I3U+000+TGU+00
+; 8: tdtr: 00+I2+I3+00
+	DC	CLK3+TDTR_DLY+000+I2L+I3L+000+000+000+I2U+I3U+000+000+00
+END_PARALLEL_UP_START
+
+PARALLEL_UP_BIN
+ 	DC	END_PARALLEL_UP_BIN-PARALLEL_UP_BIN-1
+; 0: tdrt: 00+I2+I3+00
+	DC	CLK3+TDRT_DLY+000+I2L+I3L+000+000+000+I2U+I3U+000+000+00
+; 1: toi : 00+I2+I3+I4
+	DC	CLK3+TOI_DLY+I1L+I2L+I3L+000+000+000+I2U+I3U+I4U+000+00
+; 2: toi : 00+00+I3+I4
+	DC	CLK3+TOI_DLY+I1L+I2L+000+000+000+000+000+I3U+I4U+000+00
+; 3: toi : I1+00+I3+I4
+	DC	CLK3+TOI_DLY+I1L+I2L+000+I4L+000+I1U+000+I3U+I4U+TGU+00
+; 4: toi : I1+00+00+I4
+	DC	CLK3+TOI_DLY+I1L+000+000+I4L+000+I1U+000+000+I4U+TGU+00
+; 5: toi : I1+I2+00+I4
+	DC	CLK3+TOI_DLY+I1L+000+I3L+I4L+000+I1U+I2U+000+I4U+TGU+00
+; 6: toi : I1+I2+00+00
+	DC	CLK3+TOI_DLY+000+000+I3L+I4L+000+I1U+I2U+000+000+TGU+00
+; 7: toi : I1+I2+I3+00
+	DC	CLK3+TOI_DLY+000+I2L+I3L+I4L+000+I1U+I2U+I3U+000+TGU+00
+; 8: tdtr: 00+I2+I3+00
+	DC	CLK3+TDTR_DLY+000+I2L+I3L+000+000+000+I2U+I3U+000+000+00
+END_PARALLEL_UP_BIN
+
+PARALLEL_UP_END
+ 	DC	END_PARALLEL_UP_END-PARALLEL_UP_END-1
+	; nothing to go here
+END_PARALLEL_UP_END
+
+; PARALLEL_DOWN: ABCD go down towards Register/Amplifier EF, See data sheet, table top of P14
+; I1 = A1/B1/C4/D4 = I1L+I4U
+; I2 = A2/B2/C3/D3 = I2L+I3U
+; I3 = A3/B3/C2/D2 = I3L+I2U
+; I4 = A4/B4/C1/D1 = I4L+I1U+TGL
+; TGD = TGU = low; TGA = TGL = I4
+PARALLEL_DOWN_START
+ 	DC	END_PARALLEL_DOWN_START-PARALLEL_DOWN_START-1
+	DC	CLK2+R_DLY+RG+R1L+R2L+000+R1R+R2R+000+00 ;  setup serial waveforms correctly. R1 and R2 high. SW?
+	DC	VIDEO+%0011000		; DC restore and reset integrator
+; 0: tdrt: 00+I2+I3+00
+	DC	CLK3+TDRT_DLY+000+I2L+I3L+000+000+000+I2U+I3U+000+000+00
+; 1: toi : 00+I2+I3+I4
+	DC	CLK3+TOI_DLY+000+I2L+I3L+I4L+TGL+I1U+I2U+I3U+000+000+00
+; 2: toi : 00+00+I3+I4
+	DC	CLK3+TOI_DLY+000+000+I3L+I4L+TGL+I1U+I2U+000+000+000+00
+; 3: toi : I1+00+I3+I4
+	DC	CLK3+TOI_DLY+I1L+000+I3L+I4L+TGL+I1U+I2U+000+I4U+000+00
+; 4: toi : I1+00+00+I4
+	DC	CLK3+TOI_DLY+I1L+000+000+I4L+TGL+I1U+000+000+I4U+000+00
+; 5: toi : I1+I2+00+I4
+	DC	CLK3+TOI_DLY+I1L+I2L+000+I4L+TGL+I1U+000+I3U+I4U+000+00
+; 6: toi : I1+I2+00+00
+	DC	CLK3+TOI_DLY+I1L+I2L+000+000+000+000+000+I3U+I4U+000+00
+; 7: toi : I1+I2+I3+00
+	DC	CLK3+TOI_DLY+I1L+I2L+I3L+000+000+000+I2U+I3U+I4U+000+00
+; 8: tdtr: 00+I2+I3+00
+	DC	CLK3+TDTR_DLY+000+I2L+I3L+000+000+000+I2U+I3U+000+000+00
+END_PARALLEL_DOWN_START
+
+PARALLEL_DOWN_BIN
+ 	DC	END_PARALLEL_DOWN_BIN-PARALLEL_DOWN_BIN-1
+; 0: tdrt: 00+I2+I3+00
+	DC	CLK3+TDRT_DLY+000+I2L+I3L+000+000+000+I2U+I3U+000+000+00
+; 1: toi : 00+I2+I3+I4
+	DC	CLK3+TOI_DLY+000+I2L+I3L+I4L+TGL+I1U+I2U+I3U+000+000+00
+; 2: toi : 00+00+I3+I4
+	DC	CLK3+TOI_DLY+000+000+I3L+I4L+TGL+I1U+I2U+000+000+000+00
+; 3: toi : I1+00+I3+I4
+	DC	CLK3+TOI_DLY+I1L+000+I3L+I4L+TGL+I1U+I2U+000+I4U+000+00
+; 4: toi : I1+00+00+I4
+	DC	CLK3+TOI_DLY+I1L+000+000+I4L+TGL+I1U+000+000+I4U+000+00
+; 5: toi : I1+I2+00+I4
+	DC	CLK3+TOI_DLY+I1L+I2L+000+I4L+TGL+I1U+000+I3U+I4U+000+00
+; 6: toi : I1+I2+00+00
+	DC	CLK3+TOI_DLY+I1L+I2L+000+000+000+000+000+I3U+I4U+000+00
+; 7: toi : I1+I2+I3+00
+	DC	CLK3+TOI_DLY+I1L+I2L+I3L+000+000+000+I2U+I3U+I4U+000+00
+; 8: tdtr: 00+I2+I3+00
+	DC	CLK3+TDTR_DLY+000+I2L+I3L+000+000+000+I2U+I3U+000+000+00
+END_PARALLEL_DOWN_BIN
+
+PARALLEL_DOWN_END
+ 	DC	END_PARALLEL_DOWN_END-PARALLEL_DOWN_END-1
+	; nothing to go here
+END_PARALLEL_DOWN_END
+
+; PARALLEL_SPLIT: AB go down to register/amplifier EF, CD go up to register amplifier GH
+; I1 = A1/B1/C1/D1 = I1L+I1U+TGU
+; I2 = A2/B2/C2/D2 = I2L+I2U
+; I3 = A3/B3/C3/D3 = I3L+I3U
+; I4 = A4/B4/C4/D4 = I4L+I4U+TGL
+; TGD = TGU = I1; TGA = TGL = I4
+PARALLEL_SPLIT_START
+ 	DC	END_PARALLEL_SPLIT_START-PARALLEL_SPLIT_START-1
+	DC	CLK2+R_DLY+RG+R1L+R2L+000+R1R+R2R+000+00 ;  setup serial waveforms correctly. R1 and R2 high. SW?
+	DC	VIDEO+%0011000		; DC restore and reset integrator
+; 0: tdrt: 00+I2+I3+00
+	DC	CLK3+TDRT_DLY+000+I2L+I3L+000+000+000+I2U+I3U+000+000+00
+; 1: toi : 00+I2+I3+I4
+	DC	CLK3+TOI_DLY+000+I2L+I3L+I4L+TGL+000+I2U+I3U+I4U+000+00
+; 2: toi : 00+00+I3+I4
+	DC	CLK3+TOI_DLY+000+000+I3L+I4L+TGL+000+000+I3U+I4U+000+00
+; 3: toi : I1+00+I3+I4
+	DC	CLK3+TOI_DLY+I1L+000+I3L+I4L+TGL+I1U+000+I3U+I4U+TGU+00
+; 4: toi : I1+00+00+I4
+	DC	CLK3+TOI_DLY+I1L+000+000+I4L+TGL+I1U+000+000+I4U+TGU+00
+; 5: toi : I1+I2+00+I4
+	DC	CLK3+TOI_DLY+I1L+I2L+000+I4L+TGL+I1U+I2U+000+I4U+TGU+00
+; 6: toi : I1+I2+00+00
+	DC	CLK3+TOI_DLY+I1L+I2L+000+000+000+I1U+I2U+000+000+TGU+00
+; 7: toi : I1+I2+I3+00
+	DC	CLK3+TOI_DLY+I1L+I2L+I3L+000+000+I1U+I2U+I3U+000+TGU+00
+; 8: tdtr: 00+I2+I3+00
+	DC	CLK3+TDTR_DLY+000+I2L+I3L+000+000+000+I2U+I3U+000+000+00
+END_PARALLEL_SPLIT_START
+
+; I1 = A1/B1/C1/D1 = I1L+I1U+TGU
+; I2 = A2/B2/C2/D2 = I2L+I2U
+; I3 = A3/B3/C3/D3 = I3L+I3U
+; I4 = A4/B4/C4/D4 = I4L+I4U+TGL
+PARALLEL_SPLIT_BIN
+ 	DC	END_PARALLEL_SPLIT_BIN-PARALLEL_SPLIT_BIN-1
+; 0: tdrt: 00+I2+I3+00
+	DC	CLK3+TDRT_DLY+000+I2L+I3L+000+000+000+I2U+I3U+000+000+00
+; 1: toi : 00+I2+I3+I4
+	DC	CLK3+TOI_DLY+000+I2L+I3L+I4L+TGL+000+I2U+I3U+I4U+000+00
+; 2: toi : 00+00+I3+I4
+	DC	CLK3+TOI_DLY+000+000+I3L+I4L+TGL+000+000+I3U+I4U+000+00
+; 3: toi : I1+00+I3+I4
+	DC	CLK3+TOI_DLY+I1L+000+I3L+I4L+TGL+I1U+000+I3U+I4U+TGU+00
+; 4: toi : I1+00+00+I4
+	DC	CLK3+TOI_DLY+I1L+000+000+I4L+TGL+I1U+000+000+I4U+TGU+00
+; 5: toi : I1+I2+00+I4
+	DC	CLK3+TOI_DLY+I1L+I2L+000+I4L+TGL+I1U+I2U+000+I4U+TGU+00
+; 6: toi : I1+I2+00+00
+	DC	CLK3+TOI_DLY+I1L+I2L+000+000+000+I1U+I2U+000+000+TGU+00
+; 7: toi : I1+I2+I3+00
+	DC	CLK3+TOI_DLY+I1L+I2L+I3L+000+000+I1U+I2U+I3U+000+TGU+00
+; 8: tdtr: 00+I2+I3+00
+	DC	CLK3+TDTR_DLY+000+I2L+I3L+000+000+000+I2U+I3U+000+000+00
+END_PARALLEL_SPLIT_BIN
+
+PARALLEL_SPLIT_END
+ 	DC	END_PARALLEL_SPLIT_END-PARALLEL_SPLIT_END-1
+	; nothing to go here
+END_PARALLEL_SPLIT_END
+
+; PARALLEL_CLEAR_UP: ABCD go up towards Register/Amplifier GH, See data sheet, table top of P14
+; I1 = C1/D1/A4/B4 = I1U+I4L+TGU
+; I2 = C2/D2/A3/B3 = I2U+I3L
+; I3 = C3/D3/A2/B2 = I3U+I2L
+; I4 = C4/D4/A1/B1 = I4U+I1L
+; TGD = TGU = I1; TGA = TGL = low
+PARALLEL_CLEAR_UP
+	DC	END_PARALLEL_CLEAR_UP-PARALLEL_CLEAR_UP-1
+; -: R_DLY   : CLK2 R1+R2+00+00+R
+	DC	CLK2+R_DLY+RG+R1L+R2L+000+R1R+R2R+000+00 ;  setup serial waveforms correctly.
+	DC	VIDEO+%0011000		; DC restore and reset integrator
+; 0: tdrt: 00+I2+I3+00+DG
+	DC	CLK3+TDRT_DLY+000+I2L+I3L+000+000+000+I2U+I3U+000+000+DG
+; 1: toi : 00+I2+I3+I4+DG
+	DC	CLK3+TOI_DLY+I1L+I2L+I3L+000+000+000+I2U+I3U+I4U+000+DG
+; 2: toi : 00+00+I3+I4+DG
+	DC	CLK3+TOI_DLY+I1L+I2L+000+000+000+000+000+I3U+I4U+000+DG
+; 3: toi : I1+00+I3+I4+DG
+	DC	CLK3+TOI_DLY+I1L+I2L+000+I4L+000+I1U+000+I3U+I4U+TGU+DG
+; 4: toi : I1+00+00+I4+DG
+	DC	CLK3+TOI_DLY+I1L+000+000+I4L+000+I1U+000+000+I4U+TGU+DG
+; 5: toi : I1+I2+00+I4+DG
+	DC	CLK3+TOI_DLY+I1L+000+I3L+I4L+000+I1U+I2U+000+I4U+TGU+DG
+; 6: toi : I1+I2+00+00+DG
+	DC	CLK3+TOI_DLY+000+000+I3L+I4L+000+I1U+I2U+000+000+TGU+DG
+; 7: toi : I1+I2+I3+00+DG
+	DC	CLK3+TOI_DLY+000+I2L+I3L+I4L+000+I1U+I2U+I3U+000+TGU+DG
+; 8: tdtr: 00+I2+I3+00+DG
+	DC	CLK3+TDTR_DLY+000+I2L+I3L+000+000+000+I2U+I3U+000+000+DG
+; 9: tdrg: CLK3 00+I2+I3+00+DG (no change) / CLK2 00+00+00+00+R (R1 and R2 low)
+	DC	CLK2+TDRG_DLY+RG+000+000+000+000+000+000+00
+;10: tdgr: 00+I2+I3+00+00 (dump gate off)
+	DC	CLK3+TDGR_DLY+000+I2L+I3L+000+000+000+I2U+I3U+000+000+00
+END_PARALLEL_CLEAR_UP
+
+; PARALLEL_CLEAR_DOWN: ABCD go down towards Register/Amplifier EF, See data sheet, table top of P14
+; I1 = A1/B1/C4/D4 = I1L+I4U
+; I2 = A2/B2/C3/D3 = I2L+I3U
+; I3 = A3/B3/C2/D2 = I3L+I2U
+; I4 = A4/B4/C1/D1 = I4L+I1U+TGL
+; TGD = TGU = low; TGA = TGL = I4
+PARALLEL_CLEAR_DOWN
+ 	DC	END_PARALLEL_CLEAR_DOWN-PARALLEL_CLEAR_DOWN-1
+; -: R_DLY   : CLK2 R1+R2+00+00+R
+	DC	CLK2+R_DLY+RG+R1L+R2L+000+R1R+R2R+000+00 ;  setup serial waveforms correctly. R1 and R2 high. SW?
+	DC	VIDEO+%0011000		; DC restore and reset integrator
+; 0: tdrt: 00+I2+I3+00+DG
+	DC	CLK3+TDRT_DLY+000+I2L+I3L+000+000+000+I2U+I3U+000+000+DG
+; 1: toi : 00+I2+I3+I4+DG
+	DC	CLK3+TOI_DLY+000+I2L+I3L+I4L+TGL+I1U+I2U+I3U+000+000+DG
+; 2: toi : 00+00+I3+I4+DG
+	DC	CLK3+TOI_DLY+000+000+I3L+I4L+TGL+I1U+I2U+000+000+000+DG
+; 3: toi : I1+00+I3+I4+DG
+	DC	CLK3+TOI_DLY+I1L+000+I3L+I4L+TGL+I1U+I2U+000+I4U+000+DG
+; 4: toi : I1+00+00+I4+DG
+	DC	CLK3+TOI_DLY+I1L+000+000+I4L+TGL+I1U+000+000+I4U+000+DG
+; 5: toi : I1+I2+00+I4+DG
+	DC	CLK3+TOI_DLY+I1L+I2L+000+I4L+TGL+I1U+000+I3U+I4U+000+DG
+; 6: toi : I1+I2+00+00+DG
+	DC	CLK3+TOI_DLY+I1L+I2L+000+000+000+000+000+I3U+I4U+000+DG
+; 7: toi : I1+I2+I3+00+DG
+	DC	CLK3+TOI_DLY+I1L+I2L+I3L+000+000+000+I2U+I3U+I4U+000+DG
+; 8: tdtr: 00+I2+I3+00+DG
+	DC	CLK3+TDTR_DLY+000+I2L+I3L+000+000+000+I2U+I3U+000+000+DG
+; 9: tdrg: CLK3 00+I2+I3+00+DG (no change) / CLK2 00+00+00+00+R (R1 and R2 low)
+	DC	CLK2+TDRG_DLY+RG+000+000+000+000+000+000+00
+;10: tdgr: 00+I2+I3+00+00 (dump gate off)
+	DC	CLK3+TDGR_DLY+000+I2L+I3L+000+000+000+I2U+I3U+000+000+00
+END_PARALLEL_CLEAR_DOWN
+
+; PARALLEL_CLEAR_SPLIT: AB go down to register/amplifier EF, CD go up to register amplifier GH
+; I1 = A1/B1/C1/D1 = I1L+I1U+TGU
+; I2 = A2/B2/C2/D2 = I2L+I2U
+; I3 = A3/B3/C3/D3 = I3L+I3U
+; I4 = A4/B4/C4/D4 = I4L+I4U+TGL
+; TGD = TGU = I1; TGA = TGL = I4
+PARALLEL_CLEAR_SPLIT
+	DC	END_PARALLEL_CLEAR_SPLIT-PARALLEL_CLEAR_SPLIT-1
+	DC	CLK2+R_DLY+RG+R1L+R2L+000+R1R+R2R+000+00 ;  setup serial waveforms correctly. R1 and R2 high. SW?
+	DC	VIDEO+%0011000		; DC restore and reset integrator
+; 0: tdrt: 00+I2+I3+00+DG
+	DC	CLK3+TDRT_DLY+000+I2L+I3L+000+000+000+I2U+I3U+000+000+DG
+; 1: toi : 00+I2+I3+I4+DG
+	DC	CLK3+TOI_DLY+000+I2L+I3L+I4L+TGL+000+I2U+I3U+I4U+000+DG
+; 2: toi : 00+00+I3+I4+DG
+	DC	CLK3+TOI_DLY+000+000+I3L+I4L+TGL+000+000+I3U+I4U+000+DG
+; 3: toi : I1+00+I3+I4+DG
+	DC	CLK3+TOI_DLY+I1L+000+I3L+I4L+TGL+I1U+000+I3U+I4U+TGU+DG
+; 4: toi : I1+00+00+I4+DG
+	DC	CLK3+TOI_DLY+I1L+000+000+I4L+TGL+I1U+000+000+I4U+TGU+DG
+; 5: toi : I1+I2+00+I4+DG
+	DC	CLK3+TOI_DLY+I1L+I2L+000+I4L+TGL+I1U+I2U+000+I4U+TGU+DG
+; 6: toi : I1+I2+00+00+DG
+	DC	CLK3+TOI_DLY+I1L+I2L+000+000+000+I1U+I2U+000+000+TGU+DG
+; 7: toi : I1+I2+I3+00+DG
+	DC	CLK3+TOI_DLY+I1L+I2L+I3L+000+000+I1U+I2U+I3U+000+TGU+DG
+; 8: tdtr: 00+I2+I3+00+DG
+	DC	CLK3+TDTR_DLY+000+I2L+I3L+000+000+000+I2U+I3U+000+000+DG
+; 9: tdrg: CLK3 00+I2+I3+00+DG (no change) / CLK2 00+00+00+00+R (R1 and R2 low)
+	DC	CLK2+TDRG_DLY+RG+000+000+000+000+000+000+00
+;10: tdgr: 00+I2+I3+00+00 (dump gate off)
+	DC	CLK3+TDGR_DLY+000+I2L+I3L+000+000+000+I2U+I3U+000+000+00
+END_PARALLEL_CLEAR_SPLIT
+
+;  ****************  Tables for serial transfer  ****************
+;    xfer, A/D, integ, Pol+, Pol-, DCclamp, rst  (1 => switch open)
+
+; BOTH: Each Register moves towards it's own amplifier 
+; R1 = E2/F2/G2/H2 = R2L+R2R
+; R2 = E1/F1/G1/H1 = R1L+R1R
+; R3 = E3/F3/G3/H3 = R3L+R3R
+SERIAL_IDLE
+ 	DC	END_SERIAL_IDLE-SERIAL_IDLE-1
+; 0: R_DLY   : 00+00+R3+SW+0
+	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
+; 1: R_DLY   : R1+00+00+00+0
+	DC	CLK2+R_DLY+00+000+R2L+000+000+R2R+000+SW
+; 2: R_DLY   : 00+R2+00+00+0
+	DC	CLK2+R_DLY+00+R1L+000+000+R1R+000+000+SW
+; 3: R_DLY   : 00+R2+00+00+R  Should be twxmtdx delay (30ns) but executing waveform takes 40ns
+	DC	CLK2+R_DLY+RG+R1L+000+000+R1R+000+000+SW
+; 4: R_DLY   : 00+00+R3+SW+R  Should be tdx delay (20ns) but executing waveform takes 40ns
+	DC	CLK2+R_DLY+RG+000+000+R3L+000+000+R3R+SW
+; 5: R_DLY   : 00+00+R3+SW+0
+	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
+; Sample reset level
+	DC	VIDEO+$000000+%0010111		; Stop resetting integrator
+	DC	VIDEO+INT_TIM+%0000111		; Integrate
+	DC	VIDEO+$000000+%0011011		; Stop Integrate
+; 6: R_DLY   : R1+00+00+00+0
+	DC	CLK2+R_DLY+00+000+R2L+000+000+R2R+000+00
+; sample signal level
+	DC	VIDEO+INT_TIM+%0001011		; Integrate
+	DC	VIDEO+$000000+%0011011		; Stop, A/D is sampling
+	DC	VIDEO+%1110100			; Start A/D conversion
+END_SERIAL_IDLE
+
+; LEFT: Register EF moves towards E, Register GH moves towards H
+; R1 = E2/F1/G1/H2 = R2L+R1R
+; R2 = E1/F2/G2/H1 = R1L+R2R
+; R3 = E3/F3/G3/H3 = R3L+R3R
+SERIAL_SKIP_LEFT	; Serial clocking waveform for skipping left
+	DC	END_SERIAL_SKIP_LEFT-SERIAL_SKIP_LEFT-1
+; diddly we should delete '0' as it's a replication of index 5
+; 0: R_DLY   : 00+00+R3+SW+0
+	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
+; 1: R_DLY   : R1+00+00+00+0
+	DC	CLK2+R_DLY+00+000+R2L+000+R1R+000+000+SW
+; 2: R_DLY   : 00+R2+00+00+0
+	DC	CLK2+R_DLY+00+R1L+000+000+000+R2R+000+SW
+; 3: R_DLY   : 00+R2+00+00+R  Should be twxmtdx delay (30ns) but executing waveform takes 40ns
+	DC	CLK2+R_DLY+RG+R1L+000+000+000+R2R+000+00
+; 4: R_DLY   : 00+00+R3+SW+R  Should be tdx delay (20ns) but executing waveform takes 40ns
+	DC	CLK2+R_DLY+RG+000+000+R3L+000+000+R3R+SW
+; 5: R_DLY   : 00+00+R3+SW+0
+	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
+; 6: R_DLY   : R1+00+00+00+0
+	DC	CLK2+R_DLY+00+000+R2L+000+R1R+000+000+00
+END_SERIAL_SKIP_LEFT
+
+; Copied from FIRST_CLOCKS_RIGHT / CHARGE_DUMP_RIGHT
+SERIAL_SKIP_RIGHT	; Serial clocking waveform for skipping right
+	DC	END_SERIAL_SKIP_RIGHT-SERIAL_SKIP_RIGHT-1
+; 0: R_DLY   : 00+00+R3+SW+0
+	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
+; 1: R_DLY   : R1+00+00+00+0
+	DC	CLK2+R_DLY+00+R1L+000+000+000+R2R+000+SW
+; 2: R_DLY   : 00+R2+00+00+0
+	DC	CLK2+R_DLY+00+000+R2L+000+R1R+000+000+SW
+; 3: R_DLY   : 00+R2+00+00+R  Should be twxmtdx delay (30ns) but executing waveform takes 40ns
+	DC	CLK2+R_DLY+RG+000+R2L+000+R1R+000+000+SW
+; 4: R_DLY   : 00+00+R3+SW+R  Should be tdx delay (20ns) but executing waveform takes 40ns
+	DC	CLK2+R_DLY+RG+000+000+R3L+000+000+R3R+SW
+; 5: R_DLY   : 00+00+R3+SW+0
+	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
+; 6: R_DLY   : R1+00+00+00+0
+	DC	CLK2+R_DLY+00+R1L+000+000+000+R2R+000+00
+END_SERIAL_SKIP_RIGHT
+
+; Copied from FIRST_CLOCKS_SPLIT / CHARGE_DUMP_SPLIT
+SERIAL_SKIP_SPLIT	; Serial clocking waveform for skipping both ends
+	DC	END_SERIAL_SKIP_SPLIT-SERIAL_SKIP_SPLIT-1
+; 0: R_DLY   : 00+00+R3+SW+0
+	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
+; 1: R_DLY   : R1+00+00+00+0
+	DC	CLK2+R_DLY+00+000+R2L+000+000+R2R+000+SW
+; 2: R_DLY   : 00+R2+00+00+0
+	DC	CLK2+R_DLY+00+R1L+000+000+R1R+000+000+SW
+; 3: R_DLY   : 00+R2+00+00+R  Should be twxmtdx delay (30ns) but executing waveform takes 40ns
+	DC	CLK2+R_DLY+RG+R1L+000+000+R1R+000+000+SW
+; 4: R_DLY   : 00+00+R3+SW+R  Should be tdx delay (20ns) but executing waveform takes 40ns
+	DC	CLK2+R_DLY+RG+000+000+R3L+000+000+R3R+SW
+; 5: R_DLY   : 00+00+R3+SW+0
+	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
+; 6: R_DLY   : R1+00+00+00+0
+	DC	CLK2+R_DLY+00+000+R2L+000+000+R2R+000+00
+END_SERIAL_SKIP_SPLIT
+
+SERIALS_EXPOSE
+	DC	END_SERIALS_EXPOSE-SERIALS_EXPOSE-1
+	DC	CLK2+R_DLY+RG+R1L+R2L+000+R1R+R2R+000+00 ;  setup serial waveforms correctly. R1 and R2 high. SW?
+END_SERIALS_EXPOSE
+
+; same as SERIAL_SKIP_SPLIT
+SERIAL_CLEAR		; Serial clocking waveform for clearing both ends
+	DC	END_SERIAL_CLEAR-SERIAL_CLEAR-1
+; 0: R_DLY   : 00+00+R3+SW+0
+	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
+; 1: R_DLY   : R1+00+00+00+0
+	DC	CLK2+R_DLY+00+000+R2L+000+000+R2R+000+SW
+; 2: R_DLY   : 00+R2+00+00+0
+	DC	CLK2+R_DLY+00+R1L+000+000+R1R+000+000+SW
+; 3: R_DLY   : 00+R2+00+00+R  Should be twxmtdx delay (30ns) but executing waveform takes 40ns
+	DC	CLK2+R_DLY+RG+R1L+000+000+R1R+000+000+SW
+; 4: R_DLY   : 00+00+R3+SW+R  Should be tdx delay (20ns) but executing waveform takes 40ns
+	DC	CLK2+R_DLY+RG+000+000+R3L+000+000+R3R+SW
+; 5: R_DLY   : 00+00+R3+SW+0
+	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
+; 6: R_DLY   : R1+00+00+00+0
+	DC	CLK2+R_DLY+00+000+R2L+000+000+R2R+000+00
+END_SERIAL_CLEAR
+
+RESET_VIDEO
+ 	DC	END_RESET_VIDEO-RESET_VIDEO-1
+	DC	VIDEO+$000000+%0010111		; Stop resetting integrator
+INTEGRATE_RESET
+	DC	VIDEO+INT_TIM+%0000111		; Integrate
+	DC	VIDEO+$000000+%0011011		; Stop Integrate
+END_RESET_VIDEO
+
+; ************ Waveform generating code for the LEFT ****************
+; clock names -> spec sheet
+; R1L = E1/H1
+; R2L = E2/H2
+; R3L = E3/H3
+; R1R = F1/G1
+; R2R = F2/G2
+; R3R = F3/G3
+
+; delays
+; tdx: 20ns
+; twx: 50ns
+; twxmtdx: 30ns (twx minus tdx)
+
+; serial waveforms
+; full:
+;	DC	CLK2+R_DLY+RG+R1L+R2L+R3L+R1R+R2R+R3R+SW
+; empty
+;	DC	CLK2+00000+00+000+000+000+000+000+000+00
+
+; Serial readout sequence
+; 0: R_DLY   : 00+00+R3+SW+0
+; 1: R_DLY   : R1+00+00+00+0
+; 2: R_DLY   : 00+R2+00+00+0
+; 3: R_DLY   : 00+R2+00+00+R  Should be twxmtdx delay (30ns) but executing waveform takes 40ns
+; 4: R_DLY   : 00+00+R3+SW+R  Should be tdx delay (20ns) but executing waveform takes 40ns
+; 5: R_DLY   : 00+00+R3+SW+0
+; Sample reset level
+; 6: R_DLY   : R1+00+00+00+0
+; sample signal level
+
+
+; LEFT: Register EF moves towards E, Register GH moves towards H
+; R1 = E2/F1/G1/H2 = R2L+R1R
+; R2 = E1/F2/G2/H1 = R1L+R2R
+; R3 = E3/F3/G3/H3 = R3L+R3R
+; SW held high until last bin, then clocked as R3
+FIRST_CLOCKS_LEFT
+ 	DC	END_FIRST_CLOCKS_LEFT-FIRST_CLOCKS_LEFT-1
+; 0: R_DLY   : 00+00+R3+SW+0
+	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
+; 1: R_DLY   : R1+00+00+00+0
+	DC	CLK2+R_DLY+00+000+R2L+000+R1R+000+000+SW
+; 2: R_DLY   : 00+R2+00+00+0
+	DC	CLK2+R_DLY+00+R1L+000+000+000+R2R+000+SW
+; 3: R_DLY   : 00+R2+00+00+R  Should be twxmtdx delay (30ns) but executing waveform takes 40ns
+	DC	CLK2+R_DLY+RG+R1L+000+000+000+R2R+000+00
+; 4: R_DLY   : 00+00+R3+SW+R  Should be tdx delay (20ns) but executing waveform takes 40ns
+	DC	CLK2+R_DLY+RG+000+000+R3L+000+000+R3R+SW
+; 5: R_DLY   : 00+00+R3+SW+0
+	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
+; Next: Sample reset level
+END_FIRST_CLOCKS_LEFT
+
+CLOCK_LINE_LEFT
+	DC	END_CLOCK_LINE_LEFT-CLOCK_LINE_LEFT-1
+; 6: R_DLY   : R1+00+00+00+0
+	DC	CLK2+R_DLY+00+000+R2L+000+R1R+000+000+SW
+; 0: R_DLY   : 00+00+R3+SW+0
+	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
+; 1: R_DLY   : R1+00+00+00+0
+	DC	CLK2+R_DLY+00+000+R2L+000+R1R+000+000+SW
+; 2: R_DLY   : 00+R2+00+00+0
+	DC	CLK2+R_DLY+00+R1L+000+000+000+R2R+000+SW
+; 3: R_DLY   : 00+R2+00+00+R  Should be twxmtdx delay (30ns) but executing waveform takes 40ns
+	DC	CLK2+R_DLY+RG+R1L+000+000+000+R2R+000+00
+; 4: R_DLY   : 00+00+R3+SW+R  Should be tdx delay (20ns) but executing waveform takes 40ns
+	DC	CLK2+R_DLY+RG+000+000+R3L+000+000+R3R+SW
+; 5: R_DLY   : 00+00+R3+SW+0
+	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
+; Next: Sample reset level
+END_CLOCK_LINE_LEFT
+
+CHARGE_DUMP_LEFT
+ 	DC	END_CHARGE_DUMP_LEFT-CHARGE_DUMP_LEFT-1
+; 6: R_DLY   : R1+00+00+00+0
+	DC	CLK2+R_DLY+00+000+R2L+000+R1R+000+000+00
+INTEGRATE_SIGNAL_LEFT
+	DC	VIDEO+INT_TIM+%0001011		; Integrate
+	DC	VIDEO+$000000+%0011011		; Stop, A/D is sampling
+	DC	VIDEO+%1110100	
+END_CHARGE_DUMP_LEFT
+
+; **************  Waveform generating code for the RIGHT  **********
+; RIGHT: Register EF moves towards F, Register GH moves towards G
+; R1 = E1/F2/G2/H1 = R1L+R2R
+; R2 = E2/F1/G1/H2 = R2L+R1R
+; R3 = E3/F3/G3/H3 = R3L+R3R
+FIRST_CLOCKS_RIGHT
+ 	DC	END_FIRST_CLOCKS_RIGHT-FIRST_CLOCKS_RIGHT-1
+; 0: R_DLY   : 00+00+R3+SW+0
+	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
+; 1: R_DLY   : R1+00+00+00+0
+	DC	CLK2+R_DLY+00+R1L+000+000+000+R2R+000+SW
+; 2: R_DLY   : 00+R2+00+00+0
+	DC	CLK2+R_DLY+00+000+R2L+000+R1R+000+000+SW
+; 3: R_DLY   : 00+R2+00+00+R  Should be twxmtdx delay (30ns) but executing waveform takes 40ns
+	DC	CLK2+R_DLY+RG+000+R2L+000+R1R+000+000+SW
+; 4: R_DLY   : 00+00+R3+SW+R  Should be tdx delay (20ns) but executing waveform takes 40ns
+	DC	CLK2+R_DLY+RG+000+000+R3L+000+000+R3R+SW
+; 5: R_DLY   : 00+00+R3+SW+0
+	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
+; Next: Sample reset level
+END_FIRST_CLOCKS_RIGHT
+
+CLOCK_LINE_RIGHT
+ 	DC	END_CLOCK_LINE_RIGHT-CLOCK_LINE_RIGHT-1
+; 6: R_DLY   : R1+00+00+00+0
+	DC	CLK2+R_DLY+00+R1L+000+000+000+R2R+000+SW
+; 0: R_DLY   : 00+00+R3+SW+0
+	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
+; 1: R_DLY   : R1+00+00+00+0
+	DC	CLK2+R_DLY+00+R1L+000+000+000+R2R+000+SW
+; 2: R_DLY   : 00+R2+00+00+0
+	DC	CLK2+R_DLY+00+000+R2L+000+R1R+000+000+SW
+; 3: R_DLY   : 00+R2+00+00+R  Should be twxmtdx delay (30ns) but executing waveform takes 40ns
+	DC	CLK2+R_DLY+RG+000+R2L+000+R1R+000+000+SW
+; 4: R_DLY   : 00+00+R3+SW+R  Should be tdx delay (20ns) but executing waveform takes 40ns
+	DC	CLK2+R_DLY+RG+000+000+R3L+000+000+R3R+SW
+; 5: R_DLY   : 00+00+R3+SW+0
+	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
+; Next: Sample reset level
+END_CLOCK_LINE_RIGHT
+
+CHARGE_DUMP_RIGHT
+ 	DC	END_CHARGE_DUMP_RIGHT-CHARGE_DUMP_RIGHT-1
+; 6: R_DLY   : R1+00+00+00+0
+	DC	CLK2+R_DLY+00+R1L+000+000+000+R2R+000+00
+; sample signal level
+INTEGRATE_SIGNAL_RIGHT
+	DC	VIDEO+INT_TIM+%0001011		; Integrate
+	DC	VIDEO+$000000+%0011011		; Stop, A/D is sampling
+	DC	VIDEO+%1110100	
+END_CHARGE_DUMP_RIGHT
+
+; **************  Waveform generating code for SPLIT = Both  **********
+; BOTH: Each Register moves towards it's own amplifier 
+; R1 = E2/F2/G2/H2 = R2L+R2R
+; R2 = E1/F1/G1/H1 = R1L+R1R
+; R3 = E3/F3/G3/H3 = R3L+R3R
+FIRST_CLOCKS_SPLIT
+ 	DC	END_FIRST_CLOCKS_SPLIT-FIRST_CLOCKS_SPLIT-1
+; 0: R_DLY   : 00+00+R3+SW+0
+	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
+; 1: R_DLY   : R1+00+00+00+0
+	DC	CLK2+R_DLY+00+000+R2L+000+000+R2R+000+SW
+; 2: R_DLY   : 00+R2+00+00+0
+	DC	CLK2+R_DLY+00+R1L+000+000+R1R+000+000+SW
+; 3: R_DLY   : 00+R2+00+00+R  Should be twxmtdx delay (30ns) but executing waveform takes 40ns
+	DC	CLK2+R_DLY+RG+R1L+000+000+R1R+000+000+SW
+; 4: R_DLY   : 00+00+R3+SW+R  Should be tdx delay (20ns) but executing waveform takes 40ns
+	DC	CLK2+R_DLY+RG+000+000+R3L+000+000+R3R+SW
+; 5: R_DLY   : 00+00+R3+SW+0
+	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
+; Next: Sample reset level
+END_FIRST_CLOCKS_SPLIT
+
+CLOCK_LINE_SPLIT
+ 	DC	END_CLOCK_LINE_SPLIT-CLOCK_LINE_SPLIT-1
+; 6: R_DLY   : R1+00+00+00+0
+	DC	CLK2+R_DLY+00+000+R2L+000+000+R2R+000+SW
+; 0: R_DLY   : 00+00+R3+SW+0
+	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
+; 1: R_DLY   : R1+00+00+00+0
+	DC	CLK2+R_DLY+00+000+R2L+000+000+R2R+000+SW
+; 2: R_DLY   : 00+R2+00+00+0
+	DC	CLK2+R_DLY+00+R1L+000+000+R1R+000+000+SW
+; 3: R_DLY   : 00+R2+00+00+R  Should be twxmtdx delay (30ns) but executing waveform takes 40ns
+	DC	CLK2+R_DLY+RG+R1L+000+000+R1R+000+000+SW
+; 4: R_DLY   : 00+00+R3+SW+R  Should be tdx delay (20ns) but executing waveform takes 40ns
+	DC	CLK2+R_DLY+RG+000+000+R3L+000+000+R3R+SW
+; 5: R_DLY   : 00+00+R3+SW+0
+	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
+; Next: Sample reset level
+END_CLOCK_LINE_SPLIT
+
+CHARGE_DUMP_SPLIT
+ 	DC	END_CHARGE_DUMP_SPLIT-CHARGE_DUMP_SPLIT-1
+; 6: R_DLY   : R1+00+00+00+0
+	DC	CLK2+R_DLY+00+000+R2L+000+000+R2R+000+00
+; sample signal level
+INTEGRATE_SIGNAL_SPLIT
+	DC	VIDEO+INT_TIM+%0001011		; Integrate
+	DC	VIDEO+$000000+%0011011		; Stop, A/D is sampling
+	DC	VIDEO+%1110100	
+END_CHARGE_DUMP_SPLIT
+
+; Initialization of clock driver and video processor DACs and switches
+DACS	DC	END_DACS-DACS-1
+	DC	CLKV+$0A0080					; DAC = unbuffered mode
+; ARC-32
+	DC	CLKV+$000100+@CVI((RG_HI+Vmax)/(2*Vmax)*255)	; Pin #1, Reset Gate
+	DC	CLKV+$000200+@CVI((RG_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$000400+@CVI((R_HI+Vmax)/(2*Vmax)*255)	; Pin #2, R1 Left
+	DC	CLKV+$000800+@CVI((R_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$002000+@CVI((R_HI+Vmax)/(2*Vmax)*255)	; Pin #3, R2 Left
+	DC	CLKV+$004000+@CVI((R_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$008000+@CVI((R_HI+Vmax)/(2*Vmax)*255)	; Pin #4, R3 Left
+	DC	CLKV+$010000+@CVI((R_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$020100+@CVI((R_HI+Vmax)/(2*Vmax)*255)	; Pin #5, R1 Right
+	DC	CLKV+$020200+@CVI((R_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$020400+@CVI((R_HI+Vmax)/(2*Vmax)*255)	; Pin #6, R2 Right
+	DC	CLKV+$020800+@CVI((R_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$022000+@CVI((R_HI+Vmax)/(2*Vmax)*255)	; Pin #7, R3 Right
+	DC	CLKV+$024000+@CVI((R_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$028000+@CVI((SW_HI+Vmax)/(2*Vmax)*255)	; Pin #8, Summing Well Lower Left
+	DC	CLKV+$030000+@CVI((SW_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$040100+@CVI((SW_HI+Vmax)/(2*Vmax)*255)	; Pin #9, Summing Well Upper Left
+	DC	CLKV+$040200+@CVI((SW_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$040400+@CVI((SW_HI+Vmax)/(2*Vmax)*255)	; Pin #10, Summing Well Lower Right
+	DC	CLKV+$040800+@CVI((SW_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$042000+@CVI((SW_HI+Vmax)/(2*Vmax)*255)	; Pin #11, Summing Well Upper Right
+	DC	CLKV+$044000+@CVI((SW_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$048000+@CVI((ZERO+Vmax)/(2*Vmax)*255)	; Pin #12, Unused
+	DC	CLKV+$050000+@CVI((ZERO+Vmax)/(2*Vmax)*255)
+
+; Define all the parallel clock voltages
+	DC	CLKV+$060100+@CVI((I_HI+Vmax)/(2*Vmax)*255)	; Pin #13, I1 Lower
+	DC	CLKV+$060200+@CVI((I_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$060400+@CVI((I_HI+Vmax)/(2*Vmax)*255)	; Pin #14, I2 Lower
+	DC	CLKV+$060800+@CVI((I_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$062000+@CVI((I_HI+Vmax)/(2*Vmax)*255)	; Pin #15, I3 Lower
+	DC	CLKV+$064000+@CVI((I_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$068000+@CVI((I_HI+Vmax)/(2*Vmax)*255)	; Pin #16, I4 Lower
+	DC	CLKV+$070000+@CVI((I_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$080100+@CVI((TG_HI+Vmax)/(2*Vmax)*255)	; Pin #17, Transfer Gate Lower
+	DC	CLKV+$080200+@CVI((TG_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$080400+@CVI((I_HI+Vmax)/(2*Vmax)*255)	; Pin #18, I1 Upper
+	DC	CLKV+$080800+@CVI((I_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$082000+@CVI((I_HI+Vmax)/(2*Vmax)*255)	; Pin #19, I2 Upper
+	DC	CLKV+$084000+@CVI((I_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$088000+@CVI((I_HI+Vmax)/(2*Vmax)*255)	; Pin #33, I3 Upper
+	DC	CLKV+$090000+@CVI((I_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$0A0100+@CVI((I_HI+Vmax)/(2*Vmax)*255)	; Pin #34, I4 Upper
+	DC	CLKV+$0A0200+@CVI((I_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$0A0400+@CVI((TG_HI+Vmax)/(2*Vmax)*255)	; Pin #35, Transfer Gate Upper
+	DC	CLKV+$0A0800+@CVI((TG_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$0A2000+@CVI((DG_HI+Vmax)/(2*Vmax)*255)	; Pin #36, Dump Gates
+	DC	CLKV+$0A4000+@CVI((DG_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$0A8000+@CVI((ZERO+Vmax)/(2*Vmax)*255)	; Pin #37, Unused
+	DC	CLKV+$0B0000+@CVI((ZERO+Vmax)/(2*Vmax)*255)
+
+
+;  ******************  Code for 2 x ARC-45  ****************************
+
+; Set gain and integrator speed. (77, bb, dd, ee; low gain to high gain)
+	DC	$0c3c77			; Gain x1, slow integrate, board #0
+	DC	$0c3f77			; Gain x1, fast integ speed, board #0
+	DC	$0c3fbb			; Gain x2, fast integ speed, board #0
+	DC	$0c3fdd			; Gain x4.75, fast integ speed, board #0
+	DC	$0c3fee			; Gain x9.50, fast integ speed, board #0
+	DC	$1c3fbb			; Gain x2, fast integ speed, board #1
+
+	DC	DC0+$0c3fbb		; x2 fast
+	DC	DC1+$0c3fbb
+
+; Output offset voltages
+	DC	DC0+$0c8000+OFFSET0 	; Output video offset, ch. E
+	DC	DC0+$0cc000+OFFSET1	; Output video offset, ch. F
+	DC	DC1+$0c8000+OFFSET2 	; Output video offset, ch. G	
+	DC	DC1+$0cc000+OFFSET3	; Output video offset, ch. H
+
+; Output and reset drain DC bias voltages
+	DC	DC0+$0d0000+@CVI((VOD-7.50)/22.5*4095)	; VOD-LL pin #1 board #0, ARC-45 #0, DB25 pin #1
+	DC	DC0+$0d4000+@CVI((VOD-7.50)/22.5*4095)	; VOD-LR pin #2 board #0, ARC-45 #0, DB25 pin #2
+	DC	DC1+$0c0000+@CVI((VRD-5.00)/15.0*4095)	; VRD-LL pin #3 board #0, ARC-45 #0, DB25 pin #3
+	DC	DC1+$0c4000+@CVI((VRD-5.00)/15.0*4095)	; VRD-LR pin #4 board #0, ARC-45 #0, DB25 pin #4
+	DC	DC0+$0d8000+@CVI((VDD-7.50)/22.5*4095)	; Vdd-L Dump Drain pin #5 board #0
+
+	DC	DC1+$0d0000+@CVI((VOD-7.50)/22.5*4095)	; VOD-UR pin #1 board #1, ARC-45 #1, DB25 pin #1
+	DC	DC1+$0d4000+@CVI((VOD-7.50)/22.5*4095)	; VOD-UL pin #2 board #1, ARC-45 #1, DB25 pin #2
+	DC	DC1+$0c0000+@CVI((VRD-5.00)/15.0*4095)	; VRD-UR pin #3 board #1, ARC-45 #1, DB25 pin #3
+	DC	DC1+$0c4000+@CVI((VRD-5.00)/15.0*4095)	; VRD-UL pin #4 board #1, ARC-45 #1, DB25 pin #4
+	DC	DC1+$0d8000+@CVI((VDD-7.50)/22.5*4095)	; Vdd-U Dump Drain pin #5 board #1
+
+; Output gate, anti-blooming gate and substrate voltages
+	DC	DC0+$0e0000+@CVI((VOG+10.0)/20.0*4095)	; VOG-LL pin # 9 board #0, ARC-45 #0, DB25 pin #9
+	DC	DC0+$0e4000+@CVI((VOG+10.0)/20.0*4095)	; VOG-LR pin #10 board #0, ARC-45 #0, DB25 pin #10
+	DC	DC1+$0e0000+@CVI((VOG+10.0)/20.0*4095)	; VOG-UR pin # 9 board #1, ARC-45 #1, DB25 pin #9
+	DC	DC1+$0e4000+@CVI((VOG+10.0)/20.0*4095)	; VOG-UL pin #10 board #1, ARC-45 #1, DB25 pin #10
+
+END_DACS
+
+;
+; $Log: not supported by cvs2svn $
+;
