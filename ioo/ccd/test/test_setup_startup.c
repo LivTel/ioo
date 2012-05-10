@@ -1,5 +1,5 @@
 /* test_setup_startup.c
- * $Header: /space/home/eng/cjm/cvs/ioo/ccd/test/test_setup_startup.c,v 1.1 2011-11-23 11:03:02 cjm Exp $
+ * $Header: /space/home/eng/cjm/cvs/ioo/ccd/test/test_setup_startup.c,v 1.2 2012-05-10 14:30:25 cjm Exp $
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,7 +21,7 @@
  * 	-t[ext_print_level] &lt;commands|replies|values|all&gt; -h[elp]
  * </pre>
  * @author $Author: cjm $
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 /* hash definitions */
 /**
@@ -33,7 +33,7 @@
 /**
  * Revision control system identifier.
  */
-static char rcsid[] = "$Id: test_setup_startup.c,v 1.1 2011-11-23 11:03:02 cjm Exp $";
+static char rcsid[] = "$Id: test_setup_startup.c,v 1.2 2012-05-10 14:30:25 cjm Exp $";
 /**
  * How much information to print out when using the text interface.
  */
@@ -73,6 +73,15 @@ static enum CCD_SETUP_LOAD_TYPE Utility_Load_Type = CCD_SETUP_LOAD_ROM;
  */
 static char *Utility_Filename = NULL;
 /**
+ * Gain to use in CCD_Setup_Startup.
+ */
+static int Gain = CCD_DSP_GAIN_ONE;
+/**
+ * Gain Speed (integrator speed) to use in CCD_Setup_Startup.
+ * A boolean, TRUE is fast and FALSE is slow.
+ */
+static int Gain_Speed = TRUE;
+/**
  * Temperature to set the CCD to. Defaults to -100.0 degrees C.
  */
 static double Temperature = -110.0;
@@ -95,6 +104,8 @@ static void Help(void);
  * @see #Utility_Load_Type
  * @see #Utility_Filename
  * @see #Temperature
+ * @see #Gain
+ * @see #Gain_Speed
  */
 int main(int argc, char *argv[])
 {
@@ -120,7 +131,7 @@ int main(int argc, char *argv[])
 			strcpy(device_pathname,CCD_PCI_DEFAULT_DEVICE_ZERO);
 			break;
 		case CCD_INTERFACE_DEVICE_TEXT:
-			strcpy(device_pathname,"frodospec_ccd_test_setup_startup.txt");
+			strcpy(device_pathname,"io_ccd_test_setup_startup.txt");
 			break;
 		default:
 			fprintf(stderr,"Illegal interface device %d.\n",Interface_Device);
@@ -147,9 +158,10 @@ int main(int argc, char *argv[])
 		fprintf(stdout,"Utility Type:%d:Filename:%s\n",Utility_Load_Type,Utility_Filename);
 	else
 		fprintf(stdout,"Utility Type:%d:Filename:NULL\n",Utility_Load_Type);
+	fprintf(stdout,"Gain:%d : Gain_Speed:%d\n",Gain,Gain_Speed);
 	fprintf(stdout,"Temperature:%.2f\n",Temperature);
 	if(!CCD_Setup_Startup(handle,PCI_Load_Type,PCI_Filename,Timing_Load_Type,0,Timing_Filename,
-		Utility_Load_Type,0,Utility_Filename,Temperature,CCD_DSP_GAIN_ONE,TRUE,TRUE))
+		Utility_Load_Type,0,Utility_Filename,Temperature,Gain,Gain_Speed,TRUE))
 	{
 		CCD_Global_Error();
 		return 3;
@@ -176,6 +188,8 @@ int main(int argc, char *argv[])
  * @see #Utility_Load_Type
  * @see #Utility_Filename
  * @see #Temperature
+ * @see #Gain
+ * @see #Gain_Speed
  */
 static int Parse_Arguments(int argc, char *argv[])
 {
@@ -183,7 +197,63 @@ static int Parse_Arguments(int argc, char *argv[])
 
 	for(i=1;i<argc;i++)
 	{
-		if((strcmp(argv[i],"-interface_device")==0)||(strcmp(argv[i],"-i")==0))
+		if((strcmp(argv[i],"-gain")==0)||(strcmp(argv[i],"-g")==0))
+		{
+			if((i+1)<argc)
+			{
+				if(strcmp(argv[i+1],"1")==0)
+				{
+					Gain = CCD_DSP_GAIN_ONE;
+				}
+				else if(strcmp(argv[i+1],"2")==0)
+				{
+					Gain = CCD_DSP_GAIN_TWO;
+				}
+				else if(strcmp(argv[i+1],"4")==0)
+				{
+					Gain = CCD_DSP_GAIN_FOUR;
+				}
+				else if(strcmp(argv[i+1],"9")==0)
+				{
+					Gain = CCD_DSP_GAIN_NINE;
+				}
+				else
+				{
+					fprintf(stderr,"Parse_Arguments:Illegal Gain '%s' (should be 1|2|4|9).\n",
+						argv[i+1]);
+					return FALSE;
+				}
+				i += 1;
+			}
+			else
+			{
+				fprintf(stderr,"Parse_Arguments:Gain requires a value <1|2|4|9>.\n");
+				return FALSE;
+			}
+		}
+		else if((strcmp(argv[i],"-gain_speed")==0)||(strcmp(argv[i],"-gs")==0))
+		{
+			if((i+1)<argc)
+			{
+				if(strcmp(argv[i+1],"true")==0)
+				{
+					Gain_Speed = TRUE;
+				}
+				else if(strcmp(argv[i+1],"false")==0)
+				{
+					Gain_Speed = FALSE;
+				}
+				else
+				{
+					fprintf(stderr,
+						"Parse_Arguments:Illegal Gain_Speed '%s' (should be true|false).\n",
+						argv[i+1]);
+					return FALSE;
+				}
+				i += 1;
+			}
+		}
+		else if((strcmp(argv[i],"-interface_device")==0)||(strcmp(argv[i],"-i")==0))
 		{
 			if((i+1)<argc)
 			{
@@ -315,6 +385,7 @@ static void Help(void)
 	fprintf(stdout,"test_setup_startup [-i[nterface_device] <interface device>]\n");
 	fprintf(stdout,"\t[-pci_filename <filename>][-timing_filename <filename>][-utility_filename <filename>]\n");
 	fprintf(stdout,"\t[-temperature <temperature>]\n");
+	fprintf(stdout,"\t[-g[ain] <1|2|4|9>] [-gain_speed <true|false>]\n");
 	fprintf(stdout,"\t[-t[ext_print_level] <commands|replies|values|all>][-h[elp]]\n");
 	fprintf(stdout,"\n");
 	fprintf(stdout,"\t-interface_device selects the device to communicate with the SDSU controller.\n");
@@ -327,4 +398,7 @@ static void Help(void)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.1  2011/11/23 11:03:02  cjm
+** Initial revision
+**
 */
