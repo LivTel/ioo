@@ -1,9 +1,10 @@
        COMMENT *
-	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/e2v231-84/e2v231-84.waveforms,v 1.1 2012-04-23 14:45:27 cjm Exp $
-	Id: 	 $Id: e2v231-84.waveforms,v 1.1 2012-04-23 14:45:27 cjm Exp $
-	Version: $Revision: 1.1 $
-Waveform tables for CCD231-84.
-
+	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/e2v231-84/e2v231-84.waveforms,v 1.2 2012-05-21 09:20:54 cjm Exp $
+	Id: 	 $Id: e2v231-84.waveforms,v 1.2 2012-05-21 09:20:54 cjm Exp $
+	Version: $Revision: 1.2 $
+Waveform tables for CCD231-84. Waveforms based on E2V spec sheet A1A-765136 V1, October 2008.
+Waveforms are Mode 1 (low read noise, lower pixel charge capacity).
+Assumes usage with an SDSU ARC-22 timing board, ARC-32 clock driver board, and 2 x ARC-45 video boards.
 	*
 
 ; Definitions of readout variables
@@ -18,15 +19,12 @@ TOI_DLY	 EQU	$900000		; spec 10us : 16x640ns (bit 23 set) = 0x900000 = 10240ns
 TDTR_DLY EQU	$900000		; spec 10us : 16x640ns (bit 23 set) = 0x900000 = 10240ns
 TDRG_DLY EQU	$A00000		; spec 20us : 32x640ns (bit 23 set) = 0xA00000 = 20480ns
 TDGR_DLY EQU	$A00000		; spec 20us : 32x640ns (bit 23 set) = 0xA00000 = 20480ns
-SER_DLY	 EQU	$000000		; Serial register transfer delay
 R_DLY	 EQU	$000000		; Serial register transfer delay
 NSCLR	 EQU	2048		; To clear the serial register
 NPCLR	 EQU	2056    	; To clear the parallel register.
 SH_DEL	 EQU	100		; Delay in milliseconds between shutter
 				;   closing and image readout
-PRESCAN EQU	3		; PRESCAN - 18 according to data sheet
-				; But PRESCAN is clocked over in RDCCD, why not set this to 0?
-				; Needs to be at least 3 due to pixel pipelining, to remove pixel wraparound
+PRESCAN EQU	3		; PRESCAN - Needs to be at least 3 due to pixel pipelining, to remove pixel wraparound
 PRESKIP EQU	0		; 
 NPAR	EQU	1		; Repeat number for SLOW_CLOCKS
 
@@ -574,7 +572,7 @@ FIRST_CLOCKS_LEFT
 ; 2: R_DLY   : 00+R2+00+00+0
 	DC	CLK2+R_DLY+00+R1L+000+000+000+R2R+000+SW
 ; 3: R_DLY   : 00+R2+00+00+R  Should be twxmtdx delay (30ns) but executing waveform takes 40ns
-	DC	CLK2+R_DLY+RG+R1L+000+000+000+R2R+000+00
+	DC	CLK2+R_DLY+RG+R1L+000+000+000+R2R+000+SW
 ; 4: R_DLY   : 00+00+R3+SW+R  Should be tdx delay (20ns) but executing waveform takes 40ns
 	DC	CLK2+R_DLY+RG+000+000+R3L+000+000+R3R+SW
 ; 5: R_DLY   : 00+00+R3+SW+0
@@ -593,7 +591,7 @@ CLOCK_LINE_LEFT
 ; 2: R_DLY   : 00+R2+00+00+0
 	DC	CLK2+R_DLY+00+R1L+000+000+000+R2R+000+SW
 ; 3: R_DLY   : 00+R2+00+00+R  Should be twxmtdx delay (30ns) but executing waveform takes 40ns
-	DC	CLK2+R_DLY+RG+R1L+000+000+000+R2R+000+00
+	DC	CLK2+R_DLY+RG+R1L+000+000+000+R2R+000+SW
 ; 4: R_DLY   : 00+00+R3+SW+R  Should be tdx delay (20ns) but executing waveform takes 40ns
 	DC	CLK2+R_DLY+RG+000+000+R3L+000+000+R3R+SW
 ; 5: R_DLY   : 00+00+R3+SW+0
@@ -813,4 +811,7 @@ END_DACS
 
 ;
 ; $Log: not supported by cvs2svn $
+; Revision 1.1  2012/04/23 14:45:27  cjm
+; Initial revision
+;
 ;
