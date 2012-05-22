@@ -1,7 +1,7 @@
        COMMENT *
-	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/e2v231-84/e2v231-84.waveforms,v 1.2 2012-05-21 09:20:54 cjm Exp $
-	Id: 	 $Id: e2v231-84.waveforms,v 1.2 2012-05-21 09:20:54 cjm Exp $
-	Version: $Revision: 1.2 $
+	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/e2v231-84/e2v231-84.waveforms,v 1.3 2012-05-22 15:31:11 cjm Exp $
+	Id: 	 $Id: e2v231-84.waveforms,v 1.3 2012-05-22 15:31:11 cjm Exp $
+	Version: $Revision: 1.3 $
 Waveform tables for CCD231-84. Waveforms based on E2V spec sheet A1A-765136 V1, October 2008.
 Waveforms are Mode 1 (low read noise, lower pixel charge capacity).
 Assumes usage with an SDSU ARC-22 timing board, ARC-32 clock driver board, and 2 x ARC-45 video boards.
@@ -772,12 +772,12 @@ DACS	DC	END_DACS-DACS-1
 ;  ******************  Code for 2 x ARC-45  ****************************
 
 ; Set gain and integrator speed. (77, bb, dd, ee; low gain to high gain)
-	DC	$0c3c77			; Gain x1, slow integrate, board #0
-	DC	$0c3f77			; Gain x1, fast integ speed, board #0
-	DC	$0c3fbb			; Gain x2, fast integ speed, board #0
-	DC	$0c3fdd			; Gain x4.75, fast integ speed, board #0
-	DC	$0c3fee			; Gain x9.50, fast integ speed, board #0
-	DC	$1c3fbb			; Gain x2, fast integ speed, board #1
+;	DC	$0c3c77			; Gain x1, slow integrate, board #0
+;	DC	$0c3f77			; Gain x1, fast integ speed, board #0
+;	DC	$0c3fbb			; Gain x2, fast integ speed, board #0
+;	DC	$0c3fdd			; Gain x4.75, fast integ speed, board #0
+;	DC	$0c3fee			; Gain x9.50, fast integ speed, board #0
+;	DC	$1c3fbb			; Gain x2, fast integ speed, board #1
 
 	DC	DC0+$0c3fbb		; x2 fast
 	DC	DC1+$0c3fbb
@@ -791,8 +791,8 @@ DACS	DC	END_DACS-DACS-1
 ; Output and reset drain DC bias voltages
 	DC	DC0+$0d0000+@CVI((VOD-7.50)/22.5*4095)	; VOD-LL pin #1 board #0, ARC-45 #0, DB25 pin #1
 	DC	DC0+$0d4000+@CVI((VOD-7.50)/22.5*4095)	; VOD-LR pin #2 board #0, ARC-45 #0, DB25 pin #2
-	DC	DC1+$0c0000+@CVI((VRD-5.00)/15.0*4095)	; VRD-LL pin #3 board #0, ARC-45 #0, DB25 pin #3
-	DC	DC1+$0c4000+@CVI((VRD-5.00)/15.0*4095)	; VRD-LR pin #4 board #0, ARC-45 #0, DB25 pin #4
+	DC	DC0+$0c0000+@CVI((VRD-5.00)/15.0*4095)	; VRD-LL pin #3 board #0, ARC-45 #0, DB25 pin #3
+	DC	DC0+$0c4000+@CVI((VRD-5.00)/15.0*4095)	; VRD-LR pin #4 board #0, ARC-45 #0, DB25 pin #4
 	DC	DC0+$0d8000+@CVI((VDD-7.50)/22.5*4095)	; Vdd-L Dump Drain pin #5 board #0
 
 	DC	DC1+$0d0000+@CVI((VOD-7.50)/22.5*4095)	; VOD-UR pin #1 board #1, ARC-45 #1, DB25 pin #1
@@ -811,6 +811,9 @@ END_DACS
 
 ;
 ; $Log: not supported by cvs2svn $
+; Revision 1.2  2012/05/21 09:20:54  cjm
+; Added some missing SW.
+;
 ; Revision 1.1  2012/04/23 14:45:27  cjm
 ; Initial revision
 ;
