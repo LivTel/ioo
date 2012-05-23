@@ -194,7 +194,7 @@ CONTINUE_READ
 L_S
 
 ; Clock and video process prescan "pixels" without SXMIT to fill the pipeline
-; There are 18 PRESCAN pixels according to the SPEC sheet, but if we set PRESCAN to 0 we will get the
+; There are 50 PRESCAN pixels according to the SPEC sheet, but if we set PRESCAN to 0 we will get the
 ; PRESCAN data on the final image.
 	MOVE	Y:SXMIT_ADR,R0
 	MOVE	#>$74,X0
