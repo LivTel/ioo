@@ -1,0 +1,13 @@
+#!/bin/csh
+# print_waveforms
+# $Header: /space/home/eng/cjm/cvs/ioo/sdsu/e2v231-84/print_waveforms,v 1.1 2012-05-28 09:35:56 cjm Exp $
+set waveforms_dir = "/home/dev/src/o/sdsu/e2v231-84/waveforms"
+foreach png_file ( ${waveforms_dir}/*.png )
+	/home/dev/src/sdsu/waveformdisplay/print_waveform ${png_file}
+end
+#
+# $Log: not supported by cvs2svn $
+# Revision 1.1  2009/09/21 16:04:57  cjm
+# Initial revision
+#
+#
