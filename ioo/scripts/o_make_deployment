@@ -1,6 +1,6 @@
 #!/bin/csh
-# $Header: /space/home/eng/cjm/cvs/ioo/scripts/o_make_deployment,v 1.3 2012-01-16 10:36:13 cjm Exp $
-# Version: $Revision: 1.3 $
+# $Header: /space/home/eng/cjm/cvs/ioo/scripts/o_make_deployment,v 1.4 2012-05-29 14:03:13 cjm Exp $
+# Version: $Revision: 1.4 $
 # By $Author: cjm $
 # Make a deployment tar file.
 # This contains:
@@ -261,7 +261,7 @@ echo "${dir_count} C test program directories copied, containg ${file_count} C t
 # Scripts
 #
 echo "Copying scripts..."
-set file_list = "o/scripts/o_engineering_mode o/scripts/soak_test_filter_wheel o/scripts/filter_change o/scripts/o_get_status_cron scripts/killhup.csh scripts/fuser_check ccs_gui/java/icsgui o/ccd/test/test_temperature_control_cron"
+set file_list = "o/scripts/o_engineering_mode o/scripts/soak_test_filter_wheel o/scripts/soak_test_data_link o/scripts/filter_change o/scripts/o_get_status_cron scripts/killhup.csh scripts/fuser_check ccs_gui/java/icsgui o/ccd/test/test_temperature_control_cron"
 set file_count = 0
 cd ${dev_dir}
 foreach file ( ${file_list} )
@@ -280,7 +280,7 @@ echo "${file_count} scripts copied."
 #
 # in bin sub-directories
 echo "Copying machine configuration files..."
-set file_list = "o/ccd/test/${HOSTTYPE}/bif486.config o/ccd/test/${HOSTTYPE}/hamamatsu-s9970.config o/java/${machine_name}.fits.properties o/java/${machine_name}.o.net.properties o/java/${machine_name}.o.properties dprt/java/${machine_name}.dprt.properties ccs_gui/java/${machine_name}.ccs_gui.properties ccs_gui/java/${machine_name}.ccs_gui_config.properties ccs_gui/java/${machine_name}.ccs_gui.fits.properties ccs_gui/java/${machine_name}.ics_gui.fits.bss.properties autobooter/java/${machine_name}.autobooter.properties"
+set file_list = "o/ccd/test/${HOSTTYPE}/e2v231-84.config o/ccd/test/${HOSTTYPE}/bif486.config o/ccd/test/${HOSTTYPE}/hamamatsu-s9970.config o/java/${machine_name}.fits.properties o/java/${machine_name}.o.net.properties o/java/${machine_name}.o.properties dprt/java/${machine_name}.dprt.properties ccs_gui/java/${machine_name}.ccs_gui.properties ccs_gui/java/${machine_name}.ccs_gui_config.properties ccs_gui/java/${machine_name}.ccs_gui.fits.properties ccs_gui/java/${machine_name}.ics_gui.fits.bss.properties autobooter/java/${machine_name}.autobooter.properties"
 set file_count = 0
 cd ${dev_dir}
 foreach file ( ${file_list} )
@@ -339,7 +339,7 @@ endif
 # DSP code
 #
 echo "Copying DSP code files..."
-set file_list = "o/dsp/timbif486.lod o/dsp/util.lod"
+set file_list = "o/dsp/time2v231-84.lod o/dsp/util.lod"
 set file_count = 0
 cd ${dev_bin_dir}
 foreach file ( ${file_list} )
@@ -411,6 +411,9 @@ echo "Download ${deployment_tar}.gz o_tar_install icc_cshrc icc_cshrc_edit.awk R
 echo "Deployment ready."
 #
 # $Log: not supported by cvs2svn $
+# Revision 1.3  2012/01/16 10:36:13  cjm
+# Swapped /icc/tmp/ for /icc/-o-data for o1.
+#
 # Revision 1.2  2012/01/16 10:14:28  cjm
 # Added ngat_message_rcs_bss.jar.
 #
