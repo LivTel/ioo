@@ -1,0 +1,28 @@
+IO:O Filter Wheel Position Mapping
+----------------------------------
+$Header: /space/home/eng/cjm/cvs/ioo/docs/o_filter_wheel_positions.txt,v 1.1 2012-05-31 15:24:24 cjm Exp $
+
+Mappings between different filter wheel numbering system in IO:O.
+
+| Filter in Beam | Filter in Beam  | Filter at change port | Filter at change port |
+| Software       | Window on Wheel | Software              | Window on wheel       |
+------------------------------------------------------------------------------------
+| 0		 | 1		   | 8			   | 9			   |
+| 1		 | 2		   | 9			   | 10			   |
+| 2		 | 3		   | 10			   | 11			   |
+| 3		 | 4		   | 11			   | 12			   |
+| 4		 | 5		   | 0			   | 1			   |
+| 5		 | 6		   | 1			   | 2			   |
+| 6		 | 7		   | 2			   | 3			   |
+| 7		 | 8		   | 3			   | 4			   |
+| 8		 | 9		   | 4			   | 5			   |
+| 9		 | 10		   | 5			   | 6			   |
+| 10		 | 11		   | 6			   | 7			   |
+| 11		 | 12		   | 7			   | 8			   |
+------------------------------------------------------------------------------------
+
+Where software number is the 0..11 number used in current.filter.properties.
+
+See also ~dev/src/o/scripts/filter_change
+
+$Log: not supported by cvs2svn $
