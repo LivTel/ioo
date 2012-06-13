@@ -1,13 +1,13 @@
 /* ccd_exposure.c
 ** low level ccd library
-** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ccd_exposure.c,v 1.3 2012-01-11 15:04:55 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ccd_exposure.c,v 1.4 2012-06-13 14:40:53 cjm Exp $
 */
 /**
  * ccd_exposure.c contains routines for performing an exposure with the SDSU CCD Controller. There is a
  * routine that does the whole job in one go, or several routines can be called to do parts of an exposure.
  * An exposure can be paused and resumed, or it can be stopped or aborted.
  * @author SDSU, Chris Mottram
- * @version $Revision: 1.3 $
+ * @version $Revision: 1.4 $
  */
 /**
  * This hash define is needed before including source files give us POSIX.4/IEEE1003.1b-1993 prototypes
@@ -159,7 +159,7 @@ struct Exposure_Struct
 /**
  * Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ccd_exposure.c,v 1.3 2012-01-11 15:04:55 cjm Exp $";
+static char rcsid[] = "$Id: ccd_exposure.c,v 1.4 2012-06-13 14:40:53 cjm Exp $";
 /**
  * Internal exposure data (library wide).
  * @see #Exposure_Struc
@@ -1879,9 +1879,9 @@ static int Exposure_DeInterlace(int ncols,int nrows,unsigned short *old_iptr,
 					j++; /*number of completed rows*/
 					counter=0; /*reset for next convergece*/
 				}
-				*(new_iptr+begin+counter)       = *(old_iptr+i); 
+				*(new_iptr+end-ncols+1+counter)  = *(old_iptr+i); 
 				i++;
-				*(new_iptr+end-ncols+1+counter)     = *(old_iptr+i); 
+				*(new_iptr+begin+counter)        = *(old_iptr+i); 
 				i++;
 				counter++;
 			}/* end while */
@@ -2357,6 +2357,9 @@ static int fexist(char *filename)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.3  2012/01/11 15:04:55  cjm
+** Changed SPLIT_PARALLEL deinterlace to allow for both amplifiers being on the right.
+**
 ** Revision 1.2  2011/11/23 10:59:52  cjm
 ** Added Modified Exposure time which is set based on shuttering effects.
 ** Fixed de-interlacing.
