@@ -1,7 +1,7 @@
        COMMENT *
-	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/e2v231-84/e2v231-84.waveforms,v 1.4 2012-05-29 14:25:13 cjm Exp $
-	Id: 	 $Id: e2v231-84.waveforms,v 1.4 2012-05-29 14:25:13 cjm Exp $
-	Version: $Revision: 1.4 $
+	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/e2v231-84/e2v231-84.waveforms,v 1.5 2012-06-19 10:41:04 cjm Exp $
+	Id: 	 $Id: e2v231-84.waveforms,v 1.5 2012-06-19 10:41:04 cjm Exp $
+	Version: $Revision: 1.5 $
 Waveform tables for CCD231-84. Waveforms based on E2V spec sheet A1A-765136 V1, October 2008.
 Waveforms are Mode 1 (low read noise, lower pixel charge capacity).
 Assumes usage with an SDSU ARC-22 timing board, ARC-32 clock driver board, and 2 x ARC-45 video boards.
@@ -19,7 +19,7 @@ TOI_DLY	 EQU	$900000		; spec 10us : 16x640ns (bit 23 set) = 0x900000 = 10240ns
 TDTR_DLY EQU	$900000		; spec 10us : 16x640ns (bit 23 set) = 0x900000 = 10240ns
 TDRG_DLY EQU	$A00000		; spec 20us : 32x640ns (bit 23 set) = 0xA00000 = 20480ns
 TDGR_DLY EQU	$A00000		; spec 20us : 32x640ns (bit 23 set) = 0xA00000 = 20480ns
-R_DLY	 EQU	$000000		; Serial register transfer delay
+R_DLY	 EQU	$0A0000		; Serial register transfer delay
 NSCLR	 EQU	2048		; To clear the serial register
 NPCLR	 EQU	2056    	; To clear the parallel register.
 SH_DEL	 EQU	100		; Delay in milliseconds between shutter
@@ -28,7 +28,8 @@ PRESCAN EQU	3		; PRESCAN - Needs to be at least 3 due to pixel pipelining, to re
 PRESKIP EQU	0		; 
 NPAR	EQU	1		; Repeat number for SLOW_CLOCKS
 
-INT_TIM	EQU	$060000		; Signal integration time for ~1 microsec/pixel (300ns delay)
+;INT_TIM	EQU	$060000		; Signal integration time for ~1 microsec/pixel (300ns delay)
+INT_TIM	EQU	$140000		; Signal integration time for several microsec/pixel (longer delay)
 
 ; CCD clock voltages
 RG_HI	EQU	12.0		; Reset Gate High
@@ -410,28 +411,21 @@ END_PARALLEL_CLEAR_SPLIT
 ; R3 = E3/F3/G3/H3 = R3L+R3R
 SERIAL_IDLE
  	DC	END_SERIAL_IDLE-SERIAL_IDLE-1
-; 0: R_DLY   : 00+00+R3+SW+0
-;	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW   IAS
-; 1: R_DLY   : R1+00+00+00+0
-;	DC	CLK2+R_DLY+00+000+R2L+000+000+R2R+000+SW   IAS
-; 2: R_DLY   : 00+R2+00+00+0
-	DC	CLK2+R_DLY+00+R1L+000+000+R1R+000+000+SW
-; 3: R_DLY   : 00+R2+00+00+R  Should be twxmtdx delay (30ns) but executing waveform takes 40ns
 	DC	CLK2+R_DLY+RG+R1L+000+000+R1R+000+000+SW
-; 4: R_DLY   : 00+00+R3+SW+R  Should be tdx delay (20ns) but executing waveform takes 40ns
-	DC	CLK2+R_DLY+RG+000+000+R3L+000+000+R3R+SW
-; 5: R_DLY   : 00+00+R3+SW+0
+	DC	CLK2+R_DLY+00+R1L+000+000+R1R+000+000+SW
+	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
+	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
 	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
 ; Sample reset level
-	DC	VIDEO+$000000+%0010111		; Stop resetting integrator
+	DC	VIDEO+$030000+%0010111		; Stop resetting integrator
 	DC	VIDEO+INT_TIM+%0000111		; Integrate
 	DC	VIDEO+$000000+%0011011		; Stop Integrate
-; 6: R_DLY   : R1+00+00+00+0
-	DC	CLK2+R_DLY+00+000+R2L+000+000+R2R+000+00
+	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+00
 ; sample signal level
 	DC	VIDEO+INT_TIM+%0001011		; Integrate
 	DC	VIDEO+$000000+%0011011		; Stop, A/D is sampling
 	DC	VIDEO+%1110100			; Start A/D conversion
+	DC	CLK2+R_DLY+00+000+R2L+000+000+R2R+000+00
 END_SERIAL_IDLE
 
 ; LEFT: Register EF moves towards E, Register GH moves towards H
@@ -440,11 +434,6 @@ END_SERIAL_IDLE
 ; R3 = E3/F3/G3/H3 = R3L+R3R
 SERIAL_SKIP_LEFT	; Serial clocking waveform for skipping left
 	DC	END_SERIAL_SKIP_LEFT-SERIAL_SKIP_LEFT-1
-; diddly we should delete '0' as it's a replication of index 5
-; 0: R_DLY   : 00+00+R3+SW+0
-;	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
-; 1: R_DLY   : R1+00+00+00+0
-;	DC	CLK2+R_DLY+00+000+R2L+000+R1R+000+000+SW
 ; 2: R_DLY   : 00+R2+00+00+0
 	DC	CLK2+R_DLY+00+R1L+000+000+000+R2R+000+SW
 ; 3: R_DLY   : 00+R2+00+00+R  Should be twxmtdx delay (30ns) but executing waveform takes 40ns
@@ -460,10 +449,6 @@ END_SERIAL_SKIP_LEFT
 ; Copied from FIRST_CLOCKS_RIGHT / CHARGE_DUMP_RIGHT
 SERIAL_SKIP_RIGHT	; Serial clocking waveform for skipping right
 	DC	END_SERIAL_SKIP_RIGHT-SERIAL_SKIP_RIGHT-1
-; 0: R_DLY   : 00+00+R3+SW+0
-;	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
-; 1: R_DLY   : R1+00+00+00+0
-;	DC	CLK2+R_DLY+00+R1L+000+000+000+R2R+000+SW
 ; 2: R_DLY   : 00+R2+00+00+0
 	DC	CLK2+R_DLY+00+000+R2L+000+R1R+000+000+SW
 ; 3: R_DLY   : 00+R2+00+00+R  Should be twxmtdx delay (30ns) but executing waveform takes 40ns
@@ -479,10 +464,6 @@ END_SERIAL_SKIP_RIGHT
 ; Copied from FIRST_CLOCKS_SPLIT / CHARGE_DUMP_SPLIT
 SERIAL_SKIP_SPLIT	; Serial clocking waveform for skipping both ends
 	DC	END_SERIAL_SKIP_SPLIT-SERIAL_SKIP_SPLIT-1
-; 0: R_DLY   : 00+00+R3+SW+0
-;	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
-; 1: R_DLY   : R1+00+00+00+0
-;	DC	CLK2+R_DLY+00+000+R2L+000+000+R2R+000+SW
 ; 2: R_DLY   : 00+R2+00+00+0
 	DC	CLK2+R_DLY+00+R1L+000+000+R1R+000+000+SW
 ; 3: R_DLY   : 00+R2+00+00+R  Should be twxmtdx delay (30ns) but executing waveform takes 40ns
@@ -497,16 +478,13 @@ END_SERIAL_SKIP_SPLIT
 
 SERIALS_EXPOSE
 	DC	END_SERIALS_EXPOSE-SERIALS_EXPOSE-1
+	DC	CLK3+TDGR_DLY+000+I2L+I3L+000+000+000+I2U+I3U+000+000+00 ; IAS 
 	DC	CLK2+R_DLY+RG+R1L+R2L+000+R1R+R2R+000+00 ;  setup serial waveforms correctly. R1 and R2 high. SW?
 END_SERIALS_EXPOSE
 
 ; same as SERIAL_SKIP_SPLIT
 SERIAL_CLEAR		; Serial clocking waveform for clearing both ends
 	DC	END_SERIAL_CLEAR-SERIAL_CLEAR-1
-; 0: R_DLY   : 00+00+R3+SW+0
-;	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
-; 1: R_DLY   : R1+00+00+00+0
-;	DC	CLK2+R_DLY+00+000+R2L+000+000+R2R+000+SW
 ; 2: R_DLY   : 00+R2+00+00+0
 	DC	CLK2+R_DLY+00+R1L+000+000+R1R+000+000+SW
 ; 3: R_DLY   : 00+R2+00+00+R  Should be twxmtdx delay (30ns) but executing waveform takes 40ns
@@ -566,10 +544,6 @@ END_RESET_VIDEO
 ; SW held high until last bin, then clocked as R3
 FIRST_CLOCKS_LEFT
  	DC	END_FIRST_CLOCKS_LEFT-FIRST_CLOCKS_LEFT-1
-; 0: R_DLY   : 00+00+R3+SW+0
-;	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
-; 1: R_DLY   : R1+00+00+00+0
-;	DC	CLK2+R_DLY+00+000+R2L+000+R1R+000+000+SW
 ; 2: R_DLY   : 00+R2+00+00+0
 	DC	CLK2+R_DLY+00+R1L+000+000+000+R2R+000+SW
 ; 3: R_DLY   : 00+R2+00+00+R  Should be twxmtdx delay (30ns) but executing waveform takes 40ns
@@ -583,10 +557,6 @@ END_FIRST_CLOCKS_LEFT
 
 CLOCK_LINE_LEFT
 	DC	END_CLOCK_LINE_LEFT-CLOCK_LINE_LEFT-1
-; 6: R_DLY   : R1+00+00+00+0
-;	DC	CLK2+R_DLY+00+000+R2L+000+R1R+000+000+SW
-; 0: R_DLY   : 00+00+R3+SW+0
-;	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
 ; 1: R_DLY   : R1+00+00+00+0
 	DC	CLK2+R_DLY+00+000+R2L+000+R1R+000+000+SW
 ; 2: R_DLY   : 00+R2+00+00+0
@@ -617,10 +587,6 @@ END_CHARGE_DUMP_LEFT
 ; R3 = E3/F3/G3/H3 = R3L+R3R
 FIRST_CLOCKS_RIGHT
  	DC	END_FIRST_CLOCKS_RIGHT-FIRST_CLOCKS_RIGHT-1
-; 0: R_DLY   : 00+00+R3+SW+0
-;	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
-; 1: R_DLY   : R1+00+00+00+0
-;	DC	CLK2+R_DLY+00+R1L+000+000+000+R2R+000+SW
 ; 2: R_DLY   : 00+R2+00+00+0
 	DC	CLK2+R_DLY+00+000+R2L+000+R1R+000+000+SW
 ; 3: R_DLY   : 00+R2+00+00+R  Should be twxmtdx delay (30ns) but executing waveform takes 40ns
@@ -634,10 +600,6 @@ END_FIRST_CLOCKS_RIGHT
 
 CLOCK_LINE_RIGHT
  	DC	END_CLOCK_LINE_RIGHT-CLOCK_LINE_RIGHT-1
-; 6: R_DLY   : R1+00+00+00+0
-;	DC	CLK2+R_DLY+00+R1L+000+000+000+R2R+000+SW
-; 0: R_DLY   : 00+00+R3+SW+0
-;	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
 ; 1: R_DLY   : R1+00+00+00+0
 	DC	CLK2+R_DLY+00+R1L+000+000+000+R2R+000+SW
 ; 2: R_DLY   : 00+R2+00+00+0
@@ -669,43 +631,24 @@ END_CHARGE_DUMP_RIGHT
 ; R3 = E3/F3/G3/H3 = R3L+R3R
 FIRST_CLOCKS_SPLIT
  	DC	END_FIRST_CLOCKS_SPLIT-FIRST_CLOCKS_SPLIT-1
-; 0: R_DLY   : 00+00+R3+SW+0
-;	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
-; 1: R_DLY   : R1+00+00+00+0
-;	DC	CLK2+R_DLY+00+000+R2L+000+000+R2R+000+SW
-; 2: R_DLY   : 00+R2+00+00+0
-	DC	CLK2+R_DLY+00+R1L+000+000+R1R+000+000+SW
-; 3: R_DLY   : 00+R2+00+00+R  Should be twxmtdx delay (30ns) but executing waveform takes 40ns
 	DC	CLK2+R_DLY+RG+R1L+000+000+R1R+000+000+SW
-; 4: R_DLY   : 00+00+R3+SW+R  Should be tdx delay (20ns) but executing waveform takes 40ns
-	DC	CLK2+R_DLY+RG+000+000+R3L+000+000+R3R+SW
-; 5: R_DLY   : 00+00+R3+SW+0
+	DC	CLK2+R_DLY+00+R1L+000+000+R1R+000+000+SW
+	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
 	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
 ; Next: Sample reset level
 END_FIRST_CLOCKS_SPLIT
 
 CLOCK_LINE_SPLIT
  	DC	END_CLOCK_LINE_SPLIT-CLOCK_LINE_SPLIT-1
-; 6: R_DLY   : R1+00+00+00+0
-;	DC	CLK2+R_DLY+00+000+R2L+000+000+R2R+000+SW
-; 0: R_DLY   : 00+00+R3+SW+0
-;	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
-; 1: R_DLY   : R1+00+00+00+0
 	DC	CLK2+R_DLY+00+000+R2L+000+000+R2R+000+SW
-; 2: R_DLY   : 00+R2+00+00+0
 	DC	CLK2+R_DLY+00+R1L+000+000+R1R+000+000+SW
-; 3: R_DLY   : 00+R2+00+00+R  Should be twxmtdx delay (30ns) but executing waveform takes 40ns
-	DC	CLK2+R_DLY+RG+R1L+000+000+R1R+000+000+SW
-; 4: R_DLY   : 00+00+R3+SW+R  Should be tdx delay (20ns) but executing waveform takes 40ns
-	DC	CLK2+R_DLY+RG+000+000+R3L+000+000+R3R+SW
-; 5: R_DLY   : 00+00+R3+SW+0
+	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
 	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
 ; Next: Sample reset level
 END_CLOCK_LINE_SPLIT
 
 CHARGE_DUMP_SPLIT
  	DC	END_CHARGE_DUMP_SPLIT-CHARGE_DUMP_SPLIT-1
-; 6: R_DLY   : R1+00+00+00+0
 	DC	CLK2+R_DLY+00+000+R2L+000+000+R2R+000+00
 ; sample signal level
 INTEGRATE_SIGNAL_SPLIT
@@ -812,6 +755,14 @@ END_DACS
 
 ;
 ; $Log: not supported by cvs2svn $
+; Revision 1.4  2012/05/29 14:25:13  cjm
+; Changes made by IAS on site.
+; I4L moved from pin 16 to pin 37, as pin 16 caused signal problems.
+; Phases 0 and 1 commented out from all serial waveforms, as they are duplicates
+; in the spec sheet (i.e. phase 1 is also phase 6).
+; Offset tuned.
+; Pin 37 voltages set up.
+;
 ; Revision 1.3  2012/05/22 15:31:11  cjm
 ; Fixed VRD board 0 settings in DACS.
 ; Commented out spurious Gain setting examples.
