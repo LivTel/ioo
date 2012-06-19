@@ -1,7 +1,7 @@
        COMMENT *
-	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/e2v231-84/e2v231-84.waveforms,v 1.6 2012-06-19 14:17:53 cjm Exp $
-	Id: 	 $Id: e2v231-84.waveforms,v 1.6 2012-06-19 14:17:53 cjm Exp $
-	Version: $Revision: 1.6 $
+	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/e2v231-84/e2v231-84.waveforms,v 1.7 2012-06-19 15:01:57 cjm Exp $
+	Id: 	 $Id: e2v231-84.waveforms,v 1.7 2012-06-19 15:01:57 cjm Exp $
+	Version: $Revision: 1.7 $
 Waveform tables for CCD231-84. Waveforms based on E2V spec sheet A1A-765136 V1, October 2008.
 Waveforms are Mode 1 (low read noise, lower pixel charge capacity).
 Assumes usage with an SDSU ARC-22 timing board, ARC-32 clock driver board, and 2 x ARC-45 video boards.
@@ -417,7 +417,7 @@ SERIAL_IDLE
 	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
 	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
 ; Sample reset level
-	DC	VIDEO+$030000+%0010111		; Stop resetting integrator
+	DC	VIDEO+$000000+%0010111		; Stop resetting integrator
 	DC	VIDEO+INT_TIM+%0000111		; Integrate
 	DC	VIDEO+$000000+%0011011		; Stop Integrate
 	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+00
@@ -755,6 +755,9 @@ END_DACS
 
 ;
 ; $Log: not supported by cvs2svn $
+; Revision 1.6  2012/06/19 14:17:53  cjm
+; Also OFFSET now set to $800 from $500.
+;
 ; Revision 1.5  2012/06/19 10:41:04  cjm
 ; Changes to reduce readnoise to ~5 electrons:
 ; R_DLY increased to slow serial transfer.
