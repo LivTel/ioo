@@ -1,5 +1,5 @@
 // FITSImplementation.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/FITSImplementation.java,v 1.8 2012-04-19 13:12:40 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/FITSImplementation.java,v 1.9 2012-07-10 13:41:31 cjm Exp $
 package ngat.o;
 
 import java.lang.*;
@@ -22,14 +22,14 @@ import ngat.util.logging.*;
  * use the hardware  libraries as this is needed to generate FITS files.
  * @see HardwareImplementation
  * @author Chris Mottram
- * @version $Revision: 1.8 $
+ * @version $Revision: 1.9 $
  */
 public class FITSImplementation extends HardwareImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: FITSImplementation.java,v 1.8 2012-04-19 13:12:40 cjm Exp $");
+	public final static String RCSID = new String("$Id: FITSImplementation.java,v 1.9 2012-07-10 13:41:31 cjm Exp $");
 	/**
 	 * Internal constant used when the order number offset defined in the property
 	 * 'o.get_fits.order_number_offset' is not found or is not a valid number.
@@ -223,8 +223,8 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 	 * @see OStatus#getFilterIdOpticalThickness
 	 * @see OStatus#getBSSFocusOffset
 	 * @see ngat.o.ccd.CCDLibrary#filterWheelGetPosition
-	 * @see ngat.o.ccd.CCDLibrary#getNCols
-	 * @see ngat.o.ccd.CCDLibrary#getNRows
+	 * @see ngat.o.ccd.CCDLibrary#getBinnedNCols
+	 * @see ngat.o.ccd.CCDLibrary#getBinnedNRows
 	 * @see ngat.o.ccd.CCDLibrary#getTemperature
 	 * @see ngat.o.ccd.CCDLibrary#getTemperatureHeaterADU
 	 * @see ngat.o.ccd.CCDLibrary#getTemperatureHeaterPower
@@ -311,10 +311,10 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 			}
 		// NAXIS1
 			cardImage = oFitsHeader.get("NAXIS1");
-			cardImage.setValue(new Integer(ccd.getNCols()));
+			cardImage.setValue(new Integer(ccd.getBinnedNCols()));
 		// NAXIS2
 			cardImage = oFitsHeader.get("NAXIS2");
-			cardImage.setValue(new Integer(ccd.getNRows()));
+			cardImage.setValue(new Integer(ccd.getBinnedNRows()));
 		// OBSTYPE
 			cardImage = oFitsHeader.get("OBSTYPE");
 			cardImage.setValue(obsTypeString);
@@ -800,8 +800,8 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 					o.log(Logging.VERBOSITY_VERY_VERBOSE,this.getClass().getName()+
 						":saveFitsHeaders:Using default window : "+window+".");
 					oFilename.setWindowNumber(1);
-					ncols = ccd.getNCols();
-					nrows = ccd.getNRows();
+					ncols = ccd.getBinnedNCols();
+					nrows = ccd.getBinnedNRows();
 				}
 				filename = oFilename.getFilename();
 				// NAXIS1
@@ -1348,6 +1348,13 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.8  2012/04/19 13:12:40  cjm
+// getFitsHeadersFromBSS/setFocusOffset/beamSteer now retrieve bssUse
+// from the "o.net.bss.use" config value, and only invoke sendBSSCommand
+// if it is true. sendBSSCommand also checks this config, but adding
+// checks here means getFitsHeadersFromBSS will not fail when it gets the
+// wrong return class from sendBSSCommand in fake mode.
+//
 // Revision 1.7  2012/02/08 10:46:10  cjm
 // Added beamSteer method, so it can be called from both TWILIGHTCalibrate and ACQUIRE implementations.
 //
