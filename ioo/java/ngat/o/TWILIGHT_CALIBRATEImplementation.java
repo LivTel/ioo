@@ -1,5 +1,5 @@
 // TWILIGHT_CALIBRATEImplementation.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/TWILIGHT_CALIBRATEImplementation.java,v 1.4 2012-02-08 10:47:10 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/TWILIGHT_CALIBRATEImplementation.java,v 1.5 2012-07-12 12:30:28 cjm Exp $
 package ngat.o;
 
 import java.io.*;
@@ -29,21 +29,22 @@ import ngat.util.logging.*;
  * The exposure length is dynamically adjusted as the sky gets darker or brighter. TWILIGHT_CALIBRATE commands
  * should be sent to O just after sunset and just before sunrise.
  * @author Chris Mottram
- * @version $Revision: 1.4 $
+ * @version $Revision: 1.5 $
  */
 public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: TWILIGHT_CALIBRATEImplementation.java,v 1.4 2012-02-08 10:47:10 cjm Exp $");
+	public final static String RCSID = new String("$Id: TWILIGHT_CALIBRATEImplementation.java,v 1.5 2012-07-12 12:30:28 cjm Exp $");
 	/**
 	 * The number of different binning factors we should min/best/max count data for.
+	 * Actually 1 more than the maximum used binning, as we go from 1 not 0.
 	 * @see #minMeanCounts
 	 * @see #maxMeanCounts
 	 * @see #bestMeanCounts
 	 */
-	protected final static int BIN_COUNT 	     = 4;
+	protected final static int BIN_COUNT 	     = 5;
 	/**
 	 * Initial part of a key string, used to create a list of potential twilight calibrations to
 	 * perform from a Java property file.
@@ -229,22 +230,22 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 	private String temporaryFITSFilename = null;
 	/**
 	 * The minimum mean counts. A &quot;good&quot; frame will have a mean counts greater than this number.
-	 * A list, indexed by binning factor, as the F486 has different saturation values at different binnings.
+	 * A list, indexed by binning factor, as the chip has different saturation values at different binnings.
 	 * The array must be BIN_COUNT size long.
 	 */
-	private int minMeanCounts[] = {0,0,0,0};
+	private int minMeanCounts[] = {0,0,0,0,0};
 	/**
 	 * The best mean counts. The &quot;ideal&quot; frame will have a mean counts of this number.
-	 * A list, indexed by binning factor, as the F486 has different saturation values at different binnings.
+	 * A list, indexed by binning factor, as the chip has different saturation values at different binnings.
 	 * The array must be BIN_COUNT size long.
 	 */
-	private int bestMeanCounts[] = {0,0,0,0};
+	private int bestMeanCounts[] = {0,0,0,0,0};
 	/**
 	 * The maximum mean counts. A &quot;good&quot; frame will have a mean counts less than this number.
-	 * A list, indexed by binning factor, as the F486 has different saturation values at different binnings.
+	 * A list, indexed by binning factor, as the chip has different saturation values at different binnings.
 	 * The array must be BIN_COUNT size long.
 	 */
-	private int maxMeanCounts[] = {0,0,0,0};
+	private int maxMeanCounts[] = {0,0,0,0,0};
 	/**
 	 * The last relative filter sensitivity used for calculating exposure lengths.
 	 */
@@ -521,16 +522,17 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 		// saved state filename
 			propertyName = LIST_KEY_STRING+"state_filename";
 			stateFilename = status.getProperty(propertyName);
-			for(int binIndex = 0; binIndex < BIN_COUNT; binIndex ++)
+			// binning goes from 1..BIN_COUNT-1
+			for(int binIndex = 1; binIndex < BIN_COUNT; binIndex ++)
 			{
 				// minimum mean counts
-				propertyName = LIST_KEY_STRING+"mean_counts.min."+(binIndex + 1);
+				propertyName = LIST_KEY_STRING+"mean_counts.min."+binIndex;
 				minMeanCounts[binIndex] = status.getPropertyInteger(propertyName);
 				// best mean counts
-				propertyName = LIST_KEY_STRING+"mean_counts.best."+(binIndex + 1);
+				propertyName = LIST_KEY_STRING+"mean_counts.best."+binIndex;
 				bestMeanCounts[binIndex] = status.getPropertyInteger(propertyName);
 				// maximum mean counts
-				propertyName = LIST_KEY_STRING+"mean_counts.max."+(binIndex + 1);
+				propertyName = LIST_KEY_STRING+"mean_counts.max."+binIndex;
 				maxMeanCounts[binIndex] = status.getPropertyInteger(propertyName);
 			}// end for on binIndex
 		}
@@ -2192,6 +2194,10 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.4  2012/02/08 10:47:10  cjm
+// Moved beamSteer method to FITSImplementation so it can be called from ACQUIREImplementation.
+// Changed beamSteer API so it throws an exception.
+//
 // Revision 1.3  2012/01/17 15:26:34  cjm
 // Changed upperSlide and lowerSlide from parsed integers to Strings, to match new parameters
 // to BEAM_STEER command.
