@@ -1,5 +1,5 @@
 // TWILIGHT_CALIBRATEImplementation.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/TWILIGHT_CALIBRATEImplementation.java,v 1.5 2012-07-12 12:30:28 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/TWILIGHT_CALIBRATEImplementation.java,v 1.6 2012-07-12 14:26:59 cjm Exp $
 package ngat.o;
 
 import java.io.*;
@@ -29,14 +29,14 @@ import ngat.util.logging.*;
  * The exposure length is dynamically adjusted as the sky gets darker or brighter. TWILIGHT_CALIBRATE commands
  * should be sent to O just after sunset and just before sunrise.
  * @author Chris Mottram
- * @version $Revision: 1.5 $
+ * @version $Revision: 1.6 $
  */
 public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: TWILIGHT_CALIBRATEImplementation.java,v 1.5 2012-07-12 12:30:28 cjm Exp $");
+	public final static String RCSID = new String("$Id: TWILIGHT_CALIBRATEImplementation.java,v 1.6 2012-07-12 14:26:59 cjm Exp $");
 	/**
 	 * The number of different binning factors we should min/best/max count data for.
 	 * Actually 1 more than the maximum used binning, as we go from 1 not 0.
@@ -402,8 +402,17 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 			exposureLength = minExposureLength;
 		else // this should never happen
 			exposureLength = minExposureLength;
+		// set lastFilterSensitivity/lastBin to contents of first calibration so initial exposure length
+		// remains the same as the calculated above.
 		lastFilterSensitivity = 1.0;
 		lastBin = 1;
+		if(calibrationList.size() > 0)
+		{
+			calibration = (TWILIGHT_CALIBRATECalibration)(calibrationList.get(0));
+			lastFilterSensitivity = calibration.getFilterSensitivity();
+			lastBin = calibration.getBin();
+		}
+		// initialise loop variables
 		calibrationListIndex = 0;
 		doneCalibration = false;
 	// main loop, do calibrations until we run out of time.
@@ -885,7 +894,9 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 	 * <li>If we did this calibration more recently than frequency, log and return.
 	 * <li>The start exposure length is recalculated, by dividing by the last relative sensitivity used
 	 * 	(to get the exposure length as if though a clear filter), and then dividing by the 
-	 * 	new relative filter sensitivity (to increase the exposure length). 
+	 * 	new relative filter sensitivity (to increase the exposure length).
+	 * <li>The start exposure length is recalculated to take account of differences from the last binning
+	 *     to the new binning.
 	 * <li>If the new exposure length is too short, it is reset to the minimum exposure length.
 	 * <li>If the new exposure length is too long, the fact is logged and the method returns.
 	 * <li><b>sendBasicAck</b> is called to stop the client timing out before the config is completed.
@@ -958,8 +969,19 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 			return true;
 		}
 	// recalculate the exposure length
+		o.log(Logging.VERBOSITY_VERBOSE,
+		      "Command:"+twilightCalibrateCommand.getClass().getName()+
+		      ":doCalibrate:exposureLength currently:"+exposureLength);
 		exposureLength = (int)((((double)exposureLength)*lastFilterSensitivity)/filterSensitivity);
+		o.log(Logging.VERBOSITY_VERBOSE,
+		      "Command:"+twilightCalibrateCommand.getClass().getName()+
+		      ":doCalibrate:exposureLength after multiplication through by last filter sensitivity:"+
+		      lastFilterSensitivity+"/ filter senisitivity:"+filterSensitivity+" =:"+exposureLength);
 		exposureLength = (exposureLength*(lastBin*lastBin))/(bin*bin);
+		o.log(Logging.VERBOSITY_VERBOSE,
+		      "Command:"+twilightCalibrateCommand.getClass().getName()+
+		      ":doCalibrate:exposureLength after multiplication through by last bin:"+
+		      lastBin+" (squared) / bin:"+bin+" (squared) =:"+exposureLength);
 	// if we are going to do this calibration, reset the last filter sensitivity for next time
 	// We need to think about when to do this when the new exposure length means we DON'T do the calibration
 		lastFilterSensitivity = filterSensitivity;
@@ -2194,6 +2216,10 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.5  2012/07/12 12:30:28  cjm
+// Changed indexing into min/best/maxMeanCounts and BIN_COUNT now 5.
+// This allows property keys and array indexes to use the binning factor as an index.
+//
 // Revision 1.4  2012/02/08 10:47:10  cjm
 // Moved beamSteer method to FITSImplementation so it can be called from ACQUIREImplementation.
 // Changed beamSteer API so it throws an exception.
