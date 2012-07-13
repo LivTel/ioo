@@ -1,5 +1,5 @@
 // TWILIGHT_CALIBRATEImplementation.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/TWILIGHT_CALIBRATEImplementation.java,v 1.7 2012-07-13 11:10:35 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/TWILIGHT_CALIBRATEImplementation.java,v 1.8 2012-07-13 11:23:07 cjm Exp $
 package ngat.o;
 
 import java.io.*;
@@ -29,14 +29,14 @@ import ngat.util.logging.*;
  * The exposure length is dynamically adjusted as the sky gets darker or brighter. TWILIGHT_CALIBRATE commands
  * should be sent to O just after sunset and just before sunrise.
  * @author Chris Mottram
- * @version $Revision: 1.7 $
+ * @version $Revision: 1.8 $
  */
 public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: TWILIGHT_CALIBRATEImplementation.java,v 1.7 2012-07-13 11:10:35 cjm Exp $");
+	public final static String RCSID = new String("$Id: TWILIGHT_CALIBRATEImplementation.java,v 1.8 2012-07-13 11:23:07 cjm Exp $");
 	/**
 	 * The number of different binning factors we should min/best/max count data for.
 	 * Actually 1 more than the maximum used binning, as we go from 1 not 0.
@@ -1394,7 +1394,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 			o.log(Logging.VERBOSITY_VERBOSE,"Command:"+twilightCalibrateCommand.getId()+
 			      ":doFrame:"+"bin:"+bin+
 			      ":upper slide:"+upperSlide+":lower slide:"+lowerSlide+":filter:"+filter+
-			      "Attempting exposure: length:"+exposureLength+".");
+			      ":Attempting exposure: length:"+exposureLength+".");
 		// do exposure
 			try
 			{
@@ -2240,6 +2240,11 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.7  2012/07/13 11:10:35  cjm
+// Logging changes to remove newlines - makes the logs harder to read but easier to grep.
+// Passed down filter[Slides] and binning to doFrame, so doFrame logs have lots of
+// useful into in them.
+//
 // Revision 1.6  2012/07/12 14:26:59  cjm
 // Added extra setting of initial values of lastFilterSensitivity and
 // lastBin from first calibration, so first exposure length is calculated to be the
