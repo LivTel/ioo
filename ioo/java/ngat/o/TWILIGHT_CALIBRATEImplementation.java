@@ -1,5 +1,5 @@
 // TWILIGHT_CALIBRATEImplementation.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/TWILIGHT_CALIBRATEImplementation.java,v 1.6 2012-07-12 14:26:59 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/TWILIGHT_CALIBRATEImplementation.java,v 1.7 2012-07-13 11:10:35 cjm Exp $
 package ngat.o;
 
 import java.io.*;
@@ -29,14 +29,14 @@ import ngat.util.logging.*;
  * The exposure length is dynamically adjusted as the sky gets darker or brighter. TWILIGHT_CALIBRATE commands
  * should be sent to O just after sunset and just before sunrise.
  * @author Chris Mottram
- * @version $Revision: 1.6 $
+ * @version $Revision: 1.7 $
  */
 public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: TWILIGHT_CALIBRATEImplementation.java,v 1.6 2012-07-12 14:26:59 cjm Exp $");
+	public final static String RCSID = new String("$Id: TWILIGHT_CALIBRATEImplementation.java,v 1.7 2012-07-13 11:10:35 cjm Exp $");
 	/**
 	 * The number of different binning factors we should min/best/max count data for.
 	 * Actually 1 more than the maximum used binning, as we go from 1 not 0.
@@ -690,8 +690,8 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 			// log
 				o.log(Logging.VERBOSITY_VERBOSE,
 					"Command:"+twilightCalibrateCommand.getClass().getName()+
-					":Loaded calibration "+index+
-					"\n\tbin:"+calibration.getBin()+
+					":Loaded calibration:"+index+
+					":bin:"+calibration.getBin()+
 					":use window amplifier:"+calibration.useWindowAmplifier()+
 					":upper slide:"+calibration.getUpperSlide()+
 					":lower slide:"+calibration.getLowerSlide()+
@@ -834,7 +834,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 				o.log(Logging.VERBOSITY_VERBOSE,
 					"Command:"+twilightCalibrateCommand.getClass().getName()+
 					":Loaded offset "+index+
-					"\n\tRA Offset:"+offset.getRAOffset()+
+					":RA Offset:"+offset.getRAOffset()+
 					":DEC Offset:"+offset.getDECOffset()+".");
 			}
 			else
@@ -876,13 +876,13 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 			calibration.setLastTime(lastTime);
 			o.log(Logging.VERBOSITY_VERBOSE,
 			      "Command:"+twilightCalibrateCommand.getClass().getName()+":Calibration:"+
-			      "\n\tbin:"+calibration.getBin()+
+			      "bin:"+calibration.getBin()+
 			      ":use window amplifier:"+calibration.useWindowAmplifier()+
 			      ":upper slide:"+calibration.getUpperSlide()+
 			      ":lower slide:"+calibration.getLowerSlide()+
 			      ":filter:"+calibration.getFilter()+
 			      ":frequency:"+calibration.getFrequency()+
-			      "\n\t\tnow has last time set to:"+lastTime+".");
+			      " now has last time set to:"+lastTime+".");
 		}
 		return true;
 	}
@@ -931,15 +931,14 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 
 		o.log(Logging.VERBOSITY_VERBOSE,
 		      "Command:"+twilightCalibrateCommand.getClass().getName()+
-		      ":doCalibrate:"+
-		      "\n\tbin:"+calibration.getBin()+
+		      ":doCalibrate:"+"bin:"+calibration.getBin()+
 		      ":use window amplifier:"+calibration.useWindowAmplifier()+
 		      ":upper slide:"+calibration.getUpperSlide()+
 		      ":lower slide:"+calibration.getLowerSlide()+
 		      ":filter:"+calibration.getFilter()+
 		      ":frequency:"+calibration.getFrequency()+
 		      ":filter sensitivity:"+calibration.getFilterSensitivity()+
-		      ":last time:"+calibration.getLastTime()+".");
+		      ":last time:"+calibration.getLastTime()+" Started.");
 	// get copy of calibration data
 		bin = calibration.getBin();
 		useWindowAmplifier = calibration.useWindowAmplifier();
@@ -956,16 +955,14 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 		{
 			o.log(Logging.VERBOSITY_VERBOSE,
 			      "Command:"+twilightCalibrateCommand.getClass().getName()+
-			      ":doCalibrate:"+
-			      "\n\tbin:"+calibration.getBin()+
+			      ":doCalibrate:"+"bin:"+calibration.getBin()+
 			      ":use window amplifier:"+calibration.useWindowAmplifier()+
 			      ":upper slide:"+calibration.getUpperSlide()+
 			      ":lower slide:"+calibration.getLowerSlide()+
 			      ":filter:"+calibration.getFilter()+
 			      ":frequency:"+calibration.getFrequency()+
 			      ":last time:"+lastTime+
-			      "\n\tNOT DONE: too soon since last completed:"+
-			      "\n\t"+now+" - "+lastTime+" < "+frequency+".");
+			      "NOT DONE: too soon since last completed:"+now+" - "+lastTime+" < "+frequency+".");
 			return true;
 		}
 	// recalculate the exposure length
@@ -991,15 +988,14 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 		{
 			o.log(Logging.VERBOSITY_VERBOSE,
 			      "Command:"+twilightCalibrateCommand.getClass().getName()+
-			      ":doCalibrate:"+
-			      "\n\tbin:"+calibration.getBin()+
+			      ":doCalibrate:"+"bin:"+calibration.getBin()+
 			      ":use window amplifier:"+calibration.useWindowAmplifier()+
 			      ":upper slide:"+calibration.getUpperSlide()+
 			      ":lower slide:"+calibration.getLowerSlide()+
 			      ":filter:"+calibration.getFilter()+
 			      ":frequency:"+calibration.getFrequency()+
 			      ":last time:"+lastTime+
-			      "\n\tcalculated exposure length:"+exposureLength+
+			      " calculated exposure length:"+exposureLength+
 			      " too short, using minimum:"+minExposureLength+".");
 			exposureLength = minExposureLength;
 		}
@@ -1007,15 +1003,14 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 		{
 			o.log(Logging.VERBOSITY_VERBOSE,
 			      "Command:"+twilightCalibrateCommand.getClass().getName()+
-			      ":doCalibrate:"+
-			      "\n\tbin:"+calibration.getBin()+
+			      ":doCalibrate:"+"bin:"+calibration.getBin()+
 			      ":use window amplifier:"+calibration.useWindowAmplifier()+
 			      ":upper slide:"+calibration.getUpperSlide()+
 			      ":lower slide:"+calibration.getLowerSlide()+
 			      ":filter:"+calibration.getFilter()+
 			      ":frequency:"+calibration.getFrequency()+
 			      ":last time:"+lastTime+
-			      "\n\tcalculated exposure length:"+exposureLength+
+			      " calculated exposure length:"+exposureLength+
 			      " too long, using maximum:"+maxExposureLength+".");
 			exposureLength = maxExposureLength;
 		}
@@ -1025,10 +1020,10 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 			o.log(Logging.VERBOSITY_VERBOSE,
 				"Command:"+twilightCalibrateCommand.getClass().getName()+
 				":doCalibrate:Ran out of time to complete:"+
-				"\n\t((now:"+now+
+				"((now:"+now+
 				")+(exposureLength:"+exposureLength+
 				")+(frameOverhead:"+frameOverhead+")) > "+
-				"\n\t((implementationStartTime:"+implementationStartTime+
+				"((implementationStartTime:"+implementationStartTime+
 				")+(timeToComplete:"+twilightCalibrateCommand.getTimeToComplete()+")).");
 			return true;
 		}
@@ -1044,7 +1039,8 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 			return false;
 	// do the frames with this configuration
 		calibrationFrameCount = 0;
-		if(doOffsetList(twilightCalibrateCommand,twilightCalibrateDone,bin) == false)
+		if(doOffsetList(twilightCalibrateCommand,twilightCalibrateDone,bin,
+				lowerSlide,upperSlide,filter) == false)
 			return false;
 	// update state, if we completed the whole calibration.
 		if(calibrationFrameCount == offsetList.size())
@@ -1070,7 +1066,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 			o.log(Logging.VERBOSITY_VERBOSE,
 			      "Command:"+twilightCalibrateCommand.getClass().getName()+
 			      ":doCalibrate:Calibration successfully completed:"+
-			      "\n\tbin:"+calibration.getBin()+
+			      "bin:"+calibration.getBin()+
 			      ":use window amplifier:"+calibration.useWindowAmplifier()+
 			      ":upper slide:"+calibration.getUpperSlide()+
 			      ":lower slide:"+calibration.getLowerSlide()+
@@ -1081,7 +1077,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 			o.log(Logging.VERBOSITY_VERBOSE,
 			      "Command:"+twilightCalibrateCommand.getClass().getName()+
 			      ":doCalibrate:Calibration NOT completed:"+
-			      "\n\tbin:"+calibration.getBin()+
+			      "bin:"+calibration.getBin()+
 			      ":use window amplifier:"+calibration.useWindowAmplifier()+
 			      ":upper slide:"+calibration.getUpperSlide()+
 			      ":lower slide:"+calibration.getLowerSlide()+
@@ -1231,6 +1227,9 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 	 * @param twilightCalibrateCommand The instance of TWILIGHT_CALIBRATE we are currently running.
 	 * @param twilightCalibrateDone The instance of TWILIGHT_CALIBRATE_DONE to fill in with errors we receive.
 	 * @param bin The binning factor we are doing the exposure at, used to select the correct min/best/max counts.
+	 * @param lowerSlide The position the lower filter slide should be in. Passed through for logging purposes.
+	 * @param upperSlide The position the upper filter slide should be in. Passed through for logging purposes.
+	 * @param filter The type of filter to use. Passed through for logging purposes.
 	 * @return The method returns true when the offset list is terminated, false if an error occured.
 	 * @see #offsetList
 	 * @see #doFrame
@@ -1238,7 +1237,8 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 	 * @see ngat.message.ISS_INST.OFFSET_RA_DEC
 	 */
 	protected boolean doOffsetList(TWILIGHT_CALIBRATE twilightCalibrateCommand,
-					TWILIGHT_CALIBRATE_DONE twilightCalibrateDone,int bin)
+				       TWILIGHT_CALIBRATE_DONE twilightCalibrateDone,int bin,
+				       String lowerSlide,String upperSlide,String filter)
 	{
 		TWILIGHT_CALIBRATEOffset offset = null;
 		OFFSET_RA_DEC offsetRaDecCommand = null;
@@ -1254,8 +1254,8 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 		// log telescope offset
 			o.log(Logging.VERBOSITY_VERBOSE,
 			      "Command:"+twilightCalibrateCommand.getClass().getName()+
-			      ":Attempting telescope position offset index "+offsetListIndex+
-			      "\n\tRA:"+offset.getRAOffset()+
+			      ":Attempting telescope position offset index:"+offsetListIndex+
+			      ":RA:"+offset.getRAOffset()+
 			      ":DEC:"+offset.getDECOffset()+".");
 		// tell telescope of offset RA and DEC
 			offsetRaDecCommand = new OFFSET_RA_DEC(twilightCalibrateCommand.getId());
@@ -1276,7 +1276,8 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 				return false;
 			}
 		// do exposure at this offset
-			if(doFrame(twilightCalibrateCommand,twilightCalibrateDone,bin) == false)
+			if(doFrame(twilightCalibrateCommand,twilightCalibrateDone,bin,lowerSlide,upperSlide,
+				   filter) == false)
 				return false;
 			offsetListIndex++;
 		}// end for on offset list
@@ -1321,6 +1322,9 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 	 * @param twilightCalibrateCommand The instance of TWILIGHT_CALIBRATE we are currently running.
 	 * @param twilightCalibrateDone The instance of TWILIGHT_CALIBRATE_DONE to fill in with errors we receive.
 	 * @param bin The binning factor we are doing the exposure at, used to select the correct min/best/max counts.
+	 * @param lowerSlide The position the lower filter slide should be in. Passed through for logging purposes.
+	 * @param upperSlide The position the upper filter slide should be in. Passed through for logging purposes.
+	 * @param filter The type of filter to use. Passed through for logging purposes.
 	 * @return The method returns true if no errors occured, false if an error occured.
 	 * @see FITSImplementation#testAbort
 	 * @see FITSImplementation#setFitsHeaders
@@ -1347,7 +1351,8 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 	 * @see #FRAME_STATE_NAME_LIST
 	 */
 	protected boolean doFrame(TWILIGHT_CALIBRATE twilightCalibrateCommand,
-				  TWILIGHT_CALIBRATE_DONE twilightCalibrateDone,int bin)
+				  TWILIGHT_CALIBRATE_DONE twilightCalibrateDone,int bin,
+				  String lowerSlide,String upperSlide,String filter)
 	{
 		File temporaryFile = null;
 		File newFile = null;
@@ -1386,10 +1391,10 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 			}
 			status.setExposureFilename(temporaryFITSFilename);
 		// log exposure attempt
-			o.log(Logging.VERBOSITY_VERBOSE,
-				"Command:"+twilightCalibrateCommand.getId()+
-				":doFrame:Attempting exposure:"+
-				"\n\tlength "+exposureLength+".");
+			o.log(Logging.VERBOSITY_VERBOSE,"Command:"+twilightCalibrateCommand.getId()+
+			      ":doFrame:"+"bin:"+bin+
+			      ":upper slide:"+upperSlide+":lower slide:"+lowerSlide+":filter:"+filter+
+			      "Attempting exposure: length:"+exposureLength+".");
 		// do exposure
 			try
 			{
@@ -1431,12 +1436,13 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 				return false;
 		// log reduction
 			o.log(Logging.VERBOSITY_VERBOSE,
-				"Command:"+twilightCalibrateCommand.getId()+
-				":doFrame:Exposure reduction:"+
-				"\n\tlength "+exposureLength+
-				":filename:"+twilightCalibrateDone.getFilename()+
-				":mean counts:"+twilightCalibrateDone.getMeanCounts()+
-				":peak counts:"+twilightCalibrateDone.getPeakCounts()+".");
+			      "Command:"+twilightCalibrateCommand.getId()+
+			      ":doFrame:"+"bin:"+bin+
+			      ":upper slide:"+upperSlide+":lower slide:"+lowerSlide+":filter:"+filter+
+			      ":Exposure reduction:length "+exposureLength+
+			      ":filename:"+twilightCalibrateDone.getFilename()+
+			      ":mean counts:"+twilightCalibrateDone.getMeanCounts()+
+			      ":peak counts:"+twilightCalibrateDone.getPeakCounts()+".");
 		// get reduced filename from done
 			reducedFilename = twilightCalibrateDone.getFilename();
 		// get mean counts and set frame state.
@@ -1449,12 +1455,13 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 				frameState = FRAME_STATE_OK;
 		// log frame state
 			o.log(Logging.VERBOSITY_VERBOSE,
-				"Command:"+twilightCalibrateCommand.getId()+
-				":doFrame:Exposure frame state:"+
-				"\n\tlength "+exposureLength+
-				":mean counts:"+twilightCalibrateDone.getMeanCounts()+
-				":peak counts:"+twilightCalibrateDone.getPeakCounts()+
-				":frame state:"+FRAME_STATE_NAME_LIST[frameState]+".");
+			      "Command:"+twilightCalibrateCommand.getId()+
+			      ":doFrame:"+"bin:"+bin+
+			      ":upper slide:"+upperSlide+":lower slide:"+lowerSlide+":filter:"+filter+
+			      ":Exposure frame state:length:"+exposureLength+
+			      ":mean counts:"+twilightCalibrateDone.getMeanCounts()+
+			      ":peak counts:"+twilightCalibrateDone.getPeakCounts()+
+			      ":frame state:"+FRAME_STATE_NAME_LIST[frameState]+".");
 		// if the frame was good, rename it
 			if(frameState == FRAME_STATE_OK)
 			{
@@ -1492,9 +1499,10 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 				}
 			// log rename
 				o.log(Logging.VERBOSITY_VERBOSE,
-					"Command:"+twilightCalibrateCommand.getId()+
-					":doFrame:Exposure raw frame rename:"+
-					"\n\trenamed "+temporaryFile+" to "+newFile+".");
+				      "Command:"+twilightCalibrateCommand.getId()+
+				      ":doFrame:"+"bin:"+bin+
+				      ":upper slide:"+upperSlide+":lower slide:"+lowerSlide+":filter:"+filter+
+				      ":Exposure raw frame rename:renamed "+temporaryFile+" to "+newFile+".");
 			// reset twilight calibrate done's filename to renamed file
 			// in case pipelined reduced filename does not exist/cannot be renamed
 				twilightCalibrateDone.setFilename(filename);
@@ -1543,9 +1551,10 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 					twilightCalibrateDone.setFilename(filename);
 				// log rename
 					o.log(Logging.VERBOSITY_VERBOSE,
-						"Command:"+twilightCalibrateCommand.getId()+
-						":doFrame:Exposure DpRt frame rename:"+
-						"\n\trenamed "+temporaryFile+" to "+newFile+".");
+					      "Command:"+twilightCalibrateCommand.getId()+
+					      ":doFrame:"+"bin:"+bin+
+					      ":upper slide:"+upperSlide+":lower slide:"+lowerSlide+":filter:"+filter+
+					      ":Exposure DpRt frame rename:renamed "+temporaryFile+" to "+newFile+".");
 				}// end if temporary file exists
 			}// end if frameState was OK
 		// Test abort status.
@@ -1562,22 +1571,26 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 			   ((lastExposureLength != maxExposureLength)||(frameState == FRAME_STATE_OK)))
 			{
 				o.log(Logging.VERBOSITY_VERBOSE,
-					"Command:"+twilightCalibrateCommand.getId()+
-					":doFrame:Calculated exposure length:"+exposureLength+
-					"\n\tout of range, but going to try "+maxExposureLength+
-					"\n\tas last exposure length was "+lastExposureLength+
-					" with frame state "+FRAME_STATE_NAME_LIST[frameState]+".");
+				      "Command:"+twilightCalibrateCommand.getId()+
+				      ":doFrame:"+"bin:"+bin+
+				      ":upper slide:"+upperSlide+":lower slide:"+lowerSlide+":filter:"+filter+
+				      ":Calculated exposure length:"+exposureLength+
+				      " out of range, but going to try "+maxExposureLength+
+				      " as last exposure length was "+lastExposureLength+
+				      " with frame state "+FRAME_STATE_NAME_LIST[frameState]+".");
 				exposureLength = maxExposureLength;
 			}
 			if((exposureLength < minExposureLength)&&
 			   ((lastExposureLength != minExposureLength)||(frameState == FRAME_STATE_OK)))
 			{
 				o.log(Logging.VERBOSITY_VERBOSE,
-					"Command:"+twilightCalibrateCommand.getId()+
-					":doFrame:Calculated exposure length:"+exposureLength+
-					"\n\tout of range, but going to try "+minExposureLength+
-					"\n\tas last exposure length was "+lastExposureLength+
-					" with frame state "+FRAME_STATE_NAME_LIST[frameState]+".");
+				      "Command:"+twilightCalibrateCommand.getId()+
+				      ":doFrame:"+"bin:"+bin+
+				      ":upper slide:"+upperSlide+":lower slide:"+lowerSlide+":filter:"+filter+
+				      ":Calculated exposure length:"+exposureLength+
+				      " out of range, but going to try "+minExposureLength+
+				      " as last exposure length was "+lastExposureLength+
+				      " with frame state "+FRAME_STATE_NAME_LIST[frameState]+".");
 				exposureLength = minExposureLength;
 			}
 		// send dp_ack, filename/mean counts/peak counts are all retrieved from twilightCalibrateDone,
@@ -1597,7 +1610,9 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 				calibrationFrameCount++;
 			// log
 				o.log(Logging.VERBOSITY_VERBOSE,"Command:"+twilightCalibrateCommand.getId()+
-				      ":doFrame:Frame completed.");
+				      ":doFrame:"+"bin:"+bin+
+				      ":upper slide:"+upperSlide+":lower slide:"+lowerSlide+":filter:"+filter+
+				      ":Frame completed.");
 			}
 			if(exposureLength > maxExposureLength)
 			{
@@ -1609,8 +1624,10 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 					// log
 					o.log(Logging.VERBOSITY_VERBOSE,
 					      "Command:"+twilightCalibrateCommand.getId()+
-					      ":doFrame:Exposure length too long:"+
-					      "\n\t(exposureLength:"+exposureLength+") > "+
+					      ":doFrame:"+"bin:"+bin+
+					      ":upper slide:"+upperSlide+":lower slide:"+lowerSlide+":filter:"+filter+
+					      ":Exposure length too long:"+
+					      "(exposureLength:"+exposureLength+") > "+
 					      "(maxExposureLength:"+maxExposureLength+").");
 				}
 				else // retry this calibration - it has got lighter
@@ -1618,8 +1635,10 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 					// log
 					o.log(Logging.VERBOSITY_VERBOSE,
 					      "Command:"+twilightCalibrateCommand.getId()+
-					      ":doFrame:Calulated Exposure length too long:"+
-					      "\n\t(exposureLength:"+exposureLength+") > "+
+					      ":doFrame:"+"bin:"+bin+
+					      ":upper slide:"+upperSlide+":lower slide:"+lowerSlide+":filter:"+filter+
+					      ":Calulated Exposure length too long:"+
+					      "(exposureLength:"+exposureLength+") > "+
 					      "(maxExposureLength:"+maxExposureLength+"): retrying as it is dawn.");
 					exposureLength = maxExposureLength;
 				}
@@ -1634,8 +1653,10 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 					// log
 					o.log(Logging.VERBOSITY_VERBOSE,
 					      "Command:"+twilightCalibrateCommand.getId()+
-					      ":doFrame:Exposure length too short:"+
-					      "\n\t(exposureLength:"+exposureLength+") < "+
+					      ":doFrame:"+"bin:"+bin+
+					      ":upper slide:"+upperSlide+":lower slide:"+lowerSlide+":filter:"+filter+
+					      ":Exposure length too short:"+
+					      "(exposureLength:"+exposureLength+") < "+
 					      "(minExposureLength:"+minExposureLength+").");
 				}
 				else // retry this calibration - it has got darker
@@ -1643,8 +1664,10 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 					// log
 					o.log(Logging.VERBOSITY_VERBOSE,
 					      "Command:"+twilightCalibrateCommand.getId()+
-					      ":doFrame:Calulated Exposure length too short:"+
-					      "\n\t(exposureLength:"+exposureLength+") < "+
+					      ":doFrame:"+"bin:"+bin+
+					      ":upper slide:"+upperSlide+":lower slide:"+lowerSlide+":filter:"+filter+
+					      ":Calulated Exposure length too short:"+
+					      "(exposureLength:"+exposureLength+") < "+
 					      "(maxExposureLength:"+maxExposureLength+"): retrying as it is dusk.");
 					exposureLength = minExposureLength;
 				}
@@ -1660,11 +1683,12 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 			// log
 				o.log(Logging.VERBOSITY_VERBOSE,
 				      "Command:"+twilightCalibrateCommand.getId()+
-				      ":doFrame:Ran out of time to complete:"+
-				      "\n\t((now:"+now+
+				      ":doFrame:"+"bin:"+bin+
+				      ":upper slide:"+upperSlide+":lower slide:"+lowerSlide+":filter:"+filter+
+				      ":Ran out of time to complete:((now:"+now+
 				      ")+(exposureLength:"+exposureLength+
 				      ")+(frameOverhead:"+frameOverhead+")) > "+
-				      "\n\t((implementationStartTime:"+implementationStartTime+
+				      "((implementationStartTime:"+implementationStartTime+
 				      ")+(timeToComplete:"+twilightCalibrateCommand.getTimeToComplete()+")).");
 			}
 		}// end while !doneFrame
@@ -2216,6 +2240,13 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.6  2012/07/12 14:26:59  cjm
+// Added extra setting of initial values of lastFilterSensitivity and
+// lastBin from first calibration, so first exposure length is calculated to be the
+// minimum or maximum as appropriate.
+//
+// More logging for how the exposure length is calculated.
+//
 // Revision 1.5  2012/07/12 12:30:28  cjm
 // Changed indexing into min/best/maxMeanCounts and BIN_COUNT now 5.
 // This allows property keys and array indexes to use the binning factor as an index.
