@@ -1,5 +1,5 @@
 // GET_STATUSImplementation.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/GET_STATUSImplementation.java,v 1.1 2011-11-23 10:55:24 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/GET_STATUSImplementation.java,v 1.2 2012-07-17 17:17:45 cjm Exp $
 package ngat.o;
 
 import java.lang.*;
@@ -16,14 +16,14 @@ import ngat.util.ExecuteCommand;
  * This class provides the implementation for the GET_STATUS command sent to a server using the
  * Java Message System.
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class GET_STATUSImplementation extends INTERRUPTImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: GET_STATUSImplementation.java,v 1.1 2011-11-23 10:55:24 cjm Exp $");
+	public final static String RCSID = new String("$Id: GET_STATUSImplementation.java,v 1.2 2012-07-17 17:17:45 cjm Exp $");
 	/**
 	 * Local copy of the O status object.
 	 * @see O#getStatus
@@ -118,8 +118,8 @@ public class GET_STATUSImplementation extends INTERRUPTImplementation implements
 	 * @see CCDLibrary#getExposureStatus
 	 * @see CCDLibrary#getExposureLength
 	 * @see CCDLibrary#getExposureStartTime
-	 * @see CCDLibrary#getNCols
-	 * @see CCDLibrary#getNRows
+	 * @see CCDLibrary#getBinnedNCols
+	 * @see CCDLibrary#getBinnedNRows
 	 * @see CCDLibrary#getXBin
 	 * @see CCDLibrary#getYBin
 	 * @see CCDLibrary#getDeInterlaceType
@@ -162,8 +162,8 @@ public class GET_STATUSImplementation extends INTERRUPTImplementation implements
 		else
 			hashTable.put("currentCommand",currentCommand.getClass().getName());
 	// Currently, we query ccd setup stored settings, not hardware.
-		hashTable.put("NCols",new Integer(ccd.getNCols()));
-		hashTable.put("NRows",new Integer(ccd.getNRows()));
+		hashTable.put("NCols",new Integer(ccd.getBinnedNCols()));
+		hashTable.put("NRows",new Integer(ccd.getBinnedNRows()));
 		hashTable.put("NSBin",new Integer(ccd.getXBin()));
 		hashTable.put("NPBin",new Integer(ccd.getYBin()));
 		hashTable.put("DeInterlace Type",new Integer(ccd.getDeInterlaceType()));
@@ -599,4 +599,7 @@ public class GET_STATUSImplementation extends INTERRUPTImplementation implements
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2011/11/23 10:55:24  cjm
+// Initial revision
+//
 //
