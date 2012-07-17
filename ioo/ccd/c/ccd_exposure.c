@@ -1,13 +1,13 @@
 /* ccd_exposure.c
 ** low level ccd library
-** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ccd_exposure.c,v 1.4 2012-06-13 14:40:53 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ccd_exposure.c,v 1.5 2012-07-17 16:55:02 cjm Exp $
 */
 /**
  * ccd_exposure.c contains routines for performing an exposure with the SDSU CCD Controller. There is a
  * routine that does the whole job in one go, or several routines can be called to do parts of an exposure.
  * An exposure can be paused and resumed, or it can be stopped or aborted.
  * @author SDSU, Chris Mottram
- * @version $Revision: 1.4 $
+ * @version $Revision: 1.5 $
  */
 /**
  * This hash define is needed before including source files give us POSIX.4/IEEE1003.1b-1993 prototypes
@@ -159,7 +159,7 @@ struct Exposure_Struct
 /**
  * Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ccd_exposure.c,v 1.4 2012-06-13 14:40:53 cjm Exp $";
+static char rcsid[] = "$Id: ccd_exposure.c,v 1.5 2012-07-17 16:55:02 cjm Exp $";
 /**
  * Internal exposure data (library wide).
  * @see #Exposure_Struc
@@ -1323,6 +1323,68 @@ void CCD_Exposure_Set_Exposure_Start_Time(CCD_Interface_Handle_T* handle)
 }
 
 /**
+ * Flip the image data in the X direction.
+ * @param ncols The number of columns on the CCD.
+ * @param nrows The number of rows on the CCD.
+ * @param exposure_data The image data received from the CCD. The data in this array is flipped in the X direction.
+ * @return If everything was successful TRUE is returned, otherwise FALSE is returned.
+ */
+int CCD_Exposure_Flip_X(int ncols,int nrows,unsigned short *exposure_data)
+{
+	int x,y;
+	unsigned short int tempval;
+
+	/* for each row */
+	for(y=0;y<nrows;y++)
+	{
+		/* for the first half of the columns.
+		** Note the middle column will be missed, this is OK as it
+		** does not need to be flipped if it is in the middle */
+		for(x=0;x<(ncols/2);x++)
+		{
+			/* Copy exposure_data[x,y] to tempval */
+			tempval = *(exposure_data+(y*ncols)+x);
+			/* Copy exposure_data[ncols-(x+1),y] to exposure_data[x,y] */
+			*(exposure_data+(y*ncols)+x) = *(exposure_data+(y*ncols)+(ncols-(x+1)));
+			/* Copy tempval = exposure_data[ncols-(x+1),y] */
+			*(exposure_data+(y*ncols)+(ncols-(x+1))) = tempval;
+		}
+	}
+	return TRUE;
+}
+
+/**
+ * Flip the image data in the Y direction.
+ * @param ncols The number of columns on the CCD.
+ * @param nrows The number of rows on the CCD.
+ * @param exposure_data The image data received from the CCD. The data in this array is flipped in the Y direction.
+ * @return If everything was successful TRUE is returned, otherwise FALSE is returned.
+ */
+int CCD_Exposure_Flip_Y(int ncols,int nrows,unsigned short *exposure_data)
+{
+	int x,y;
+	unsigned short int tempval;
+
+	/* for the first half of the rows.
+	** Note the middle row will be missed, this is OK as it
+	** does not need to be flipped if it is in the middle */
+	for(y=0;y<(nrows/2);y++)
+	{
+		/* for each column */
+		for(x=0;x<ncols;x++)
+		{
+			/* Copy exposure_data[x,y] to tempval */
+			tempval = *(exposure_data+(y*ncols)+x);
+			/* Copy exposure_data[x,nrows-(y+1)] to exposure_data[x,y] */
+			*(exposure_data+(y*ncols)+x) = *(exposure_data+(((nrows-(y+1))*ncols)+x));
+			/* Copy tempval = exposure_data[x,nrows-(y+1)] */
+			*(exposure_data+(((nrows-(y+1))*ncols)+x)) = tempval;
+		}
+	}
+	return TRUE;
+}
+
+/**
  * Get the current value of the ccd_exposure error number.
  * @return The current value of the ccd_exposure error number.
  */
@@ -1505,8 +1567,8 @@ static void Exposure_Byte_Swap(unsigned short *svalues,long nvals)
  * @see #Exposure_DeInterlace
  * @see #Exposure_Save
  * @see #Exposure_Expose_Delete_Fits_Images
- * @see ccd_setup.html#CCD_Setup_Get_NCols
- * @see ccd_setup.html#CCD_Setup_Get_NRows
+ * @see ccd_setup.html#CCD_Setup_Get_Binned_NCols
+ * @see ccd_setup.html#CCD_Setup_Get_Binned_NRows
  * @see ccd_interface.html#CCD_Interface_Handle_T
  */
 static int Exposure_Expose_Post_Readout_Full_Frame(CCD_Interface_Handle_T* handle,unsigned short *exposure_data,
@@ -1517,8 +1579,8 @@ static int Exposure_Expose_Post_Readout_Full_Frame(CCD_Interface_Handle_T* handl
 	int ncols,nrows;
 
 /* get setup details */
-	ncols = CCD_Setup_Get_NCols(handle);
-	nrows = CCD_Setup_Get_NRows(handle);
+	ncols = CCD_Setup_Get_Binned_NCols(handle);
+	nrows = CCD_Setup_Get_Binned_NRows(handle);
 	deinterlace_type = CCD_Setup_Get_DeInterlace_Type(handle);
 /* number of columns must be a positive number */
 	if(ncols <= 0)
@@ -1737,8 +1799,8 @@ static int Exposure_Expose_Post_Readout_Window(CCD_Interface_Handle_T* handle,un
  *  ----------------            ----------------        ----------------     
  * </pre>
  * <em>Note: This routine assumes CCD_GLOBAL_BYTES_PER_PIXEL == 2 e.g. 16 bits per pixel.</em>
- * @param ncols The number of columns on the CCD.
- * @param nrows The number of rows on the CCD.
+ * @param ncols The number of binned columns on the output image.
+ * @param nrows The number of binned rows on the output image.
  * @param old_iptr The interlaced image data received from the CCD. Once deinterlaced the image data is copied back
  * 	in this memory area.
  * @param deinterlace_type The type of deinterlacing to perform. One of CCD_DSP_DEINTERLACE_TYPE:
@@ -1993,6 +2055,7 @@ static int Exposure_DeInterlace(int ncols,int nrows,unsigned short *old_iptr,
  * @param nrows The number of rows in the image data.
  * @param start_time The start time of the exposure.
  * @return Returns TRUE if the image is saved successfully, FALSE if it fails.
+ * @see #CCD_Exposure_Flip_X
  * @see #Exposure_TimeSpec_To_Date_String
  * @see #Exposure_TimeSpec_To_Date_Obs_String
  * @see #Exposure_TimeSpec_To_UtStart_String
@@ -2019,6 +2082,8 @@ static int Exposure_Save(char *filename,unsigned short *exposure_data,int ncols,
 		sprintf(Exposure_Error_String,"Exposure_Save: File open failed(%s,%d,%s).",filename,status,buff);
 		return FALSE;
 	}
+	/* flip the data */
+	CCD_Exposure_Flip_X(ncols,nrows,exposure_data);
 	/* write the data */
 	retval = fits_write_img(fp,TUSHORT,1,ncols*nrows,exposure_data,&status);
 	if(retval)
@@ -2357,6 +2422,9 @@ static int fexist(char *filename)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.4  2012/06/13 14:40:53  cjm
+** Fixed Exposure_DeInterlace split parallel de interlace code.
+**
 ** Revision 1.3  2012/01/11 15:04:55  cjm
 ** Changed SPLIT_PARALLEL deinterlace to allow for both amplifiers being on the right.
 **
