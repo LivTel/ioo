@@ -1,7 +1,7 @@
        COMMENT *
-	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/e2v231-84/e2v231-84.waveforms,v 1.7 2012-06-19 15:01:57 cjm Exp $
-	Id: 	 $Id: e2v231-84.waveforms,v 1.7 2012-06-19 15:01:57 cjm Exp $
-	Version: $Revision: 1.7 $
+	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/e2v231-84/e2v231-84.waveforms,v 1.8 2012-07-17 17:31:51 cjm Exp $
+	Id: 	 $Id: e2v231-84.waveforms,v 1.8 2012-07-17 17:31:51 cjm Exp $
+	Version: $Revision: 1.8 $
 Waveform tables for CCD231-84. Waveforms based on E2V spec sheet A1A-765136 V1, October 2008.
 Waveforms are Mode 1 (low read noise, lower pixel charge capacity).
 Assumes usage with an SDSU ARC-22 timing board, ARC-32 clock driver board, and 2 x ARC-45 video boards.
@@ -525,7 +525,8 @@ END_RESET_VIDEO
 ; empty
 ;	DC	CLK2+00000+00+000+000+000+000+000+000+00
 
-; Serial readout sequence
+; Serial readout sequence from spec sheet:
+; NO LONGER USED
 ; 0: R_DLY   : 00+00+R3+SW+0
 ; 1: R_DLY   : R1+00+00+00+0
 ; 2: R_DLY   : 00+R2+00+00+0
@@ -536,6 +537,22 @@ END_RESET_VIDEO
 ; 6: R_DLY   : R1+00+00+00+0
 ; sample signal level
 
+; Latest readout sequence:
+; First clocks
+; R_DLY   : 00+R2+00+SW+R
+; R_DLY   : 00+R2+00+SW+0
+; R_DLY   : 00+00+R3+SW+0
+; R_DLY   : 00+00+R3+SW+0
+; Clock line
+; R_DLY   : R1+00+00+SW+0
+; R_DLY   : 00+R2+00+SW+0
+; R_DLY   : 00+00+R3+SW+0
+; R_DLY   : 00+00+R3+SW+0
+; Sample reset level
+; Charge dump
+; R_DLY   : R1+00+00+00+0
+; Integrate signal
+
 
 ; LEFT: Register EF moves towards E, Register GH moves towards H
 ; R1 = E2/F1/G1/H2 = R2L+R1R
@@ -544,36 +561,34 @@ END_RESET_VIDEO
 ; SW held high until last bin, then clocked as R3
 FIRST_CLOCKS_LEFT
  	DC	END_FIRST_CLOCKS_LEFT-FIRST_CLOCKS_LEFT-1
-; 2: R_DLY   : 00+R2+00+00+0
-	DC	CLK2+R_DLY+00+R1L+000+000+000+R2R+000+SW
-; 3: R_DLY   : 00+R2+00+00+R  Should be twxmtdx delay (30ns) but executing waveform takes 40ns
+; R_DLY   : 00+R2+00+SW+R
 	DC	CLK2+R_DLY+RG+R1L+000+000+000+R2R+000+SW
-; 4: R_DLY   : 00+00+R3+SW+R  Should be tdx delay (20ns) but executing waveform takes 40ns
-	DC	CLK2+R_DLY+RG+000+000+R3L+000+000+R3R+SW
-; 5: R_DLY   : 00+00+R3+SW+0
+; R_DLY   : 00+R2+00+SW+0
+	DC	CLK2+R_DLY+00+R1L+000+000+000+R2R+000+SW
+; R_DLY   : 00+00+R3+SW+0
+	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
+; R_DLY   : 00+00+R3+SW+0
 	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
 ; Next: Sample reset level
 END_FIRST_CLOCKS_LEFT
 
 CLOCK_LINE_LEFT
 	DC	END_CLOCK_LINE_LEFT-CLOCK_LINE_LEFT-1
-; 1: R_DLY   : R1+00+00+00+0
+; R_DLY   : R1+00+00+SW+0
 	DC	CLK2+R_DLY+00+000+R2L+000+R1R+000+000+SW
-; 2: R_DLY   : 00+R2+00+00+0
+; R_DLY   : 00+R2+00+SW+0
 	DC	CLK2+R_DLY+00+R1L+000+000+000+R2R+000+SW
-; 3: R_DLY   : 00+R2+00+00+R  Should be twxmtdx delay (30ns) but executing waveform takes 40ns
-	DC	CLK2+R_DLY+RG+R1L+000+000+000+R2R+000+SW
-; 4: R_DLY   : 00+00+R3+SW+R  Should be tdx delay (20ns) but executing waveform takes 40ns
-	DC	CLK2+R_DLY+RG+000+000+R3L+000+000+R3R+SW
-; 5: R_DLY   : 00+00+R3+SW+0
+; R_DLY   : 00+00+R3+SW+0
+	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
+; R_DLY   : 00+00+R3+SW+0
 	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
 ; Next: Sample reset level
 END_CLOCK_LINE_LEFT
 
 CHARGE_DUMP_LEFT
  	DC	END_CHARGE_DUMP_LEFT-CHARGE_DUMP_LEFT-1
-; 6: R_DLY   : R1+00+00+00+0
-	DC	CLK2+R_DLY+00+000+R2L+000+R1R+000+000+00
+; R_DLY   : R1+00+00+00+0
+	DC	CLK2+R_DLY+00+000+R2L+000+R1R+000+000+SW
 INTEGRATE_SIGNAL_LEFT
 	DC	VIDEO+INT_TIM+%0001011		; Integrate
 	DC	VIDEO+$000000+%0011011		; Stop, A/D is sampling
@@ -587,35 +602,33 @@ END_CHARGE_DUMP_LEFT
 ; R3 = E3/F3/G3/H3 = R3L+R3R
 FIRST_CLOCKS_RIGHT
  	DC	END_FIRST_CLOCKS_RIGHT-FIRST_CLOCKS_RIGHT-1
-; 2: R_DLY   : 00+R2+00+00+0
-	DC	CLK2+R_DLY+00+000+R2L+000+R1R+000+000+SW
-; 3: R_DLY   : 00+R2+00+00+R  Should be twxmtdx delay (30ns) but executing waveform takes 40ns
+; R_DLY   : 00+R2+00+SW+R
 	DC	CLK2+R_DLY+RG+000+R2L+000+R1R+000+000+SW
-; 4: R_DLY   : 00+00+R3+SW+R  Should be tdx delay (20ns) but executing waveform takes 40ns
-	DC	CLK2+R_DLY+RG+000+000+R3L+000+000+R3R+SW
-; 5: R_DLY   : 00+00+R3+SW+0
+; R_DLY   : 00+R2+00+SW+0
+	DC	CLK2+R_DLY+00+000+R2L+000+R1R+000+000+SW
+; R_DLY   : 00+00+R3+SW+0
+	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
+; R_DLY   : 00+00+R3+SW+0
 	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
 ; Next: Sample reset level
 END_FIRST_CLOCKS_RIGHT
 
 CLOCK_LINE_RIGHT
  	DC	END_CLOCK_LINE_RIGHT-CLOCK_LINE_RIGHT-1
-; 1: R_DLY   : R1+00+00+00+0
+; R_DLY   : R1+00+00+SW+0
 	DC	CLK2+R_DLY+00+R1L+000+000+000+R2R+000+SW
-; 2: R_DLY   : 00+R2+00+00+0
+; R_DLY   : 00+R2+00+SW+0
 	DC	CLK2+R_DLY+00+000+R2L+000+R1R+000+000+SW
-; 3: R_DLY   : 00+R2+00+00+R  Should be twxmtdx delay (30ns) but executing waveform takes 40ns
-	DC	CLK2+R_DLY+RG+000+R2L+000+R1R+000+000+SW
-; 4: R_DLY   : 00+00+R3+SW+R  Should be tdx delay (20ns) but executing waveform takes 40ns
-	DC	CLK2+R_DLY+RG+000+000+R3L+000+000+R3R+SW
-; 5: R_DLY   : 00+00+R3+SW+0
+; R_DLY   : 00+00+R3+SW+0
+	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
+; R_DLY   : 00+00+R3+SW+0
 	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
 ; Next: Sample reset level
 END_CLOCK_LINE_RIGHT
 
 CHARGE_DUMP_RIGHT
  	DC	END_CHARGE_DUMP_RIGHT-CHARGE_DUMP_RIGHT-1
-; 6: R_DLY   : R1+00+00+00+0
+; R_DLY   : R1+00+00+00+0
 	DC	CLK2+R_DLY+00+R1L+000+000+000+R2R+000+00
 ; sample signal level
 INTEGRATE_SIGNAL_RIGHT
@@ -631,24 +644,33 @@ END_CHARGE_DUMP_RIGHT
 ; R3 = E3/F3/G3/H3 = R3L+R3R
 FIRST_CLOCKS_SPLIT
  	DC	END_FIRST_CLOCKS_SPLIT-FIRST_CLOCKS_SPLIT-1
+; R_DLY   : 00+R2+00+SW+R
 	DC	CLK2+R_DLY+RG+R1L+000+000+R1R+000+000+SW
+; R_DLY   : 00+R2+00+SW+0
 	DC	CLK2+R_DLY+00+R1L+000+000+R1R+000+000+SW
+; R_DLY   : 00+00+R3+SW+0
 	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
+; R_DLY   : 00+00+R3+SW+0
 	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
 ; Next: Sample reset level
 END_FIRST_CLOCKS_SPLIT
 
 CLOCK_LINE_SPLIT
  	DC	END_CLOCK_LINE_SPLIT-CLOCK_LINE_SPLIT-1
+; R_DLY   : R1+00+00+SW+0
 	DC	CLK2+R_DLY+00+000+R2L+000+000+R2R+000+SW
+; R_DLY   : 00+R2+00+SW+0
 	DC	CLK2+R_DLY+00+R1L+000+000+R1R+000+000+SW
+; R_DLY   : 00+00+R3+SW+0
 	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
+; R_DLY   : 00+00+R3+SW+0
 	DC	CLK2+R_DLY+00+000+000+R3L+000+000+R3R+SW
 ; Next: Sample reset level
 END_CLOCK_LINE_SPLIT
 
 CHARGE_DUMP_SPLIT
  	DC	END_CHARGE_DUMP_SPLIT-CHARGE_DUMP_SPLIT-1
+; R_DLY   : R1+00+00+00+0
 	DC	CLK2+R_DLY+00+000+R2L+000+000+R2R+000+00
 ; sample signal level
 INTEGRATE_SIGNAL_SPLIT
@@ -755,6 +777,9 @@ END_DACS
 
 ;
 ; $Log: not supported by cvs2svn $
+; Revision 1.7  2012/06/19 15:01:57  cjm
+; Fixed SERIAL_IDLE 'Stop resetting integrator' delay.
+;
 ; Revision 1.6  2012/06/19 14:17:53  cjm
 ; Also OFFSET now set to $800 from $500.
 ;
