@@ -1,12 +1,12 @@
 /* ccd_dsp.c
 ** ccd library
-** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ccd_dsp.c,v 1.3 2012-01-11 15:04:55 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ccd_dsp.c,v 1.4 2012-07-17 16:54:04 cjm Exp $
 */
 /**
  * ccd_dsp.c contains all the SDSU CCD Controller commands. Commands are passed to the 
  * controller using the <a href="ccd_interface.html">CCD_Interface_</a> calls.
  * @author SDSU, Chris Mottram
- * @version $Revision: 1.3 $
+ * @version $Revision: 1.4 $
  */
 /**
  * This hash define is needed before including source files give us POSIX.4/IEEE1003.1b-1993 prototypes
@@ -44,7 +44,7 @@
 /**
  * Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ccd_dsp.c,v 1.3 2012-01-11 15:04:55 cjm Exp $";
+static char rcsid[] = "$Id: ccd_dsp.c,v 1.4 2012-07-17 16:54:04 cjm Exp $";
 
 /* defines */
 /**
@@ -853,7 +853,7 @@ int CCD_DSP_Command_SGN(CCD_Interface_Handle_T* handle,enum CCD_DSP_GAIN gain,in
  * @param amplifier The amplifier to use when reading out the CCD. One of:
  * 	CCD_DSP_AMPLIFIER_TOP_LEFT, CCD_DSP_AMPLIFIER_TOP_RIGHT , 
  *      CCD_DSP_AMPLIFIER_BOTTOM_LEFT, CCD_DSP_AMPLIFIER_BOTTOM_RIGHT, 
- *      CCD_DSP_AMPLIFIER_BOTH_RIGHT or CCD_DSP_AMPLIFIER_ALL.
+ *      CCD_DSP_AMPLIFIER_BOTH_LEFT,CCD_DSP_AMPLIFIER_BOTH_RIGHT or CCD_DSP_AMPLIFIER_ALL.
  * @return The routine returns DON if the command succeeded and FALSE if the command failed.
  * @see #DSP_Send_Sos
  * @see #DSP_Check_Reply
@@ -3165,6 +3165,9 @@ static int DSP_String_To_Manual_Command(char *command_string)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.3  2012/01/11 15:04:55  cjm
+** Comment changes relating to adding CCD_DSP_AMPLIFIER_BOTH_RIGHT.
+**
 ** Revision 1.2  2011/11/23 10:59:52  cjm
 ** Added CCD_DSP_Print_DeInterlace.
 ** Changed exposure code to allow for shutter delays.
