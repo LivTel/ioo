@@ -1,5 +1,5 @@
 /* ccd_setup_private.h
-** $Header: /space/home/eng/cjm/cvs/ioo/ccd/include/ccd_setup_private.h,v 1.1 2011-11-23 11:02:52 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/ioo/ccd/include/ccd_setup_private.h,v 1.2 2012-07-17 17:27:56 cjm Exp $
 */
 
 #ifndef CCD_SETUP_PRIVATE_H
@@ -11,8 +11,10 @@
 /**
  * Data type used to hold local data to ccd_setup. Fields are:
  * <dl>
- * <dt>NCols</dt> <dd>The number of columns that will be used on the CCD.</dd>
- * <dt>NRows</dt> <dd>The number of rows that will be used on the CCD.</dd>
+ * <dt>NCols</dt> <dd>The number of unbinned columns that will be used on the CCD.</dd>
+ * <dt>NRows</dt> <dd>The number of unbinned rows that will be used on the CCD.</dd>
+ * <dt>Binned_NCols</dt> <dd>The number of binned columns that will be used on the CCD.</dd>
+ * <dt>Binned_NRows</dt> <dd>The number of binned rows that will be used on the CCD.</dd>
  * <dt>NSBin</dt> <dd>The amount of binning of columns on the CCD.</dd>
  * <dt>NPBin</dt> <dd>The amount of binning of rows on the CCD.</dd>
  * <dt>DeInterlace_Type</dt> <dd>The type of deinterlacing the image will require. This depends on the way the
@@ -48,6 +50,8 @@ struct CCD_Setup_Struct
 {
 	int NCols;
 	int NRows;
+	int Binned_NCols;
+	int Binned_NRows;
 	int NSBin;
 	int NPBin;
 	enum CCD_DSP_DEINTERLACE_TYPE DeInterlace_Type;
@@ -66,6 +70,9 @@ struct CCD_Setup_Struct
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.1  2011/11/23 11:02:52  cjm
+** Initial revision
+**
 ** Revision 1.1  2009/02/05 11:40:43  cjm
 ** Initial revision
 **
