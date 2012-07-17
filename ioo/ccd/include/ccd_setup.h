@@ -1,5 +1,5 @@
 /* ccd_setup.h
-** $Header: /space/home/eng/cjm/cvs/ioo/ccd/include/ccd_setup.h,v 1.1 2011-11-23 11:02:52 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/ioo/ccd/include/ccd_setup.h,v 1.2 2012-07-17 17:27:56 cjm Exp $
 */
 #ifndef CCD_SETUP_H
 #define CCD_SETUP_H
@@ -46,12 +46,10 @@
 					CCD_SETUP_WINDOW_THREE|CCD_SETUP_WINDOW_FOUR)
 
 /**
- * Memory buffer size for mmap/malloc. Should be bigger than 1 array (4096x4097) number of pixels
- * (pixels are 16 bits/2 bytes). Add in prescan (18 pixels) at each amplifier.
- * diddly cjm redoubled size of mmap for test
+ * Memory buffer size for mmap/malloc. Should be bigger than 1 array (4096x4112) number of pixels
+ * (pixels are 16 bits/2 bytes). Add in prescan (50 pixels) at each amplifier.
  */
-#define CCD_SETUP_MEMORY_BUFFER_SIZE      (4200*4100*2)
-/*(4132*4097*2)*/
+#define CCD_SETUP_MEMORY_BUFFER_SIZE      (4200*4200*2)
 
 /* These enum definitions should match with those in CCDLibrary.java */
 /**
@@ -106,8 +104,8 @@ extern int CCD_Setup_Dimensions(CCD_Interface_Handle_T* handle,int ncols,int nro
 	int window_flags,struct CCD_Setup_Window_Struct window_list[]);
 extern int CCD_Setup_Hardware_Test(CCD_Interface_Handle_T* handle,int test_count);
 extern void CCD_Setup_Abort(void);
-extern int CCD_Setup_Get_NCols(CCD_Interface_Handle_T* handle);
-extern int CCD_Setup_Get_NRows(CCD_Interface_Handle_T* handle);
+extern int CCD_Setup_Get_Binned_NCols(CCD_Interface_Handle_T* handle);
+extern int CCD_Setup_Get_Binned_NRows(CCD_Interface_Handle_T* handle);
 extern int CCD_Setup_Get_NSBin(CCD_Interface_Handle_T* handle);
 extern int CCD_Setup_Get_NPBin(CCD_Interface_Handle_T* handle);
 extern int CCD_Setup_Get_Readout_Pixel_Count(CCD_Interface_Handle_T* handle);
