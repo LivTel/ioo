@@ -1,5 +1,5 @@
 /* ccd_exposure.h
-** $Header: /space/home/eng/cjm/cvs/ioo/ccd/include/ccd_exposure.h,v 1.1 2011-11-23 11:02:52 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/ioo/ccd/include/ccd_exposure.h,v 1.2 2012-07-17 17:27:56 cjm Exp $
 */
 #ifndef CCD_EXPOSURE_H
 #define CCD_EXPOSURE_H
@@ -101,6 +101,8 @@ extern void CCD_Exposure_Shutter_Close_Delay_Set(int delay_ms);
 extern int CCD_Exposure_Shutter_Close_Delay_Get(void);
 extern void CCD_Exposure_Readout_Delay_Set(int delay_ms);
 extern int CCD_Exposure_Readout_Delay_Get(void);
+extern int CCD_Exposure_Flip_X(int ncols,int nrows,unsigned short *exposure_data);
+extern int CCD_Exposure_Flip_Y(int ncols,int nrows,unsigned short *exposure_data);
 
 extern int CCD_Exposure_Get_Error_Number(void);
 extern void CCD_Exposure_Error(void);
