@@ -1,13 +1,13 @@
 /* ngat_o_ccd_CCDLibrary.c
 ** implementation of Java Class ngat.o.ccd.CCDLibrary native interfaces
-** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ngat_o_ccd_CCDLibrary.c,v 1.1 2011-11-23 10:59:52 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ngat_o_ccd_CCDLibrary.c,v 1.2 2012-07-17 17:18:59 cjm Exp $
 */
 /**
  * ngat_o_ccd_CCDLibrary.c is the 'glue' between libo_ccd, the C library version of the SDSU CCD Controller
  * software, and CCDLibrary.java, a Java Class to drive the controller. CCDLibrary specifically
  * contains all the native C routines corresponding to native methods in Java.
  * @author Chris Mottram LJMU
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 /**
  * This hash define is needed before including source files give us POSIX.4/IEEE1003.1b-1993 prototypes
@@ -69,7 +69,7 @@ struct Handle_Map_Struct
 /**
  * Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ngat_o_ccd_CCDLibrary.c,v 1.1 2011-11-23 10:59:52 cjm Exp $";
+static char rcsid[] = "$Id: ngat_o_ccd_CCDLibrary.c,v 1.2 2012-07-17 17:18:59 cjm Exp $";
 
 /**
  * Copy of the java virtual machine pointer, used for logging back up to the Java layer from C.
@@ -1048,42 +1048,44 @@ JNIEXPORT void JNICALL Java_ngat_o_ccd_CCDLibrary_CCD_1Setup_1Abort(JNIEnv *env,
 
 /**
  * Class:     ngat_o_ccd_CCDLibrary<br>
- * Method:    CCD_Setup_Get_NCols<br>
+ * Method:    CCD_Setup_Get_Binned_NCols<br>
  * Signature: ()I<br>
- * Java Native Interface implementation of <a href="ccd_setup.html#CCD_Setup_Get_NCols">CCD_Setup_Get_NCols</a>,
+ * Java Native Interface implementation of 
+ * <a href="ccd_setup.html#CCD_Setup_Get_Binned_NCols">CCD_Setup_Get_Binned_NCols</a>,
  * which gets the number of columns in the CCD chip.
- * @see ccd_setup.html#CCD_Setup_Get_NCols
+ * @see ccd_setup.html#CCD_Setup_Get_Binned_NCols
  * @see ccd_interface.html#CCD_Interface_Handle_T
  * @see #CCDLibrary_Handle_Map_Find
  */
-JNIEXPORT jint JNICALL Java_ngat_o_ccd_CCDLibrary_CCD_1Setup_1Get_1NCols(JNIEnv *env,jobject obj)
+JNIEXPORT jint JNICALL Java_ngat_o_ccd_CCDLibrary_CCD_1Setup_1Get_1Binned_1NCols(JNIEnv *env,jobject obj)
 {
 	CCD_Interface_Handle_T *handle = NULL;
 
 	/* get interface handle from CCDLibrary instance map */
 	if(!CCDLibrary_Handle_Map_Find(env,obj,&handle))
 		return -1; /* CCDLibrary_Handle_Map_Find throws an exception on failure */
-	return (jint)CCD_Setup_Get_NCols(handle);
+	return (jint)CCD_Setup_Get_Binned_NCols(handle);
 }
 
 /**
  * Class:     ngat_o_ccd_CCDLibrary<br>
- * Method:    CCD_Setup_Get_NRows<br>
+ * Method:    CCD_Setup_Get_Binned_NRows<br>
  * Signature: ()I<br>
- * Java Native Interface implementation of <a href="ccd_setup.html#CCD_Setup_Get_NRows">CCD_Setup_Get_NRows</a>,
+ * Java Native Interface implementation of 
+ * <a href="ccd_setup.html#CCD_Setup_Get_Binned_NRows">CCD_Setup_Get_Binned_NRows</a>,
  * which gets the number of rows in the CCD chip.
- * @see ccd_setup.html#CCD_Setup_Get_NRows
+ * @see ccd_setup.html#CCD_Setup_Get_Binned_NRows
  * @see ccd_interface.html#CCD_Interface_Handle_T
  * @see #CCDLibrary_Handle_Map_Find
  */
-JNIEXPORT jint JNICALL Java_ngat_o_ccd_CCDLibrary_CCD_1Setup_1Get_1NRows(JNIEnv *env,jobject obj)
+JNIEXPORT jint JNICALL Java_ngat_o_ccd_CCDLibrary_CCD_1Setup_1Get_1Binned_1NRows(JNIEnv *env,jobject obj)
 {
 	CCD_Interface_Handle_T *handle = NULL;
 
 	/* get interface handle from CCDLibrary instance map */
 	if(!CCDLibrary_Handle_Map_Find(env,obj,&handle))
 		return -1; /* CCDLibrary_Handle_Map_Find throws an exception on failure */
-	return (jint)CCD_Setup_Get_NRows(handle);
+	return (jint)CCD_Setup_Get_Binned_NRows(handle);
 }
 
 /**
@@ -2053,4 +2055,7 @@ static int CCDLibrary_Handle_Map_Find(JNIEnv *env,jobject instance,CCD_Interface
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.1  2011/11/23 10:59:52  cjm
+** Initial revision
+**
 */

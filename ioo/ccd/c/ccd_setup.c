@@ -1,12 +1,12 @@
 /* ccd_setup.c
 ** low level ccd library
-** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ccd_setup.c,v 1.1 2011-11-23 10:59:52 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ccd_setup.c,v 1.2 2012-07-17 17:18:59 cjm Exp $
 */
 /**
  * ccd_setup.c contains routines to perform the setting of the SDSU CCD Controller, prior to performing
  * exposures.
  * @author SDSU, Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 /**
  * This hash define is needed before including source files give us POSIX.4/IEEE1003.1b-1993 prototypes.
@@ -40,7 +40,7 @@
 /**
  * Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ccd_setup.c,v 1.1 2011-11-23 10:59:52 cjm Exp $";
+static char rcsid[] = "$Id: ccd_setup.c,v 1.2 2012-07-17 17:18:59 cjm Exp $";
 
 /* #defines */
 /**
@@ -178,6 +178,8 @@ void CCD_Setup_Data_Initialise(CCD_Interface_Handle_T* handle)
 
 	handle->Setup_Data.NCols = 0;
 	handle->Setup_Data.NRows = 0;
+	handle->Setup_Data.Binned_NCols = 0;
+	handle->Setup_Data.Binned_NRows = 0;
 	handle->Setup_Data.NSBin = 0;
 	handle->Setup_Data.NPBin = 0;
 	handle->Setup_Data.DeInterlace_Type = CCD_DSP_DEINTERLACE_SINGLE;
@@ -519,8 +521,8 @@ int CCD_Setup_Shutdown(CCD_Interface_Handle_T* handle)
  * can take place. This routine must be called <b>after</b> the CCD_Setup_Startup routine.
  * This routine can be aborted with CCD_Setup_Abort.
  * @param handle The address of a CCD_Interface_Handle_T that holds the device connection specific information.
- * @param ncols The number of columns in the image.
- * @param nrows The number of rows in the image to be readout from the CCD.
+ * @param ncols The number of unbinned columns in the image.
+ * @param nrows The number of unbinned rows in the image to be readout from the CCD.
  * @param nsbin The amount of binning applied to pixels in columns. This parameter will change internally
  *	ncols.
  * @param npbin The amount of binning applied to pixels in rows.This parameter will change internally
@@ -553,7 +555,8 @@ int CCD_Setup_Dimensions(CCD_Interface_Handle_T* handle,int ncols,int nrows,int 
 {
 	Setup_Error_Number = 0;
 #if LOGGING > 0
-	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Dimensions(handle=%p,ncols=%d,nrows=%d,"
+	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Dimensions(handle=%p,"
+			      "ncols(unbinned)=%d,nrows(unbinned)=%d,"
 			      "nsbin=%d,npbin=%d,amplifier=%d(%s),deinterlace_type=%d(%s),window_flags=%d) started.",
 			      handle,ncols,nrows,nsbin,npbin,amplifier,CCD_DSP_Command_Manual_To_String(amplifier),
 			      deinterlace_type,CCD_DSP_Print_DeInterlace(deinterlace_type),window_flags);
@@ -617,7 +620,7 @@ int CCD_Setup_Dimensions(CCD_Interface_Handle_T* handle,int ncols,int nrows,int 
 		return FALSE;
 	}
 /* setup final calculated dimensions */
-	if(!Setup_Dimensions(handle,handle->Setup_Data.NCols,handle->Setup_Data.NRows))
+	if(!Setup_Dimensions(handle,handle->Setup_Data.Binned_NCols,handle->Setup_Data.Binned_NRows))
 	{
 		handle->Setup_Data.Setup_In_Progress = FALSE;
 		return FALSE;
@@ -777,39 +780,37 @@ void CCD_Setup_Abort(void)
 }
 
 /**
- * Routine that returns the number of columns setup has set the SDSU CCD Controller to readout. This is the
- * number passed into CCD_Setup_Dimensions, however, binning will have
- * reduced the value (ncols = ncols passed in / nsbin), and some deinterlacing options require an even
- * number of columns.
+ * Routine that returns the number of binned columns that the SDSU CCD Controller will readout. This is the
+ * unbinned number passed into CCD_Setup_Dimensions divided by the binning factor nsbin. 
+ * Some deinterlacing options require an even number of columns and may have modified the number further.
  * @param handle The address of a CCD_Interface_Handle_T that holds the device connection specific information.
  * @return The number of columns.
  * @see #CCD_Setup_Dimensions
  * @see ccd_setup_private.html#CCD_Setup_Struct
  * @see ccd_interface.html#CCD_Interface_Handle_T
  */
-int CCD_Setup_Get_NCols(CCD_Interface_Handle_T* handle)
+int CCD_Setup_Get_Binned_NCols(CCD_Interface_Handle_T* handle)
 {
-	return handle->Setup_Data.NCols;
+	return handle->Setup_Data.Binned_NCols;
 }
 
 /**
- * Routine that returns the number of rows setup has set the SDSU CCD Controller to readout. This is the
- * number passed into CCD_Setup_Dimensions, however, binning will have
- * reduced the value (nrows = nrows passed in / npbin), and some deinterlacing options require an even
- * number of rows.
+ * Routine that returns the number of binned rows that the SDSU CCD Controller will readout. This is the
+ * unbinned number passed into CCD_Setup_Dimensions divided by the binning factor npbin. 
+ * Some deinterlacing options require an even number of columns and may have modified the number further.
  * @param handle The address of a CCD_Interface_Handle_T that holds the device connection specific information.
  * @return The number of rows.
  * @see #CCD_Setup_Dimensions
  * @see ccd_setup_private.html#CCD_Setup_Struct
  * @see ccd_interface.html#CCD_Interface_Handle_T
  */
-int CCD_Setup_Get_NRows(CCD_Interface_Handle_T* handle)
+int CCD_Setup_Get_Binned_NRows(CCD_Interface_Handle_T* handle)
 {
-	return handle->Setup_Data.NRows;
+	return handle->Setup_Data.Binned_NRows;
 }
 
 /**
- * Routine that returns the column binning factor the last dimension setup has set the SDSU CCD Controller to. 
+ * Routine that returns the column (serial) binning factor the last dimension setup has set the SDSU CCD Controller to.
  * This is the number passed into CCD_Setup_Dimensions.
  * @param handle The address of a CCD_Interface_Handle_T that holds the device connection specific information.
  * @return The columns binning number.
@@ -823,7 +824,7 @@ int CCD_Setup_Get_NSBin(CCD_Interface_Handle_T* handle)
 }
 
 /**
- * Routine that returns the row binning factor the last dimension setup has set the SDSU CCD Controller to. 
+ * Routine that returns the row (parallel) binning factor the last dimension setup has set the SDSU CCD Controller to. 
  * This is the number passed into CCD_Setup_Dimensions.
  * @param handle The address of a CCD_Interface_Handle_T that holds the device connection specific information.
  * @return The row binning number.
@@ -853,8 +854,8 @@ int CCD_Setup_Get_Readout_Pixel_Count(CCD_Interface_Handle_T* handle)
 
 	if(handle->Setup_Data.Window_Flags == 0)
 	{
-		/* the NCols and NRows variables should already have been adjusted for binning. */
-		pixel_count = handle->Setup_Data.NCols*handle->Setup_Data.NRows;
+		/* use the binned ncols and nrows. */
+		pixel_count = handle->Setup_Data.Binned_NCols*handle->Setup_Data.Binned_NRows;
 	}
 	else
 	{
@@ -1701,8 +1702,8 @@ static int Setup_Idle(CCD_Interface_Handle_T* handle,int idle)
 /**
  * Internal routine to set up the binning configuration for the SDSU CCD Controller. This routine checks
  * the binning values and saves them in Setup_Data, writes the
- * binning values to the controller boards, and re-calculates the stored columns and rows values to allow for
- * binning e.g. NCols = NCols/NSBin. This routine is called from CCD_Setup_Dimensions.
+ * binning values to the controller boards, and calculates the stored binned columns and rows values to allow for
+ * binning e.g. Binned_NCols = NCols/NSBin. This routine is called from CCD_Setup_Dimensions.
  * @param handle The address of a CCD_Interface_Handle_T that holds the device connection specific information.
  * @param nsbin The amount of binning applied to pixels in columns. This parameter will change internally ncols.
  * @param npbin The amount of binning applied to pixels in rows.This parameter will change internally nrows.
@@ -1730,10 +1731,9 @@ static int Setup_Binning(CCD_Interface_Handle_T* handle,int nsbin,int npbin)
 		return FALSE;
 	}
 	handle->Setup_Data.NPBin = npbin;
-
 /* will be sending the FINAL image size to the boards, so calculate them now */
-	handle->Setup_Data.NCols = handle->Setup_Data.NCols/handle->Setup_Data.NSBin;
-	handle->Setup_Data.NRows = handle->Setup_Data.NRows/handle->Setup_Data.NPBin;
+	handle->Setup_Data.Binned_NCols = handle->Setup_Data.NCols/handle->Setup_Data.NSBin;
+	handle->Setup_Data.Binned_NRows = handle->Setup_Data.NRows/handle->Setup_Data.NPBin;
 	if(CCD_DSP_Command_WRM(handle,CCD_DSP_TIM_BOARD_ID,CCD_DSP_MEM_SPACE_Y,SETUP_ADDRESS_BIN_X,
 		handle->Setup_Data.NSBin) != CCD_DSP_DON)
 	{
@@ -1814,37 +1814,37 @@ static int Setup_DeInterlace(CCD_Interface_Handle_T* handle,enum CCD_DSP_AMPLIFI
 		case CCD_DSP_DEINTERLACE_FLIP_XY:	        /* Single readout flipped in X and Y */
 			break;
 		case CCD_DSP_DEINTERLACE_SPLIT_PARALLEL:	/* Split Parallel readout */
-			if((float)handle->Setup_Data.NRows/2 != (int)handle->Setup_Data.NRows/2)
+			if((float)handle->Setup_Data.Binned_NRows/2 != (int)handle->Setup_Data.Binned_NRows/2)
 			{
 				Setup_Error_Number = 18;
 				sprintf(Setup_Error_String,"DeInterlace:Split Parallel needs even rows"
-					"(%d,%d)",handle->Setup_Data.NRows,handle->Setup_Data.NCols);
+					"(%d,%d)",handle->Setup_Data.Binned_NRows,handle->Setup_Data.Binned_NCols);
 				CCD_Setup_Warning();
-				handle->Setup_Data.NRows--;
+				handle->Setup_Data.Binned_NRows--;
 			}
 			break;
 		case CCD_DSP_DEINTERLACE_SPLIT_SERIAL:	/* Split Serial readout */
-			if((float)handle->Setup_Data.NCols/2 != (int)handle->Setup_Data.NCols/2)
+			if((float)handle->Setup_Data.Binned_NCols/2 != (int)handle->Setup_Data.Binned_NCols/2)
 			{
 				Setup_Error_Number = 19;
 				sprintf(Setup_Error_String,"DeInterlace:Split Serial needs even columns"
-					"(%d,%d)",handle->Setup_Data.NRows,handle->Setup_Data.NCols);
+					"(%d,%d)",handle->Setup_Data.Binned_NRows,handle->Setup_Data.Binned_NCols);
 				CCD_Setup_Warning();
-				handle->Setup_Data.NCols--;
+				handle->Setup_Data.Binned_NCols--;
 			}
 			break;
 		case CCD_DSP_DEINTERLACE_SPLIT_QUAD:	/* Split Quad */
-			if(((float)handle->Setup_Data.NCols/2 != (int)handle->Setup_Data.NCols/2)||
-	      			((float)handle->Setup_Data.NRows/2 != (int)handle->Setup_Data.NRows/2))
+			if(((float)handle->Setup_Data.Binned_NCols/2 != (int)handle->Setup_Data.Binned_NCols/2)||
+	      			((float)handle->Setup_Data.Binned_NRows/2 != (int)handle->Setup_Data.Binned_NRows/2))
 			{
 				Setup_Error_Number = 20;
 				sprintf(Setup_Error_String,"DeInterlace:Split Quad needs even columns and rows"
-					"(%d,%d)",handle->Setup_Data.NCols,handle->Setup_Data.NRows);
+					"(%d,%d)",handle->Setup_Data.Binned_NCols,handle->Setup_Data.Binned_NRows);
 				CCD_Setup_Warning();
-				if((float)handle->Setup_Data.NCols/2 != (int)handle->Setup_Data.NCols/2)
-					handle->Setup_Data.NCols--;
-				if((float)handle->Setup_Data.NRows/2 != (int)handle->Setup_Data.NRows/2)
-					handle->Setup_Data.NRows--;
+				if((float)handle->Setup_Data.Binned_NCols/2 != (int)handle->Setup_Data.Binned_NCols/2)
+					handle->Setup_Data.Binned_NCols--;
+				if((float)handle->Setup_Data.Binned_NRows/2 != (int)handle->Setup_Data.Binned_NRows/2)
+					handle->Setup_Data.Binned_NRows--;
 			}
 			break;
 		default:
@@ -1860,9 +1860,9 @@ static int Setup_DeInterlace(CCD_Interface_Handle_T* handle,enum CCD_DSP_AMPLIFI
  * Internal routine to set up the CCD dimensions for the SDSU CCD Controller. This routines writes the
  * dimension values to the controller boards using WRM.  This routine is called from CCD_Setup_Dimensions.
  * @param handle The address of a CCD_Interface_Handle_T that holds the device connection specific information.
- * @param ncols The number of columns. This is usually Setup_Data.NCols, but will be different when
+ * @param ncols The number of binned columns. This is usually Setup_Data.Binned_NCols, but will be different when
  *        windowing.
- * @param nrows The number of rows. This is usually Setup_Data.NRows, but will be different when
+ * @param nrows The number of binned rows. This is usually Setup_Data.Binned_NRows, but will be different when
  *        windowing.
  * @return Returns TRUE if the operation succeeds, FALSE if it fails.
  * @see #CCD_Setup_Dimensions
@@ -2076,6 +2076,9 @@ static int Setup_Controller_Windows(CCD_Interface_Handle_T* handle)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.1  2011/11/23 10:59:52  cjm
+** Initial revision
+**
 ** Revision 0.31  2009/02/05 11:40:27  cjm
 ** Swapped Bitwise for Absolute logging levels.
 **
