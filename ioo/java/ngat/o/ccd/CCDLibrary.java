@@ -1,5 +1,5 @@
 // CCDLibrary.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/ccd/CCDLibrary.java,v 1.2 2012-01-11 15:03:50 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/ccd/CCDLibrary.java,v 1.3 2012-07-17 17:17:34 cjm Exp $
 package ngat.o.ccd;
 
 import java.lang.*;
@@ -10,14 +10,14 @@ import ngat.util.logging.*;
 /**
  * This class supports an interface to the SDSU CCD Controller library, for controlling the FrodoSpec CCD.
  * @author Chris Mottram
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 public class CCDLibrary
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class
 	 */
-	public final static String RCSID = new String("$Id: CCDLibrary.java,v 1.2 2012-01-11 15:03:50 cjm Exp $");
+	public final static String RCSID = new String("$Id: CCDLibrary.java,v 1.3 2012-07-17 17:17:34 cjm Exp $");
 	// ccd_dsp.h
 	/* These constants should be the same as those in ccd_dsp.h */
 	/**
@@ -70,6 +70,12 @@ public class CCDLibrary
 	 * @link http://ltdevsrv.livjm.ac.uk/~dev/o/ccd/cdocs/ccd_dsp.html#CCD_DSP_AMPLIFIER
 	 */
 	public final static int DSP_AMPLIFIER_BOTTOM_RIGHT =            0x5f5f44;
+	/**
+	 * Set Output Source parameter, to make the controller read out images from both left amplifiers (_AC).
+	 * @see #setupDimensions
+	 * @link http://ltdevsrv.livjm.ac.uk/~dev/o/ccd/cdocs/ccd_dsp.html#CCD_DSP_AMPLIFIER
+	 */
+	public final static int DSP_AMPLIFIER_BOTH_LEFT   =            0x5f4143;	
 	/**
 	 * Set Output Source parameter, to make the controller read out images from both right amplifiers (_BD).
 	 * @see #setupDimensions
@@ -484,11 +490,11 @@ public class CCDLibrary
 	/**
 	 * Native wrapper to libo_ccd routine that gets the number of columns.
 	 */
-	private native int CCD_Setup_Get_NCols();
+	private native int CCD_Setup_Get_Binned_NCols();
 	/**
 	 * Native wrapper to libo_ccd routine that gets the number of Rows.
 	 */
-	private native int CCD_Setup_Get_NRows();
+	private native int CCD_Setup_Get_Binned_NRows();
 	/**
 	 * Native wrapper to libo_ccd routine that gets the serial (column/X) binning.
 	 */
@@ -697,6 +703,7 @@ public class CCDLibrary
 	 * 	<li><a href="#DSP_AMPLIFIER_TOP_RIGHT">DSP_AMPLIFIER_TOP_RIGHT</a>
 	 * 	<li><a href="#DSP_AMPLIFIER_BOTTOM_LEFT">DSP_AMPLIFIER_BOTTOM_LEFT</a>
 	 * 	<li><a href="#DSP_AMPLIFIER_BOTTOM_RIGHT">DSP_AMPLIFIER_BOTTOM_RIGHT</a>
+	 * 	<li><a href="#DSP_AMPLIFIER_BOTH_LEFT">DSP_AMPLIFIER_BOTH_LEFT</a>
 	 * 	<li><a href="#DSP_AMPLIFIER_BOTH_RIGHT">DSP_AMPLIFIER_BOTH_RIGHT</a>
 	 * 	<li><a href="#DSP_AMPLIFIER_ALL">DSP_AMPLIFIER_ALL</a>
 	 * 	</ul>.
@@ -712,6 +719,8 @@ public class CCDLibrary
 			return DSP_AMPLIFIER_BOTTOM_LEFT;
 		if(s.equals("DSP_AMPLIFIER_BOTTOM_RIGHT"))
 			return DSP_AMPLIFIER_BOTTOM_RIGHT;
+		if(s.equals("DSP_AMPLIFIER_BOTH_LEFT"))
+			return DSP_AMPLIFIER_BOTH_LEFT;
 		if(s.equals("DSP_AMPLIFIER_BOTH_RIGHT"))
 			return DSP_AMPLIFIER_BOTH_RIGHT;
 		if(s.equals("DSP_AMPLIFIER_ALL"))
@@ -1266,6 +1275,7 @@ public class CCDLibrary
 	 * 	<a href="#DSP_AMPLIFIER_TOP_RIGHT">DSP_AMPLIFIER_TOP_RIGHT</a>,
 	 * 	<a href="#DSP_AMPLIFIER_BOTTOM_LEFT">DSP_AMPLIFIER_BOTTOM_LEFT</a>,
 	 * 	<a href="#DSP_AMPLIFIER_BOTTOM_RIGHT">DSP_AMPLIFIER_BOTTOM_RIGHT</a>,
+	 * 	<a href="#DSP_AMPLIFIER_BOTH_LEFT">DSP_AMPLIFIER_BOTH_LEFT</a> or 
 	 * 	<a href="#DSP_AMPLIFIER_BOTH_RIGHT">DSP_AMPLIFIER_BOTH_RIGHT</a> or 
 	 * 	<a href="#DSP_AMPLIFIER_ALL">DSP_AMPLIFIER_ALL</a>.
 	 * @param deinterlaceSetting The algorithm to use for deinterlacing the resulting data. The data needs to be
@@ -1318,27 +1328,27 @@ public class CCDLibrary
 	}
 
 	/**
-	 * Routine to get the number of columns on the CCD chip last passed into setupDimensions. This value
+	 * Routine to get the number of binned columns on the CCD chip last passed into setupDimensions. This value
 	 * is got from the stored setup data, rather than querying the camera directly.
 	 * @return Returns an integer representing the number of columns.
 	 * @see #setupDimensions
-	 * @see #CCD_Setup_Get_NCols
+	 * @see #CCD_Setup_Get_Binned_NCols
 	 */
-	public int getNCols()
+	public int getBinnedNCols()
 	{
-		return CCD_Setup_Get_NCols();
+		return CCD_Setup_Get_Binned_NCols();
 	}
 
 	/**
-	 * Routine to get the number of rows on the CCD chip last passed into setupDimensions. This value
+	 * Routine to get the number of binned rows on the CCD chip last passed into setupDimensions. This value
 	 * is got from the stored setup data, rather than querying the camera directly.
 	 * @return Returns an integer representing the number of rows.
 	 * @see #setupDimensions
-	 * @see #CCD_Setup_Get_NRows
+	 * @see #CCD_Setup_Get_Binned_NRows
 	 */
-	public int getNRows()
+	public int getBinnedNRows()
 	{
-		return CCD_Setup_Get_NRows();
+		return CCD_Setup_Get_Binned_NRows();
 	}
 
 	/**
@@ -1375,6 +1385,7 @@ public class CCDLibrary
 	 * @see #DSP_AMPLIFIER_TOP_RIGHT
 	 * @see #DSP_AMPLIFIER_BOTTOM_LEFT
 	 * @see #DSP_AMPLIFIER_BOTTOM_RIGHT
+	 * @see #DSP_AMPLIFIER_BOTH_LEFT
 	 * @see #DSP_AMPLIFIER_BOTH_RIGHT
 	 * @see #DSP_AMPLIFIER_ALL
 	 */
@@ -1677,6 +1688,9 @@ public class CCDLibrary
  
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.2  2012/01/11 15:03:50  cjm
+// Added DSP_AMPLIFIER_BOTH_RIGHT.
+//
 // Revision 1.1  2011/11/23 10:59:30  cjm
 // Initial revision
 //
