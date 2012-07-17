@@ -1,4 +1,4 @@
-; $Header: /space/home/eng/cjm/cvs/ioo/sdsu/e2v231-84/timCCDmisc.asm,v 1.1 2012-03-28 16:54:54 cjm Exp $
+; $Header: /space/home/eng/cjm/cvs/ioo/sdsu/e2v231-84/timCCDmisc.asm,v 1.2 2012-07-17 17:34:04 cjm Exp $
 ; Copied from e2v230 version.
 ; Various changed imported from fif486 version
 ; Miscellaneous CCD control routines
@@ -672,6 +672,8 @@ L_CHARGE_DUMP
 ; Select the amplifier and readout mode
 ;   'SOS'  Amplifier_name = '__C', '__D', '__B', '__A' or 'ALL'
 ;   			 or '__E', '__F', '__G', '__H'
+; Now also '_AC': Upper and Lower left hand amplifiers.
+; Now also '_BD': Upper and Lower right hand amplifiers.
 SELECT_OUTPUT_SOURCE
 	MOVE    X:(R3)+,Y0
 	MOVE	Y0,Y:<OS
@@ -796,7 +798,7 @@ CMP_UL	MOVE	#'__A',A		; Upper Left Amplifier = readout #3
 	JEQ	<EQ_UL
 	MOVE	#'__H',A
 	CMP	X0,A
-	JNE	<ERROR
+	JNE	<CMP_BL
 EQ_UL	MOVE	#PARALLEL_UP_START,X0
 	MOVE	X0,Y:PARALLEL_START
 	MOVE	#PARALLEL_UP_BIN,X0
@@ -818,6 +820,58 @@ EQ_UL	MOVE	#PARALLEL_UP_START,X0
 	MOVE	X0,Y:CHARGE_DUMP
 	BCLR	#SPLIT_S,X:STATUS
 	BCLR	#SPLIT_P,X:STATUS
+	RTS
+CMP_BL	MOVE	#'_AC',A		; Upper and Lower Left Amplifiers
+	CMP	X0,A
+	JNE	<CMP_BR
+	MOVE	#PARALLEL_SPLIT_START,X0
+	MOVE	X0,Y:PARALLEL_START
+	MOVE	#PARALLEL_SPLIT_BIN,X0
+	MOVE	X0,Y:PARALLEL_BIN
+	MOVE	#PARALLEL_SPLIT_END,X0
+	MOVE	X0,Y:PARALLEL_END
+	MOVE	#PARALLEL_CLEAR_SPLIT,X0
+	MOVE	X0,Y:PARALLEL_CLEAR
+	MOVE	#SERIAL_SKIP_LEFT,X0
+	MOVE	X0,Y:SERIAL_SKIP
+
+	MOVE	#FIRST_CLOCKS_LEFT,X0
+	MOVE	X0,Y:FIRST_CLOCKS
+	MOVE	#CLOCK_LINE_LEFT,X0
+	MOVE	X0,Y:CLOCK_LINE
+	;; This can't actually be done. We need to transmit A/D converters 0 and 3, without
+	;; transmitting 1 and 2, and you encodify the SXMIT command in terms of start and end converters.
+	;; So the following value is WRONG
+	MOVE	#$00F081,X0
+	MOVE	X0,Y:SXMIT
+	MOVE	#CHARGE_DUMP_LEFT,X0
+	MOVE	X0,Y:CHARGE_DUMP
+	BCLR	#SPLIT_S,X:STATUS
+	BSET	#SPLIT_P,X:STATUS
+	RTS
+CMP_BR	MOVE	#'_BD',A		; Upper and Lower Right Amplifiers = readout #1 and #2
+	CMP	X0,A
+	JNE	<ERROR
+EQ_BR	MOVE	#PARALLEL_SPLIT_START,X0
+	MOVE	X0,Y:PARALLEL_START
+	MOVE	#PARALLEL_SPLIT_BIN,X0
+	MOVE	X0,Y:PARALLEL_BIN
+	MOVE	#PARALLEL_SPLIT_END,X0
+	MOVE	X0,Y:PARALLEL_END
+	MOVE	#PARALLEL_CLEAR_SPLIT,X0
+	MOVE	X0,Y:PARALLEL_CLEAR
+	MOVE	#SERIAL_SKIP_RIGHT,X0
+	MOVE	X0,Y:SERIAL_SKIP
+	MOVE	#FIRST_CLOCKS_RIGHT,X0
+	MOVE	X0,Y:FIRST_CLOCKS
+	MOVE	#CLOCK_LINE_RIGHT,X0
+	MOVE	X0,Y:CLOCK_LINE
+	MOVE	#$00F081,X0
+	MOVE	X0,Y:SXMIT
+	MOVE	#CHARGE_DUMP_RIGHT,X0
+	MOVE	X0,Y:CHARGE_DUMP
+	BCLR	#SPLIT_S,X:STATUS
+	BSET	#SPLIT_P,X:STATUS
 	RTS
 
 ; Set the pixel time by adjusting the reset and signal integration times
@@ -857,4 +911,7 @@ SET_PIXEL_TIME
 
 ;
 ; $Log: not supported by cvs2svn $
+; Revision 1.1  2012/03/28 16:54:54  cjm
+; Initial revision
+;
 ;
