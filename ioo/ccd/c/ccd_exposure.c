@@ -1,13 +1,13 @@
 /* ccd_exposure.c
 ** low level ccd library
-** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ccd_exposure.c,v 1.5 2012-07-17 16:55:02 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ccd_exposure.c,v 1.6 2012-07-19 14:07:46 cjm Exp $
 */
 /**
  * ccd_exposure.c contains routines for performing an exposure with the SDSU CCD Controller. There is a
  * routine that does the whole job in one go, or several routines can be called to do parts of an exposure.
  * An exposure can be paused and resumed, or it can be stopped or aborted.
  * @author SDSU, Chris Mottram
- * @version $Revision: 1.5 $
+ * @version $Revision: 1.6 $
  */
 /**
  * This hash define is needed before including source files give us POSIX.4/IEEE1003.1b-1993 prototypes
@@ -159,7 +159,7 @@ struct Exposure_Struct
 /**
  * Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ccd_exposure.c,v 1.5 2012-07-17 16:55:02 cjm Exp $";
+static char rcsid[] = "$Id: ccd_exposure.c,v 1.6 2012-07-19 14:07:46 cjm Exp $";
 /**
  * Internal exposure data (library wide).
  * @see #Exposure_Struc
@@ -1941,9 +1941,9 @@ static int Exposure_DeInterlace(int ncols,int nrows,unsigned short *old_iptr,
 					j++; /*number of completed rows*/
 					counter=0; /*reset for next convergece*/
 				}
-				*(new_iptr+end-ncols+1+counter)  = *(old_iptr+i); 
-				i++;
 				*(new_iptr+begin+counter)        = *(old_iptr+i); 
+				i++;
+				*(new_iptr+end-ncols+1+counter)  = *(old_iptr+i); 
 				i++;
 				counter++;
 			}/* end while */
@@ -2055,7 +2055,6 @@ static int Exposure_DeInterlace(int ncols,int nrows,unsigned short *old_iptr,
  * @param nrows The number of rows in the image data.
  * @param start_time The start time of the exposure.
  * @return Returns TRUE if the image is saved successfully, FALSE if it fails.
- * @see #CCD_Exposure_Flip_X
  * @see #Exposure_TimeSpec_To_Date_String
  * @see #Exposure_TimeSpec_To_Date_Obs_String
  * @see #Exposure_TimeSpec_To_UtStart_String
@@ -2082,8 +2081,8 @@ static int Exposure_Save(char *filename,unsigned short *exposure_data,int ncols,
 		sprintf(Exposure_Error_String,"Exposure_Save: File open failed(%s,%d,%s).",filename,status,buff);
 		return FALSE;
 	}
-	/* flip the data */
-	CCD_Exposure_Flip_X(ncols,nrows,exposure_data);
+	/* flip the data QUAD requires a flip in X, BOTHRIGHT requires a flip in Y (now corrected in DeInterlace) */
+	/*CCD_Exposure_Flip_X(ncols,nrows,exposure_data);*/
 	/* write the data */
 	retval = fits_write_img(fp,TUSHORT,1,ncols*nrows,exposure_data,&status);
 	if(retval)
@@ -2422,6 +2421,11 @@ static int fexist(char *filename)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.5  2012/07/17 16:55:02  cjm
+** Added flipping code.
+** Added flip in X to readouts.
+** Changed CCD_Setup NCols/NRows calls to match API change.
+**
 ** Revision 1.4  2012/06/13 14:40:53  cjm
 ** Fixed Exposure_DeInterlace split parallel de interlace code.
 **
