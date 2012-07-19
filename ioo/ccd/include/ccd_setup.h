@@ -1,5 +1,5 @@
 /* ccd_setup.h
-** $Header: /space/home/eng/cjm/cvs/ioo/ccd/include/ccd_setup.h,v 1.2 2012-07-17 17:27:56 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/ioo/ccd/include/ccd_setup.h,v 1.3 2012-07-19 14:06:08 cjm Exp $
 */
 #ifndef CCD_SETUP_H
 #define CCD_SETUP_H
@@ -48,8 +48,9 @@
 /**
  * Memory buffer size for mmap/malloc. Should be bigger than 1 array (4096x4112) number of pixels
  * (pixels are 16 bits/2 bytes). Add in prescan (50 pixels) at each amplifier.
+ * We currently have a large POSTSCAN region as well (200 pixels).
  */
-#define CCD_SETUP_MEMORY_BUFFER_SIZE      (4200*4200*2)
+#define CCD_SETUP_MEMORY_BUFFER_SIZE      (4400*4400*2)
 
 /* These enum definitions should match with those in CCDLibrary.java */
 /**
