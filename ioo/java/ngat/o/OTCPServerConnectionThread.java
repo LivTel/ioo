@@ -1,5 +1,5 @@
 // OTCPServerConnectionThread.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/OTCPServerConnectionThread.java,v 1.1 2011-11-23 10:55:24 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/OTCPServerConnectionThread.java,v 1.2 2012-07-23 15:28:49 cjm Exp $
 package ngat.o;
 
 import java.lang.*;
@@ -21,14 +21,14 @@ import ngat.util.logging.*;
 /**
  * This class extends the TCPServerConnectionThread class for the O application.
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class OTCPServerConnectionThread extends TCPServerConnectionThread
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: OTCPServerConnectionThread.java,v 1.1 2011-11-23 10:55:24 cjm Exp $");
+	public final static String RCSID = new String("$Id: OTCPServerConnectionThread.java,v 1.2 2012-07-23 15:28:49 cjm Exp $");
 	/**
 	 * Default time taken to respond to a command. This is a class-wide field.
 	 */
@@ -305,12 +305,16 @@ public class OTCPServerConnectionThread extends TCPServerConnectionThread
 	 * @exception NullPointerException If the acknowledge object is null this exception is thrown.
 	 * @exception IOException If the acknowledge object fails to be sent an IOException results.
 	 * @see #acknowledgeTime
+	 * @see #o
+	 * @see O#log
 	 * @see ngat.net.TCPServerConnectionThread#sendAcknowledge
 	 */
 	public void sendAcknowledge(ACK acknowledge,boolean setThreadAckTime) throws IOException
 	{
 		if(setThreadAckTime)
 			acknowledgeTime = acknowledge.getTimeToComplete();
+		o.log(Logging.VERBOSITY_VERY_VERBOSE,"Command:"+command.getClass().getName()+
+		      ":sendAcknowledge(timeToComplete:"+acknowledge.getTimeToComplete()+").");
 		super.sendAcknowledge(acknowledge);
 	}
 
@@ -327,4 +331,7 @@ public class OTCPServerConnectionThread extends TCPServerConnectionThread
 }
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2011/11/23 10:55:24  cjm
+// Initial revision
+//
 //
