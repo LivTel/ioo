@@ -1,5 +1,5 @@
 // TWILIGHT_CALIBRATEImplementation.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/TWILIGHT_CALIBRATEImplementation.java,v 1.8 2012-07-13 11:23:07 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/TWILIGHT_CALIBRATEImplementation.java,v 1.9 2012-07-23 15:29:11 cjm Exp $
 package ngat.o;
 
 import java.io.*;
@@ -29,14 +29,14 @@ import ngat.util.logging.*;
  * The exposure length is dynamically adjusted as the sky gets darker or brighter. TWILIGHT_CALIBRATE commands
  * should be sent to O just after sunset and just before sunrise.
  * @author Chris Mottram
- * @version $Revision: 1.8 $
+ * @version $Revision: 1.9 $
  */
 public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: TWILIGHT_CALIBRATEImplementation.java,v 1.8 2012-07-13 11:23:07 cjm Exp $");
+	public final static String RCSID = new String("$Id: TWILIGHT_CALIBRATEImplementation.java,v 1.9 2012-07-23 15:29:11 cjm Exp $");
 	/**
 	 * The number of different binning factors we should min/best/max count data for.
 	 * Actually 1 more than the maximum used binning, as we go from 1 not 0.
@@ -1713,6 +1713,8 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 
 		acknowledge = new ACK(twilightCalibrateCommand.getId());
 		acknowledge.setTimeToComplete(timeToComplete+serverConnectionThread.getDefaultAcknowledgeTime());
+		o.log(Logging.VERBOSITY_VERBOSE,"Command:"+twilightCalibrateCommand.getId()+":sendBasicAck(time="+
+		      (timeToComplete+serverConnectionThread.getDefaultAcknowledgeTime())+").");
 		try
 		{
 			serverConnectionThread.sendAcknowledge(acknowledge,true);
@@ -1754,6 +1756,9 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 		twilightCalibrateAck.setTimeToComplete(timeToComplete+
 			serverConnectionThread.getDefaultAcknowledgeTime());
 		twilightCalibrateAck.setFilename(filename);
+		o.log(Logging.VERBOSITY_VERBOSE,"Command:"+twilightCalibrateCommand.getId()+
+		      ":sendTwilightCalibrateAck(time="+
+		      (timeToComplete+serverConnectionThread.getDefaultAcknowledgeTime())+",filename="+filename+").");
 		try
 		{
 			serverConnectionThread.sendAcknowledge(twilightCalibrateAck,true);
@@ -1796,6 +1801,12 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 		twilightCalibrateDpAck.setFilename(twilightCalibrateDone.getFilename());
 		twilightCalibrateDpAck.setMeanCounts(twilightCalibrateDone.getMeanCounts());
 		twilightCalibrateDpAck.setPeakCounts(twilightCalibrateDone.getPeakCounts());
+		o.log(Logging.VERBOSITY_VERBOSE,"Command:"+twilightCalibrateCommand.getId()+
+		      ":sendTwilightCalibrateDpAck(time="+
+		      (timeToComplete+serverConnectionThread.getDefaultAcknowledgeTime())+",filename="+
+		      twilightCalibrateDone.getFilename()+
+		      ",mean counts="+twilightCalibrateDone.getMeanCounts()+
+		      ",peak counts="+twilightCalibrateDone.getPeakCounts()+").");
 		try
 		{
 			serverConnectionThread.sendAcknowledge(twilightCalibrateDpAck,true);
@@ -2240,6 +2251,9 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.8  2012/07/13 11:23:07  cjm
+// Fixed Attempting exposure comment.
+//
 // Revision 1.7  2012/07/13 11:10:35  cjm
 // Logging changes to remove newlines - makes the logs harder to read but easier to grep.
 // Passed down filter[Slides] and binning to doFrame, so doFrame logs have lots of
