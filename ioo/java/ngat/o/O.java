@@ -1,5 +1,5 @@
 // O.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/O.java,v 1.2 2012-01-11 14:55:18 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/O.java,v 1.3 2012-07-24 08:24:45 cjm Exp $
 package ngat.o;
 
 import java.lang.*;
@@ -23,14 +23,14 @@ import ngat.message.INST_DP.*;
 /**
  * This class is the start point for the O Control System.
  * @author Chris Mottram
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 public class O
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: O.java,v 1.2 2012-01-11 14:55:18 cjm Exp $");
+	public final static String RCSID = new String("$Id: O.java,v 1.3 2012-07-24 08:24:45 cjm Exp $");
 	/**
 	 * Logger channel id.
 	 */
@@ -896,6 +896,7 @@ public class O
 		int startExposureClearTime,startExposureOffsetTime,readoutRemainingTime;
 		int shutterTriggerDelay,shutterOpenDelay,shutterCloseDelay,readoutDelay;
 		int filterWheelFilterCount;
+		long memoryMapLength;
 		double targetTemperature;
 		boolean gainSpeed,idle,filterWheelEnable;
 		String devicePathname,pciFilename,timingFilename,utilityFilename;
@@ -913,6 +914,7 @@ public class O
 			pciLoadType = ccd.loadTypeFromString(status.
 				getProperty("o.ccd.config.pci_load_type"));
 			pciFilename = status.getProperty("o.ccd.config.pci_filename");
+			memoryMapLength = status.getPropertyLong("o.ccd.config.memory_map.length");
 			timingLoadType = ccd.loadTypeFromString(status.
 				getProperty("o.ccd.config.timing_load_type"));
 			timingApplicationNumber = status.
@@ -950,7 +952,8 @@ public class O
 			ccd.initialise();
 			ccd.setTextPrintLevel(textPrintLevel);
 			ccd.interfaceOpen(deviceNumber,devicePathname);
-			ccd.setup(pciLoadType,pciFilename,timingLoadType,timingApplicationNumber,timingFilename,
+			ccd.setup(pciLoadType,pciFilename,memoryMapLength,
+				  timingLoadType,timingApplicationNumber,timingFilename,
 				  utilityLoadType,utilityApplicationNumber,utilityFilename,
 				  targetTemperature,gain,gainSpeed,idle);
 			// filter wheel setup
@@ -1926,6 +1929,10 @@ public class O
 }
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.2  2012/01/11 14:55:18  cjm
+// Added sendBSSCommand method for sending RCS_TO_BSS commands for
+// TWILIGHT_CALIBRATE to send BEAM_STEER.
+//
 // Revision 1.1  2011/11/23 10:55:24  cjm
 // Initial revision
 //
