@@ -1,5 +1,5 @@
 // CCDLibrary.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/ccd/CCDLibrary.java,v 1.3 2012-07-17 17:17:34 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/ccd/CCDLibrary.java,v 1.4 2012-07-24 08:26:13 cjm Exp $
 package ngat.o.ccd;
 
 import java.lang.*;
@@ -10,14 +10,14 @@ import ngat.util.logging.*;
 /**
  * This class supports an interface to the SDSU CCD Controller library, for controlling the FrodoSpec CCD.
  * @author Chris Mottram
- * @version $Revision: 1.3 $
+ * @version $Revision: 1.4 $
  */
 public class CCDLibrary
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class
 	 */
-	public final static String RCSID = new String("$Id: CCDLibrary.java,v 1.3 2012-07-17 17:17:34 cjm Exp $");
+	public final static String RCSID = new String("$Id: CCDLibrary.java,v 1.4 2012-07-24 08:26:13 cjm Exp $");
 	// ccd_dsp.h
 	/* These constants should be the same as those in ccd_dsp.h */
 	/**
@@ -440,9 +440,10 @@ public class CCDLibrary
 		throws CCDLibraryNativeException;
 	/**
 	 * Native wrapper to libo_ccd routine that sets up the memory map to the controller.
+	 * @param length The number of bytes of memory to map.
 	 * @exception CCDLibraryNativeException This method throws a CCDLibraryNativeException if it failed.
 	 */
-	private native void CCD_Interface_Memory_Map() throws CCDLibraryNativeException;
+	private native void CCD_Interface_Memory_Map(long length) throws CCDLibraryNativeException;
 	/**
 	 * Native wrapper to libo_ccd routine that closes the selected interface device.
 	 * @exception CCDLibraryNativeException This method throws a CCDLibraryNativeException if it failed.
@@ -462,7 +463,7 @@ public class CCDLibrary
 	 * Native wrapper to libo_ccd routine that does the CCD setup.
 	 * @exception CCDLibraryNativeException This method throws a CCDLibraryNativeException if it failed.
 	 */
-	private native void CCD_Setup_Startup(int pci_load_type, String pci_filename,
+	private native void CCD_Setup_Startup(int pci_load_type, String pci_filename,long memoryMapLength,
 		int timing_load_type,int timing_application_number,String timing_filename,
 		int utility_load_type,int utility_application_number,String utility_filename,
 		double target_temperature,int gain,boolean gain_speed,boolean idle) throws CCDLibraryNativeException;
@@ -1128,14 +1129,15 @@ public class CCDLibrary
 	 * Routine to create a mmap interface to the controller. This is normally called internally in
 	 * setup, but can be called explicity from the library interface for command line test programs
 	 * that do not setup the controller but want to expose it.
+	 * @param length The length of shared memory to map.
 	 * @exception CCDLibraryNativeException This method throws a CCDLibraryNativeException if the device could
 	 * 	not be closed.
 	 * @see #setup
 	 * @see #CCD_Interface_Memory_Map
 	 */
-	public void interfaceMemoryMap() throws CCDLibraryNativeException
+	public void interfaceMemoryMap(long length) throws CCDLibraryNativeException
 	{
-		CCD_Interface_Memory_Map();
+		CCD_Interface_Memory_Map(length);
 	}
 
 	/**
@@ -1207,6 +1209,7 @@ public class CCDLibrary
 	 * @param pciLoadType Where to load the PCI DSP program code from. Acceptable values are
 	 * 	SETUP_LOAD_ROM, SETUP_LOAD_APPLICATION and SETUP_LOAD_FILENAME.
 	 * @param pciFilename If pciLoadType is SETUP_LOAD_FILENAMEthis specifies which file to load from.
+	 * @param memoryMapLength The length in bytes of the number of bytes to memory map in the image area.
 	 * @param timingLoadType Where to load the Timing application DSP code from. Acceptable values are
 	 * 	SETUP_LOAD_ROM, SETUP_LOAD_APPLICATION and SETUP_LOAD_FILENAME.
 	 * @param timingApplicationNumber If timingLoadType is SETUP_LOAD_APPLICATION this specifies which 
@@ -1235,12 +1238,12 @@ public class CCDLibrary
 	 * @see #DSP_GAIN_FOUR
 	 * @see #DSP_GAIN_NINE
 	 */
-	public void setup(int pciLoadType, String pciFilename,
+	public void setup(int pciLoadType, String pciFilename,long memoryMapLength,
 		int timingLoadType,int timingApplicationNumber,String timingFilename,
 		int utilityLoadType,int utilityApplicationNumber,String utilityFilename,
 		double targetTemperature,int gain,boolean gainSpeed,boolean idle) throws CCDLibraryNativeException
 	{
-		CCD_Setup_Startup(pciLoadType,pciFilename,
+		CCD_Setup_Startup(pciLoadType,pciFilename,memoryMapLength,
 				  timingLoadType,timingApplicationNumber,timingFilename,
 				  utilityLoadType,utilityApplicationNumber,utilityFilename,
 				  targetTemperature,gain,gainSpeed,idle);
@@ -1688,6 +1691,10 @@ public class CCDLibrary
  
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.3  2012/07/17 17:17:34  cjm
+// Changed API for retrieving binned ncols and nrows.
+// Added DSP_AMPLIFIER_BOTH_LEFT.
+//
 // Revision 1.2  2012/01/11 15:03:50  cjm
 // Added DSP_AMPLIFIER_BOTH_RIGHT.
 //
