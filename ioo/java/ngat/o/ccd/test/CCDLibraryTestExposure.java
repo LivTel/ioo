@@ -1,5 +1,5 @@
 // CCDLibraryTestExposure.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/ccd/test/CCDLibraryTestExposure.java,v 1.1 2011-11-23 10:59:34 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/ccd/test/CCDLibraryTestExposure.java,v 1.2 2012-07-24 08:26:55 cjm Exp $
 package ngat.o.ccd.test;
 
 import java.io.*;
@@ -14,7 +14,7 @@ import ngat.util.logging.*;
  * This class tests the ngat.o.ccd.CCDLibrary class, which provides the Java interface for
  * the O SDSU CCD controller. It does a setup and exposure. 
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class CCDLibraryTestExposure implements Runnable
 {
@@ -22,11 +22,15 @@ public class CCDLibraryTestExposure implements Runnable
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: CCDLibraryTestExposure.java,v 1.1 2011-11-23 10:59:34 cjm Exp $");
+	public final static String RCSID = new String("$Id: CCDLibraryTestExposure.java,v 1.2 2012-07-24 08:26:55 cjm Exp $");
 	/**
 	 * Default device pathname /dev/astropci0.
 	 */
 	public final static String DEFAULT_DEVICE_PATHNAME = new String("/dev/astropci0");
+	/**
+	 * Default length of memory map for images.
+	 */
+	public final static long DEFAULT_MEMORY_MAP_LENGTH = 4400*4400*2L;
 	/**
 	 * Constant defining number of columns in CCD for O. Currently defaulting to Hamamatsu value.
 	 */
@@ -496,14 +500,14 @@ public class CCDLibraryTestExposure implements Runnable
 			}
 			if(clte.doSetup)
 			{
-				clte.ccd.setup(CCDLibrary.SETUP_LOAD_ROM,null,
+				clte.ccd.setup(CCDLibrary.SETUP_LOAD_ROM,null,DEFAULT_MEMORY_MAP_LENGTH,
 					       CCDLibrary.SETUP_LOAD_FILENAME,0,clte.timingFilename,
 					       CCDLibrary.SETUP_LOAD_FILENAME,0,clte.utilityFilename,
 					       clte.targetTemperature,clte.gain,clte.gainSpeed,clte.idle);
 			}
 			else
 			{
-				clte.ccd.interfaceMemoryMap();
+				clte.ccd.interfaceMemoryMap(DEFAULT_MEMORY_MAP_LENGTH);
 			}
 			if(clte.doExposure)
 			{
@@ -528,4 +532,7 @@ public class CCDLibraryTestExposure implements Runnable
 }
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2011/11/23 10:59:34  cjm
+// Initial revision
+//
 //
