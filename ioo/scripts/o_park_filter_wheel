@@ -1,0 +1,17 @@
+#!/bin/csh
+# park_filter_wheel cron job
+# Moves the filter wheel to a set position
+# $Header: /space/home/eng/cjm/cvs/ioo/scripts/o_park_filter_wheel,v 1.1 2012-07-25 10:49:27 cjm Exp $
+set hostname = "o1"
+set port = 7979
+set park_filter = "SDSS-U"
+set bin = 2
+java ngat.o.test.SendConfigCommand -address ${hostname} -port ${port} -filter ${park_filter} -xBin ${bin} -yBin ${bin}
+set config_status = $status
+if ( ${config_status} != 0 ) then
+	echo "An error occured: ${config_status}."
+	exit 1
+endif
+#
+# $Log: not supported by cvs2svn $
+#
