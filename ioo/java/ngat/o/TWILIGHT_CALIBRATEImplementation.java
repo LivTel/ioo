@@ -1,5 +1,5 @@
 // TWILIGHT_CALIBRATEImplementation.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/TWILIGHT_CALIBRATEImplementation.java,v 1.9 2012-07-23 15:29:11 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/TWILIGHT_CALIBRATEImplementation.java,v 1.10 2012-07-26 14:00:21 cjm Exp $
 package ngat.o;
 
 import java.io.*;
@@ -29,14 +29,14 @@ import ngat.util.logging.*;
  * The exposure length is dynamically adjusted as the sky gets darker or brighter. TWILIGHT_CALIBRATE commands
  * should be sent to O just after sunset and just before sunrise.
  * @author Chris Mottram
- * @version $Revision: 1.9 $
+ * @version $Revision: 1.10 $
  */
 public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: TWILIGHT_CALIBRATEImplementation.java,v 1.9 2012-07-23 15:29:11 cjm Exp $");
+	public final static String RCSID = new String("$Id: TWILIGHT_CALIBRATEImplementation.java,v 1.10 2012-07-26 14:00:21 cjm Exp $");
 	/**
 	 * The number of different binning factors we should min/best/max count data for.
 	 * Actually 1 more than the maximum used binning, as we go from 1 not 0.
@@ -1447,6 +1447,21 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 			reducedFilename = twilightCalibrateDone.getFilename();
 		// get mean counts and set frame state.
 			meanCounts = twilightCalibrateDone.getMeanCounts();
+			// range check mean counts, if they are negative we are saturated due to the way
+			// the CCD deals with saturation.
+			if(meanCounts < 0)
+			{
+				o.log(Logging.VERBOSITY_VERBOSE,
+				      "Command:"+twilightCalibrateCommand.getId()+
+				      ":doFrame:"+"bin:"+bin+
+				      ":upper slide:"+upperSlide+":lower slide:"+lowerSlide+":filter:"+filter+
+				      ":Exposure reduction:length "+exposureLength+
+				      ":filename:"+twilightCalibrateDone.getFilename()+
+				      ":mean counts:"+twilightCalibrateDone.getMeanCounts()+
+				      ":Mean counts are negative, exposure is probably saturated, "+
+				      "faking mean counts to 65000.");
+				meanCounts = 65000;
+			}
 			if(meanCounts > maxMeanCounts[bin])
 				frameState = FRAME_STATE_OVEREXPOSED;
 			else if(meanCounts < minMeanCounts[bin])
@@ -1459,7 +1474,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 			      ":doFrame:"+"bin:"+bin+
 			      ":upper slide:"+upperSlide+":lower slide:"+lowerSlide+":filter:"+filter+
 			      ":Exposure frame state:length:"+exposureLength+
-			      ":mean counts:"+twilightCalibrateDone.getMeanCounts()+
+			      ":mean counts:"+meanCounts+
 			      ":peak counts:"+twilightCalibrateDone.getPeakCounts()+
 			      ":frame state:"+FRAME_STATE_NAME_LIST[frameState]+".");
 		// if the frame was good, rename it
@@ -2251,6 +2266,9 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.9  2012/07/23 15:29:11  cjm
+// Added some logging of ACK times.
+//
 // Revision 1.8  2012/07/13 11:23:07  cjm
 // Fixed Attempting exposure comment.
 //
