@@ -1,0 +1,72 @@
+#!/bin/csh
+# $Header: /space/home/eng/cjm/cvs/ioo/scripts/o_twilight_calibrate_analysis,v 1.1 2012-07-31 14:50:55 cjm Exp $
+# twilight_calibrate_analysis <log file> [<log file>...]
+if($#argv < 1 ) then
+	echo "twilight_calibrate_analysis <log file> [<log file>..."
+	exit 1
+endif
+set extraction_string = ""
+foreach filename ( $argv )
+    set s1 = `/bin/echo ${filename:r:t} | sed "s/o_log_\(.*\)/\1/"`
+    set extraction_string = "${extraction_string}${s1}"
+end
+#set date_string = `/bin/date +"%Y%m%d"`
+#
+# Initially extract all logs containing TWI CALIB
+#
+set twilight_calibrate_tmp1_file = "twilight_calibrate_${extraction_string}_1.txt"
+echo "Extracting Twilight calibrate logs to ${twilight_calibrate_tmp1_file}"
+if ( -e ${twilight_calibrate_tmp1_file} ) then
+	/bin/rm ${twilight_calibrate_tmp1_file}
+endif
+cat $argv | awk ' \
+BEGIN { \
+	printit = 0 \
+} \
+/.*Command:ngat.message.ISS_INST.TWILIGHT_CALIBRATE Started.*/ { printit = 1 } \
+/.*Command:ngat.message.ISS_INST.TWILIGHT_CALIBRATE Completed.*/ { printit = 0 } \
+ { \
+	if (printit) \
+	{ \
+		print $0 \
+	} \
+} \
+' > ${twilight_calibrate_tmp1_file}
+#
+# Extract all logs containing doFrame only, removing most GET_STATUS, CCD_Command and CCD_Filter_Wheel
+#
+set twilight_calibrate_do_frame_file = "twilight_calibrate_${extraction_string}_do_frame.txt"
+echo "Extracting doFrame logs to ${twilight_calibrate_do_frame_file}"
+grep "doFrame" ${twilight_calibrate_tmp1_file} > ${twilight_calibrate_do_frame_file}
+#
+# Extract all logs containing doCalibration only, removing most GET_STATUS, CCD_Command and CCD_Filter_Wheel
+#
+set twilight_calibrate_do_calibrate_file = "twilight_calibrate_${extraction_string}_do_calibrate.txt"
+echo "Extracting doCalibrate logs to ${twilight_calibrate_do_calibrate_file}"
+grep "doCalibrate" ${twilight_calibrate_tmp1_file} > ${twilight_calibrate_do_calibrate_file}
+#
+# Create exposure log
+#
+set twilight_calibrate_exposure_log = "twilight_calibrate_${extraction_string}_exposure_log.csv"
+grep 'Exposure reduction' ${twilight_calibrate_do_frame_file} | sed "s/\(.*\) UTC :.*doFrame:bin:\(.*\):upper slide:\(.*\):lower slide:\(.*\):filter:\(.*\):Exposure reduction:length \(.*\):filename:.*:mean counts:\(.*\):peak counts:.*/\1,\2,\3,\4,\5,\6,\7/" > ${twilight_calibrate_exposure_log}
+echo "Exposure log: ${twilight_calibrate_exposure_log}"
+#
+# Flat filename log
+#
+set twilight_calibrate_flat_filename_log = "twilight_calibrate_${extraction_string}_flat_filename_log.csv"
+grep 'Exposure DpRt frame rename' ${twilight_calibrate_do_frame_file} | sed "s/.*doFrame:bin:\(.*\):upper slide:\(.*\):lower slide:\(.*\):filter:\(.*\):Exposure DpRt frame rename:renamed .* to \(.*\)\./\1,\2,\3,\4,\5/" > ${twilight_calibrate_flat_filename_log}
+echo "Flat filename log:${twilight_calibrate_flat_filename_log}"
+#
+# Completed flats
+#
+echo "Completed calibrations:"
+grep 'Calibration successfully completed' ${twilight_calibrate_do_calibrate_file} | sed "s/.*doCalibrate:Calibration successfully completed:bin:\(.*\):use window amplifier:.*:upper slide:\(.*\):lower slide:\(.*\):filter:\(.*\)\./\1,\2,\3,\4/"
+#
+# $Log: not supported by cvs2svn $
+# Revision 1.2  2012/07/23 11:37:37  cjm
+# Created better filenames for data products.
+#
+# Revision 1.1  2012/07/16 16:58:22  cjm
+# Initial revision
+#
+#
