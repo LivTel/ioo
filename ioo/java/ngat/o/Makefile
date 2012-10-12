@@ -1,5 +1,5 @@
 # Makefile
-# $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/Makefile,v 1.1 2011-11-23 10:59:46 cjm Exp $
+# $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/Makefile,v 1.2 2012-10-12 14:30:19 cjm Exp $
 include ../../../Makefile.common
 include ../../../../Makefile.common
 
@@ -18,7 +18,8 @@ BASE_IMPL_SRCS	= JMSCommandImplementation.java CommandImplementation.java Unknow
 		CALIBRATEImplementation.java EXPOSEImplementation.java INTERRUPTImplementation.java \
 		SETUPImplementation.java
 CALIBRATE_IMPL_SRCS = BIASImplementation.java DARKImplementation.java DAY_CALIBRATEImplementation.java \
-		MULTBIASImplementation.java MULTDARKImplementation.java TWILIGHT_CALIBRATEImplementation.java 
+		MULTBIASImplementation.java MULTDARKImplementation.java TWILIGHT_CALIBRATEImplementation.java \
+		TWILIGHT_CALIBRATEImplementation2.java 
 EXPOSE_IMPL_SRCS    = GLANCEImplementation.java MULTRUNImplementation.java SAVEImplementation.java
 INTERRUPT_IMPL_SRCS = ABORTImplementation.java GET_STATUSImplementation.java REBOOTImplementation.java 
 SETUP_IMPL_SRCS	    = CONFIGImplementation.java TELFOCUSImplementation.java 
@@ -84,4 +85,7 @@ backup: tidy checkin
 
 #
 # $Log: not supported by cvs2svn $
+# Revision 1.1  2011/11/23 10:59:46  cjm
+# Initial revision
+#
 #
