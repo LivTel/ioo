@@ -1,5 +1,5 @@
 // TWILIGHT_CALIBRATEImplementation2.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/TWILIGHT_CALIBRATEImplementation2.java,v 1.1 2012-10-12 14:29:09 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/TWILIGHT_CALIBRATEImplementation2.java,v 1.2 2012-10-16 09:44:53 eng Exp $
 package ngat.o;
 
 import java.io.*;
@@ -29,14 +29,14 @@ import ngat.util.logging.*;
  * The exposure length is dynamically adjusted as the sky gets darker or brighter. TWILIGHT_CALIBRATE commands
  * should be sent to O just after sunset and just before sunrise.
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: TWILIGHT_CALIBRATEImplementation2.java,v 1.1 2012-10-12 14:29:09 cjm Exp $");
+	public final static String RCSID = new String("$Id: TWILIGHT_CALIBRATEImplementation2.java,v 1.2 2012-10-16 09:44:53 eng Exp $");
 	/**
 	 * The number of different binning factors we should min/best/max count data for.
 	 * Actually 1 more than the maximum used binning, as we go from 1 not 0.
@@ -409,6 +409,7 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 			exposureLength = minExposureLength;
 		// set lastFilterSensitivity/lastBin to contents of first calibration so initial exposure length
 		// remains the same as the calculated above.
+		lastExposureLength = exposureLength;
 		lastFilterSensitivity = 1.0;
 		lastBin = 1;
 		if(calibrationList.size() > 0)
@@ -2243,6 +2244,9 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2012/10/12 14:29:09  cjm
+// Initial revision
+//
 // Revision 1.10  2012/07/26 14:00:21  cjm
 // Added extra test in doFrame to capture negative counts, and
 // assume the CCD is saturated.
