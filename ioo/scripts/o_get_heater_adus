@@ -1,5 +1,5 @@
 #!/bin/csh
-# $Header: /space/home/eng/cjm/cvs/ioo/scripts/o_get_heater_adus,v 1.1 2012-10-24 09:51:57 cjm Exp $
+# $Header: /space/home/eng/cjm/cvs/ioo/scripts/o_get_heater_adus,v 1.2 2012-10-24 10:43:42 cjm Exp $
 # o_get_heater_adus <log file> [<log file> ...]
 if ( $#argv < 2 ) then
 	echo "o_get_heater_adus <log file> [<log file> ...]"
@@ -30,11 +30,17 @@ set output_image_format = "png"
 set output_filename = "o_heater_adus_graph.${output_image_format}"
 set gnuplot_file = "o_heater_adus_gnuplot.gnuplot"
 echo "Creating gnuplot input config file in ${gnuplot_file}."
-echo "set xdata time" > ${gnuplot_file}
-echo 'set timefmt "%Y-%m-%dT%H:%M:%S"' >> ${gnuplot_file}
-echo "plot '"${plot_input_filename}"' using ${date_column}:${value_column}" >> ${gnuplot_file}
+echo "reset" > ${gnuplot_file}
 echo "set term png" >> ${gnuplot_file}
 echo 'set output "'${output_filename}'"' >> ${gnuplot_file}
+echo 'set title "IO:O Heater ADUs"' >> ${gnuplot_file}
+echo 'set xlabel "Date (UTC)"' >> ${gnuplot_file}
+echo "set xdata time" >> ${gnuplot_file}
+echo 'set timefmt "%Y-%m-%dT%H:%M:%S"' >> ${gnuplot_file}
+echo 'set format x "%Hh\\n%d"' >> ${gnuplot_file}
+#echo "set xticks 3600"  >> ${gnuplot_file}
+echo "set grid" >> ${gnuplot_file}
+echo "plot '"${plot_input_filename}"' using ${date_column}:${value_column} notitle" >> ${gnuplot_file}
 echo "replot" >> ${gnuplot_file}
 echo "Ploting graph."
 gnuplot ${gnuplot_file}
@@ -42,4 +48,7 @@ echo "Output in : ${output_filename}."
 #rm ${plot_input_filename} ${gnuplot_file}
 #
 # $Log: not supported by cvs2svn $
+# Revision 1.1  2012/10/24 09:51:57  cjm
+# Initial revision
+#
 #
