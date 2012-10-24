@@ -1,6 +1,6 @@
 #!/bin/csh
-# $Header: /space/home/eng/cjm/cvs/ioo/scripts/o_make_deployment,v 1.7 2012-07-31 14:52:40 cjm Exp $
-# Version: $Revision: 1.7 $
+# $Header: /space/home/eng/cjm/cvs/ioo/scripts/o_make_deployment,v 1.8 2012-10-24 09:53:37 cjm Exp $
+# Version: $Revision: 1.8 $
 # By $Author: cjm $
 # Make a deployment tar file.
 # This contains:
@@ -297,7 +297,7 @@ echo "${dir_count} C test program directories copied, containg ${file_count} C t
 # Scripts
 #
 echo "Copying scripts..."
-set file_list = "o/scripts/o_engineering_mode o/scripts/soak_test_filter_wheel o/scripts/soak_test_data_link o/scripts/filter_change o/scripts/o_get_status_cron o/scripts/o_park_filter_wheel o/scripts/o_twilight_calibrate_analysis scripts/killhup.csh scripts/fuser_check ccs_gui/java/icsgui o/ccd/test/test_temperature_control_cron"
+set file_list = "o/scripts/o_engineering_mode o/scripts/soak_test_filter_wheel o/scripts/soak_test_data_link o/scripts/filter_change o/scripts/o_get_status_cron o/scripts/o_park_filter_wheel o/scripts/o_twilight_calibrate_analysis o/scripts/o_get_heater_adus scripts/killhup.csh scripts/fuser_check ccs_gui/java/icsgui o/ccd/test/test_temperature_control_cron"
 set file_count = 0
 cd ${dev_dir}
 foreach file ( ${file_list} )
@@ -446,6 +446,9 @@ echo "Download ${deployment_tar}.gz o_tar_install icc_cshrc icc_cshrc_edit.awk R
 echo "Deployment ready."
 #
 # $Log: not supported by cvs2svn $
+# Revision 1.7  2012/07/31 14:52:40  cjm
+# Added o_park_filter_wheel and o_twilight_calibrate_analysis scripts.
+#
 # Revision 1.6  2012/07/10 14:02:13  cjm
 # Added day_calibrate_state.properties and twilight_calibrate_state.properties.
 #
