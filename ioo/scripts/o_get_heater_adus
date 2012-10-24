@@ -1,0 +1,45 @@
+#!/bin/csh
+# $Header: /space/home/eng/cjm/cvs/ioo/scripts/o_get_heater_adus,v 1.1 2012-10-24 09:51:57 cjm Exp $
+# o_get_heater_adus <log file> [<log file> ...]
+if ( $#argv < 2 ) then
+	echo "o_get_heater_adus <log file> [<log file> ...]"
+	exit 1
+endif
+set csv_file_list = ""
+foreach log_file ( $argv )
+	echo "Log file: ${log_file}"
+	set dir = `dirname ${log_file}`
+#	echo "Directory: ${dir}"
+	set day_hour = `echo ${log_file:r:t} | sed "s/o_log_\(.*\)/\1/g"`
+#	echo "Day Hour: ${day_hour}"
+	set csv_file = "${dir}/heater_adus_${day_hour}.csv"
+	echo "CSV file : ${csv_file}"
+	/bin/grep "CCD_Temperature_Heater_ADU_To_Power(): heater_adu" ${log_file} | sed "s/\(.*\) T \(.*\) UTC : - : - : CCD_Temperature_Heater_ADU_To_Power(): heater_adu \(.*\) means voltage \(.*\) v..*/\1T\2,\3,\4/g" > ${csv_file}
+	set csv_file_list = "${csv_file_list} ${csv_file}"
+end
+#echo ${csv_file_list}
+set plot_input_filename = "o_heater_adus_gnuplot_input.txt"
+echo "Creating gnuplot input dataset in : ${plot_input_filename}"
+/bin/rm -f ${plot_input_filename}
+foreach csv_file ( ${csv_file_list} )
+	cat ${csv_file} | sed "s/,/ /g" >> ${plot_input_filename}
+end
+set date_column = 1
+set value_column = 2
+set output_image_format = "png"
+set output_filename = "o_heater_adus_graph.${output_image_format}"
+set gnuplot_file = "o_heater_adus_gnuplot.gnuplot"
+echo "Creating gnuplot input config file in ${gnuplot_file}."
+echo "set xdata time" > ${gnuplot_file}
+echo 'set timefmt "%Y-%m-%dT%H:%M:%S"' >> ${gnuplot_file}
+echo "plot '"${plot_input_filename}"' using ${date_column}:${value_column}" >> ${gnuplot_file}
+echo "set term png" >> ${gnuplot_file}
+echo 'set output "'${output_filename}'"' >> ${gnuplot_file}
+echo "replot" >> ${gnuplot_file}
+echo "Ploting graph."
+gnuplot ${gnuplot_file}
+echo "Output in : ${output_filename}."
+#rm ${plot_input_filename} ${gnuplot_file}
+#
+# $Log: not supported by cvs2svn $
+#
