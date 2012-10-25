@@ -1,12 +1,12 @@
 /* ccd_setup.c
 ** low level ccd library
-** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ccd_setup.c,v 1.2 2012-07-17 17:18:59 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ccd_setup.c,v 1.3 2012-10-25 14:38:30 cjm Exp $
 */
 /**
  * ccd_setup.c contains routines to perform the setting of the SDSU CCD Controller, prior to performing
  * exposures.
  * @author SDSU, Chris Mottram
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 /**
  * This hash define is needed before including source files give us POSIX.4/IEEE1003.1b-1993 prototypes.
@@ -40,7 +40,7 @@
 /**
  * Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ccd_setup.c,v 1.2 2012-07-17 17:18:59 cjm Exp $";
+static char rcsid[] = "$Id: ccd_setup.c,v 1.3 2012-10-25 14:38:30 cjm Exp $";
 
 /* #defines */
 /**
@@ -226,6 +226,7 @@ void CCD_Setup_Data_Initialise(CCD_Interface_Handle_T* handle)
  * 	CCD_SETUP_LOAD_FILENAME. The PCI DSP has no applications.
  * @param pci_filename The filename of the DSP code on disc that will be loaded if the
  * 	pci_load_type is CCD_SETUP_LOAD_FILENAME.
+ * @param memory_map_length The length of memory to map for image readout, in bytes.
  * @param timing_load_type Where the routine is going to load the timing board application from. One of
  * 	<a href="#CCD_SETUP_LOAD_TYPE">CCD_SETUP_LOAD_TYPE</a>:
  * 	CCD_SETUP_LOAD_ROM, CCD_SETUP_LOAD_APPLICATION or
@@ -269,15 +270,17 @@ void CCD_Setup_Data_Initialise(CCD_Interface_Handle_T* handle)
  * @see ccd_interface.html#CCD_Interface_Handle_T
  */
 int CCD_Setup_Startup(CCD_Interface_Handle_T* handle,enum CCD_SETUP_LOAD_TYPE pci_load_type,char *pci_filename,
+		      long memory_map_length,
 	enum CCD_SETUP_LOAD_TYPE timing_load_type,int timing_application_number,char *timing_filename,
 	enum CCD_SETUP_LOAD_TYPE utility_load_type,int utility_application_number,char *utility_filename,
 	double target_temperature,enum CCD_DSP_GAIN gain,int gain_speed,int idle)
 {
 	Setup_Error_Number = 0;
 #if LOGGING > 0
-	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Startup(handle=%p,pci_load_type=%d,"
+	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,
+		"CCD_Setup_Startup(handle=%p,pci_load_type=%d,memory_map_length=%ld,"
 		"timing_load_type=%d,timing_application=%d,utility_load_type=%d,utility_application=%d,"
-		"temperature=%.2f,gain=%d,gain_speed=%d,idle=%d) started.",handle,pci_load_type,
+		"temperature=%.2f,gain=%d,gain_speed=%d,idle=%d) started.",handle,pci_load_type,memory_map_length,
 		timing_load_type,timing_application_number,utility_load_type,utility_application_number,
 		target_temperature,gain,gain_speed,idle);
 	if(pci_filename != NULL)
@@ -326,7 +329,7 @@ int CCD_Setup_Startup(CCD_Interface_Handle_T* handle,enum CCD_SETUP_LOAD_TYPE pc
 /* memory map initialisation */
 /* done after PCI download, as astropci sends a WRITE_PCI_ADDRESS HCVR command to the PCI board
 ** in response to a mmap call. */
-	if(!CCD_Interface_Memory_Map(handle,CCD_SETUP_MEMORY_BUFFER_SIZE))
+	if(!CCD_Interface_Memory_Map(handle,memory_map_length))
 	{
 		handle->Setup_Data.Setup_In_Progress = FALSE;
 		Setup_Error_Number = 41;
@@ -2076,6 +2079,9 @@ static int Setup_Controller_Windows(CCD_Interface_Handle_T* handle)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.2  2012/07/17 17:18:59  cjm
+** Changed how binned and unbinned cols/rows are handled.
+**
 ** Revision 1.1  2011/11/23 10:59:52  cjm
 ** Initial revision
 **
