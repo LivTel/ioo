@@ -1,5 +1,5 @@
 // FITSImplementation.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/FITSImplementation.java,v 1.10 2012-07-17 17:15:08 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/FITSImplementation.java,v 1.11 2012-10-25 14:37:41 cjm Exp $
 package ngat.o;
 
 import java.lang.*;
@@ -22,14 +22,14 @@ import ngat.util.logging.*;
  * use the hardware  libraries as this is needed to generate FITS files.
  * @see HardwareImplementation
  * @author Chris Mottram
- * @version $Revision: 1.10 $
+ * @version $Revision: 1.11 $
  */
 public class FITSImplementation extends HardwareImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: FITSImplementation.java,v 1.10 2012-07-17 17:15:08 cjm Exp $");
+	public final static String RCSID = new String("$Id: FITSImplementation.java,v 1.11 2012-10-25 14:37:41 cjm Exp $");
 	/**
 	 * Internal constant used when the order number offset defined in the property
 	 * 'o.get_fits.order_number_offset' is not found or is not a valid number.
@@ -1103,18 +1103,34 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 		switch(amplifier)
 		{
 			case CCDLibrary.DSP_AMPLIFIER_TOP_LEFT:
-				deInterlaceString = "DSP_DEINTERLACE_SINGLE";
-				break;
-			case CCDLibrary.DSP_AMPLIFIER_TOP_RIGHT:
-				deInterlaceString = "DSP_DEINTERLACE_FLIP_X";
-				break;
-			case CCDLibrary.DSP_AMPLIFIER_BOTTOM_LEFT:
-				deInterlaceString = "DSP_DEINTERLACE_FLIP_Y";
-				break;
-			case CCDLibrary.DSP_AMPLIFIER_BOTTOM_RIGHT:
+				// If TOP_LEFT is the natural setting
+				//deInterlaceString = "DSP_DEINTERLACE_SINGLE";
+				// diddly to make this all agree with BOTH_RIGHT
 				deInterlaceString = "DSP_DEINTERLACE_FLIP_XY";
 				break;
+			case CCDLibrary.DSP_AMPLIFIER_TOP_RIGHT:
+				// If TOP_LEFT is the natural setting
+				//deInterlaceString = "DSP_DEINTERLACE_FLIP_X";
+				// diddly to make this all agree with BOTH_RIGHT
+				deInterlaceString = "DSP_DEINTERLACE_FLIP_Y";
+				break;
+			case CCDLibrary.DSP_AMPLIFIER_BOTTOM_LEFT:
+				// If TOP_LEFT is the natural setting
+				//deInterlaceString = "DSP_DEINTERLACE_FLIP_Y";
+				// diddly to make this all agree with BOTH_RIGHT This one untested atm
+				deInterlaceString = "DSP_DEINTERLACE_FLIP_X";
+				break;
+			case CCDLibrary.DSP_AMPLIFIER_BOTTOM_RIGHT:
+				// If TOP_LEFT is the natural setting
+				//deInterlaceString = "DSP_DEINTERLACE_FLIP_XY";
+				// diddly to make this all agree with BOTH_RIGHT
+				deInterlaceString = "DSP_DEINTERLACE_SINGLE";
+				break;
 			case CCDLibrary.DSP_AMPLIFIER_BOTH_LEFT:
+				// If TOP_LEFT is the natural setting
+				//deInterlaceString = "DSP_DEINTERLACE_SPLIT_PARALLEL";
+				// diddly to make this all agree with BOTH_RIGHT
+				// probably also a flip in X? So this is definately wrong atm
 				deInterlaceString = "DSP_DEINTERLACE_SPLIT_PARALLEL";
 				break;
 			case CCDLibrary.DSP_AMPLIFIER_BOTH_RIGHT:
@@ -1355,6 +1371,9 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.10  2012/07/17 17:15:08  cjm
+// Added BOTHLEFT.
+//
 // Revision 1.9  2012/07/10 13:41:31  cjm
 // Changed calls to CCDLibrary: getNCols/getNRows to getBinnedNCols/getBinnedNRows
 // which are more explicit.
