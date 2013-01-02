@@ -1,12 +1,12 @@
 /* ccd_filter_wheel.c
 ** filter wheel control module.
-** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ccd_filter_wheel.c,v 1.1 2011-11-23 10:59:52 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ccd_filter_wheel.c,v 1.2 2013-01-02 11:19:16 cjm Exp $
 */
 /**
  * ccd_filter_wheel holds the routines for moving and controlling the filter wheel.
  * It hold state on the current position of the wheel.
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 /**
  * This hash define is needed before including source files give us POSIX.4/IEEE1003.1b-1993 prototypes.
@@ -31,7 +31,7 @@
 /**
  * Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ccd_filter_wheel.c,v 1.1 2011-11-23 10:59:52 cjm Exp $";
+static char rcsid[] = "$Id: ccd_filter_wheel.c,v 1.2 2013-01-02 11:19:16 cjm Exp $";
 /**
  * The default number of positions in each filter wheel.
  * @see #Filter_Wheel_Struct
@@ -674,9 +674,20 @@ int CCD_Filter_Wheel_Move(CCD_Interface_Handle_T* handle,int position)
 	{
 #if LOGGING > 0
 		CCD_Global_Log_Format(LOG_VERBOSITY_VERY_VERBOSE,
-				      "CCD_Filter_Wheel_Move(position=%d) finisheded:already in position.",position);
+				      "CCD_Filter_Wheel_Move(position=%d) finished:already in position.",position);
 #endif
 		return TRUE;
+	}
+	/* if the last reset/move operation failed, try to reset the wheel to a known position */
+	if(Filter_Wheel_Data.Position == -1)
+	{
+#if LOGGING > 0
+		CCD_Global_Log_Format(LOG_VERBOSITY_VERY_VERBOSE,
+				      "CCD_Filter_Wheel_Move(position=%d) : wheel in indetermine start position:"
+				      "attempting reset to drive wheel into known position.",position);
+#endif
+		if(!CCD_Filter_Wheel_Reset(handle))
+			return FALSE;
 	}
 /* wheels position is indeterminate during move */
 	Filter_Wheel_Data.Position = -1;
@@ -1260,5 +1271,8 @@ static void Filter_Wheel_Print_Digital_Outputs(int fw_dig_out)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.1  2011/11/23 10:59:52  cjm
+** Initial revision
+**
 */
 
