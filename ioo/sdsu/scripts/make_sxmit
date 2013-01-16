@@ -1,0 +1,45 @@
+#!/bin/csh
+# $Header: /space/home/eng/cjm/cvs/ioo/sdsu/scripts/make_sxmit,v 1.1 2013-01-16 11:12:25 cjm Exp $
+# Make an sxmit value for SDSU timing board DSP software
+# make_sxmit <start A/D> <end A/D>
+# From the ARC-22 250 MHz Fiber Optic Timing Board, GenIII documentation
+# bits #15-12 all set means SXMIT command
+# bits #5-0 select starting number of A/D converter
+# bits #10-6 select ending number of A/D converter
+# each A/D is addressed by 5 bits
+# ARC-45:
+# 4 most significant bits address the video board DAC address (JP1 -> JP4).
+# Least significant bit selects the A or B channel
+alias inttohex "~/cjm/c/misc/inttohex"
+alias bitstoint "~/cjm/c/misc/bitstoint"
+if ( $#argv != 2 ) then
+	echo "make_sxmit <start A/D> <end A/D>"
+	echo "For ARC-45 video boards:"
+	echo "Least significant bit of A/D number determines whether A(=0) or B(=1) channel is used."
+	echo "Rest of bits determine board: Board 0 =0, Board 1 (JP1 made) = 2, Board 2 (JP2 made) = 4"
+	echo "Board 3 (JP1/JP2 made) = 6, Board 4 (JP3 made) = 8, Board 5 (JP3/JP1 made) = 10."
+	exit 1
+endif
+set start_ad = $1
+set end_ad = $2
+echo "Start A/D: ${start_ad}"
+echo "End A/D: ${end_ad}"
+set shifted_end_ad = `bash -c 'echo "$(('${end_ad}' << 6))"'`
+echo "Shifted end A/D: ${shifted_end_ad}"
+echo -n "Shifted end A/D: "
+inttohex ${shifted_end_ad}
+set ads = `echo "(${start_ad} + ${shifted_end_ad})" | bc`
+echo "A/Ds num: ${ads}"
+echo -n "A/Ds num: "
+inttohex ${ads}
+# initialise bit list to SXMIT command : bits #15-12 all set
+set sxmit_bit_list = "15 14 13 12"
+set sxmit_command_num = `bitstoint ${sxmit_bit_list} | head -1 | sed "s/value = \(.*\)\..*/\1/"`
+echo "SXMIT command num: ${sxmit_command_num}"
+set sxmit_num = `echo "(${sxmit_command_num} + ${ads})" | bc`
+echo "SXMIT num: ${sxmit_num}"
+echo -n "SXMIT number for A/Ds ${start_ad} to ${end_ad}:"
+inttohex $sxmit_num
+#
+# $Log: not supported by cvs2svn $
+#
