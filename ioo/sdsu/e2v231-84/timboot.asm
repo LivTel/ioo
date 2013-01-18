@@ -129,6 +129,9 @@ ST_SYNC EQU     13      ; Set if starting exposure on SYNC = high signal
 ST_CNRD	EQU	14	; Set if in continous readout mode
 ST_DIRTY EQU	15	; Set if waveform tables need to be updated
 ST_SA	EQU	16	; Set if in subarray readout mode
+; Add a status bit when we are using dummy outputs.
+; This is used to LSL the NCOLS
+ST_DUMMY EQU 	17	; Set if we are using dummy outputs
 
 ; Address for the table containing the incoming SCI words
 SCI_TABLE	EQU	$400
