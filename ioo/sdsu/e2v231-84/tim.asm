@@ -132,12 +132,26 @@ GO_ON	JSR	<GENERATE_SERIAL_WAVEFORM
 	NOP
 	MOVE	A,Y:<NR_BIAS
 
-SPL_PAR	JCLR	#SPLIT_P,X:STATUS,WT_CLK
+SPL_PAR	JCLR	#SPLIT_P,X:STATUS,DUMMY_NSR_MOD
 	MOVE	Y:<NP_READ,A		; Split parallels require / 2
 	NOP
 	LSR	A
 	NOP
 	MOVE	A1,Y:<NP_READ
+DUMMY_NSR_MOD
+	JCLR	#ST_DUMMY,X:STATUS,WT_CLK
+	; Dummy outputs: divide number of pixels by two NS_READ /= 2 ; NR_BIAS /= 2 ;
+	; As each serial pixel read will now produce twice as many pixels as real amplifiers used.
+	MOVE	Y:<NS_READ,A		
+	NOP
+	LSR	A
+	NOP
+	MOVE	A1,Y:<NS_READ
+	MOVE	Y:<NR_BIAS,A		; Number of bias pixels to read
+	NOP
+	LSR	A
+	NOP
+	MOVE	A,Y:<NR_BIAS
 
 ; Update the image dimensions and binning factors being used
 WT_CLK	MOVE	Y:<NSBIN,X0
