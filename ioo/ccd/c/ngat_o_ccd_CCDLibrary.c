@@ -1,13 +1,13 @@
 /* ngat_o_ccd_CCDLibrary.c
 ** implementation of Java Class ngat.o.ccd.CCDLibrary native interfaces
-** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ngat_o_ccd_CCDLibrary.c,v 1.2 2012-07-17 17:18:59 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ngat_o_ccd_CCDLibrary.c,v 1.3 2013-01-25 14:21:08 cjm Exp $
 */
 /**
  * ngat_o_ccd_CCDLibrary.c is the 'glue' between libo_ccd, the C library version of the SDSU CCD Controller
  * software, and CCDLibrary.java, a Java Class to drive the controller. CCDLibrary specifically
  * contains all the native C routines corresponding to native methods in Java.
  * @author Chris Mottram LJMU
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 /**
  * This hash define is needed before including source files give us POSIX.4/IEEE1003.1b-1993 prototypes
@@ -69,7 +69,7 @@ struct Handle_Map_Struct
 /**
  * Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ngat_o_ccd_CCDLibrary.c,v 1.2 2012-07-17 17:18:59 cjm Exp $";
+static char rcsid[] = "$Id: ngat_o_ccd_CCDLibrary.c,v 1.3 2013-01-25 14:21:08 cjm Exp $";
 
 /**
  * Copy of the java virtual machine pointer, used for logging back up to the Java layer from C.
@@ -722,13 +722,12 @@ JNIEXPORT void JNICALL Java_ngat_o_ccd_CCDLibrary_CCD_1Interface_1Open(JNIEnv *e
  * Signature: ()V<br>
  * JNI interface to create a mmap memory map to the SDSU controller.
  * This is normally done internally to to CCD_Setup_Startup, but is exposed in the Java interface for command line
- * Java programs that don't call the setup mathod, but still want to readout the CCD.
+ * Java programs that don't call the setup method, but still want to readout the CCD.
  * @see ccd_interface.html#CCD_Interface_Handle_T
  * @see ccd_interface.html#CCD_Interface_Memory_Map
- * @see ccd_setup.html#CCD_SETUP_MEMORY_BUFFER_SIZE
  * @see #CCDLibrary_Handle_Map_Find
  */
-JNIEXPORT void JNICALL Java_ngat_o_ccd_CCDLibrary_CCD_1Interface_1Memory_1Map(JNIEnv *env, jobject obj)
+JNIEXPORT void JNICALL Java_ngat_o_ccd_CCDLibrary_CCD_1Interface_1Memory_1Map(JNIEnv *env, jobject obj,jlong length)
 {
 	CCD_Interface_Handle_T *handle = NULL;
 	int retval;
@@ -737,7 +736,7 @@ JNIEXPORT void JNICALL Java_ngat_o_ccd_CCDLibrary_CCD_1Interface_1Memory_1Map(JN
 	if(!CCDLibrary_Handle_Map_Find(env,obj,&handle))
 		return; /* CCDLibrary_Handle_Map_Find throws an exception on failure */
 	/* create mmap */
-	retval = CCD_Interface_Memory_Map(handle,CCD_SETUP_MEMORY_BUFFER_SIZE);
+	retval = CCD_Interface_Memory_Map(handle,(long)length);
 	/* if an error occured throw an exception. */
 	if(retval == FALSE)
 	{
@@ -830,7 +829,7 @@ JNIEXPORT jint JNICALL Java_ngat_o_ccd_CCDLibrary_CCD_1PCI_1Get_1Error_1Number(J
  * @see #CCDLibrary_Throw_Exception
  */
 JNIEXPORT void JNICALL Java_ngat_o_ccd_CCDLibrary_CCD_1Setup_1Startup(JNIEnv *env,jobject obj,
-			   jint pci_load_type,jstring pci_filename_string,
+			   jint pci_load_type,jstring pci_filename_string,jlong memory_map_length,
 			   jint timing_load_type,jint timing_application_number,jstring timing_filename_string,
 			   jint utility_load_type,jint utility_application_number,jstring utility_filename_string,
 			   jdouble target_temperature,jint gain,jboolean gain_speed,jboolean idle)
@@ -853,7 +852,7 @@ JNIEXPORT void JNICALL Java_ngat_o_ccd_CCDLibrary_CCD_1Setup_1Startup(JNIEnv *en
 	if(utility_filename_string != NULL)
 		utility_filename = (*env)->GetStringUTFChars(env,utility_filename_string,0);
 	/* do setup */
-	retval = CCD_Setup_Startup(handle,pci_load_type,(char*)pci_filename,
+	retval = CCD_Setup_Startup(handle,pci_load_type,(char*)pci_filename,memory_map_length,
 		timing_load_type,timing_application_number,(char*)timing_filename,
 		utility_load_type,utility_application_number,(char*)utility_filename,
 		target_temperature,gain,gain_speed,idle);
@@ -2055,6 +2054,9 @@ static int CCDLibrary_Handle_Map_Find(JNIEnv *env,jobject instance,CCD_Interface
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.2  2012/07/17 17:18:59  cjm
+** Changed how binned and unbinned cols/rows are handled.
+**
 ** Revision 1.1  2011/11/23 10:59:52  cjm
 ** Initial revision
 **
