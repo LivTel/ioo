@@ -1,5 +1,5 @@
 /* test_filter_wheel.c
- * $Header: /space/home/eng/cjm/cvs/ioo/ccd/test/test_filter_wheel.c,v 1.1 2011-11-23 11:03:02 cjm Exp $
+ * $Header: /space/home/eng/cjm/cvs/ioo/ccd/test/test_filter_wheel.c,v 1.2 2013-03-21 16:06:27 cjm Exp $
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,7 +16,7 @@
 /**
  * This program tests the operation of the filter wheel.
  * @author $Author: cjm $
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 /* hash definitions */
 /**
@@ -28,7 +28,7 @@
 /**
  * Revision control system identifier.
  */
-static char rcsid[] = "$Id: test_filter_wheel.c,v 1.1 2011-11-23 11:03:02 cjm Exp $";
+static char rcsid[] = "$Id: test_filter_wheel.c,v 1.2 2013-03-21 16:06:27 cjm Exp $";
 /**
  * How much information to print out when using the text interface.
  */
@@ -186,7 +186,7 @@ int main(int argc, char *argv[])
 		fprintf(stdout,"\tUsing PCI filename:%s\n",PCI_Filename);
 		fprintf(stdout,"\tUsing Timing filename:%s\n",Timing_Filename);
 		fprintf(stdout,"\tUsing Utility filename:%s\n",Utility_Filename);
-		if(!CCD_Setup_Startup(handle,PCI_Load_Type,PCI_Filename,
+		if(!CCD_Setup_Startup(handle,PCI_Load_Type,PCI_Filename,CCD_SETUP_DEFAULT_MEMORY_BUFFER_SIZE,
 			Timing_Load_Type,0,Timing_Filename,
 			Utility_Load_Type,1,Utility_Filename,-60.0,
 			CCD_DSP_GAIN_ONE,TRUE,TRUE))
@@ -417,4 +417,7 @@ static void Help(void)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.1  2011/11/23 11:03:02  cjm
+** Initial revision
+**
 */

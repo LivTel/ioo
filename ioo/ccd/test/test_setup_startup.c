@@ -1,5 +1,5 @@
 /* test_setup_startup.c
- * $Header: /space/home/eng/cjm/cvs/ioo/ccd/test/test_setup_startup.c,v 1.2 2012-05-10 14:30:25 cjm Exp $
+ * $Header: /space/home/eng/cjm/cvs/ioo/ccd/test/test_setup_startup.c,v 1.3 2013-03-21 16:06:27 cjm Exp $
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,7 +21,7 @@
  * 	-t[ext_print_level] &lt;commands|replies|values|all&gt; -h[elp]
  * </pre>
  * @author $Author: cjm $
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 /* hash definitions */
 /**
@@ -33,7 +33,7 @@
 /**
  * Revision control system identifier.
  */
-static char rcsid[] = "$Id: test_setup_startup.c,v 1.2 2012-05-10 14:30:25 cjm Exp $";
+static char rcsid[] = "$Id: test_setup_startup.c,v 1.3 2013-03-21 16:06:27 cjm Exp $";
 /**
  * How much information to print out when using the text interface.
  */
@@ -160,8 +160,9 @@ int main(int argc, char *argv[])
 		fprintf(stdout,"Utility Type:%d:Filename:NULL\n",Utility_Load_Type);
 	fprintf(stdout,"Gain:%d : Gain_Speed:%d\n",Gain,Gain_Speed);
 	fprintf(stdout,"Temperature:%.2f\n",Temperature);
-	if(!CCD_Setup_Startup(handle,PCI_Load_Type,PCI_Filename,Timing_Load_Type,0,Timing_Filename,
-		Utility_Load_Type,0,Utility_Filename,Temperature,Gain,Gain_Speed,TRUE))
+	if(!CCD_Setup_Startup(handle,PCI_Load_Type,PCI_Filename,CCD_SETUP_DEFAULT_MEMORY_BUFFER_SIZE,
+			      Timing_Load_Type,0,Timing_Filename,
+			      Utility_Load_Type,0,Utility_Filename,Temperature,Gain,Gain_Speed,TRUE))
 	{
 		CCD_Global_Error();
 		return 3;
@@ -398,6 +399,9 @@ static void Help(void)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.2  2012/05/10 14:30:25  cjm
+** Added gain control.
+**
 ** Revision 1.1  2011/11/23 11:03:02  cjm
 ** Initial revision
 **

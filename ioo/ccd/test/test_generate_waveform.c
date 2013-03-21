@@ -1,5 +1,5 @@
 /* test_setup_startup.c
- * $Header: /space/home/eng/cjm/cvs/ioo/ccd/test/test_generate_waveform.c,v 1.5 2012-01-11 15:06:45 cjm Exp $
+ * $Header: /space/home/eng/cjm/cvs/ioo/ccd/test/test_generate_waveform.c,v 1.6 2013-03-21 16:06:27 cjm Exp $
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,7 +28,7 @@
  * 	[-pta|-pixel_table_address <address>]
  * </pre>
  * @author $Author: cjm $
- * @version $Revision: 1.5 $
+ * @version $Revision: 1.6 $
  */
 /* hash definitions */
 /**
@@ -61,7 +61,7 @@
 /**
  * Revision control system identifier.
  */
-static char rcsid[] = "$Id: test_generate_waveform.c,v 1.5 2012-01-11 15:06:45 cjm Exp $";
+static char rcsid[] = "$Id: test_generate_waveform.c,v 1.6 2013-03-21 16:06:27 cjm Exp $";
 /**
  * How much information to print out when using the text interface.
  */
@@ -258,7 +258,8 @@ int main(int argc, char *argv[])
 		else
 			fprintf(stdout,"Utility Type:%d:Filename:NULL\n",Utility_Load_Type);
 		fprintf(stdout,"Temperature:%.2f\n",Temperature);
-		if(!CCD_Setup_Startup(handle,PCI_Load_Type,PCI_Filename,Timing_Load_Type,0,Timing_Filename,
+		if(!CCD_Setup_Startup(handle,PCI_Load_Type,PCI_Filename,CCD_SETUP_DEFAULT_MEMORY_BUFFER_SIZE,
+				      Timing_Load_Type,0,Timing_Filename,
 				      Utility_Load_Type,0,Utility_Filename,Temperature,CCD_DSP_GAIN_ONE,TRUE,TRUE))
 		{
 			CCD_Global_Error();
@@ -890,6 +891,9 @@ static void Help(void)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.5  2012/01/11 15:06:45  cjm
+** Added bothright amplifier support.
+**
 ** Revision 1.4  2011/11/23 11:03:02  cjm
 ** Added comment about strange delay values.
 **
