@@ -1,5 +1,5 @@
 /* ccd_setup.h
-** $Header: /space/home/eng/cjm/cvs/ioo/ccd/include/ccd_setup.h,v 1.3 2012-07-19 14:06:08 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/ioo/ccd/include/ccd_setup.h,v 1.4 2013-03-21 16:05:53 cjm Exp $
 */
 #ifndef CCD_SETUP_H
 #define CCD_SETUP_H
@@ -50,7 +50,7 @@
  * (pixels are 16 bits/2 bytes). Add in prescan (50 pixels) at each amplifier.
  * We currently have a large POSTSCAN region as well (200 pixels).
  */
-#define CCD_SETUP_MEMORY_BUFFER_SIZE      (4400*4400*2)
+#define CCD_SETUP_DEFAULT_MEMORY_BUFFER_SIZE      (4400*4400*2)
 
 /* These enum definitions should match with those in CCDLibrary.java */
 /**
@@ -96,6 +96,7 @@ struct CCD_Setup_Window_Struct
 extern void CCD_Setup_Initialise(void);
 extern void CCD_Setup_Data_Initialise(CCD_Interface_Handle_T* handle);
 extern int CCD_Setup_Startup(CCD_Interface_Handle_T* handle,enum CCD_SETUP_LOAD_TYPE pci_load_type,char *pci_filename,
+			     long memory_map_length,
 	enum CCD_SETUP_LOAD_TYPE timing_load_type,int timing_application_number,char *timing_filename,
 	enum CCD_SETUP_LOAD_TYPE utility_load_type,int utility_application_number,char *utility_filename,
 	double target_temperature,enum CCD_DSP_GAIN gain,int gain_speed,int idle);
