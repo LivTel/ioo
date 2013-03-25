@@ -1,5 +1,5 @@
 /* ccd_dsp.h
-** $Header: /space/home/eng/cjm/cvs/ioo/ccd/include/ccd_dsp.h,v 1.3 2012-07-17 16:53:43 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/ioo/ccd/include/ccd_dsp.h,v 1.4 2013-03-25 15:26:42 cjm Exp $
 */
 #ifndef CCD_DSP_H
 #define CCD_DSP_H
@@ -101,38 +101,6 @@ enum CCD_DSP_GAIN
 
 /* These enum definitions should match with those in CCDLibrary.java */
 /**
- * Deinterlace type. The possible values are:
- * <ul>
- * <li>CCD_DSP_DEINTERLACE_SINGLE - This setting does no deinterlacing, 
- * 	as the CCD was read out from a single readout.
- * <li>CCD_DSP_DEINTERLACE_FLIP_X - This setting flips the output image in X, if the CCD was readout from the
- *     "wrong" amplifier, i.e. to ensure east is to the left.
- * <li>CCD_DSP_DEINTERLACE_FLIP_Y - This setting flips the output image in Y, if the CCD was readout from the
- *     "wrong" amplifier, i.e. to ensure north is to the top.
- * <li>CCD_DSP_DEINTERLACE_FLIP_XY - This setting flips the output image in X and Y, if the CCD was readout from the
- *     "wrong" amplifier, i.e. to ensure east is to the left and north is to the top.
- * <li>CCD_DSP_DEINTERLACE_SPLIT_PARALLEL - This setting deinterlaces split parallel readout.
- * <li>CCD_DSP_DEINTERLACE_SPLIT_SERIAL - This setting deinterlaces split serial readout.
- * <li>CCD_DSP_DEINTERLACE_SPLIT_QUAD - This setting deinterlaces split quad readout.
- * </ul>
- */
-enum CCD_DSP_DEINTERLACE_TYPE
-{
-	CCD_DSP_DEINTERLACE_SINGLE,CCD_DSP_DEINTERLACE_FLIP_X,CCD_DSP_DEINTERLACE_FLIP_Y,
-	CCD_DSP_DEINTERLACE_FLIP_XY,CCD_DSP_DEINTERLACE_SPLIT_PARALLEL,
-	CCD_DSP_DEINTERLACE_SPLIT_SERIAL,CCD_DSP_DEINTERLACE_SPLIT_QUAD
-};
-
-/**
- * Macro to check whether the deinterlace type is a legal value.
- */
-#define CCD_DSP_IS_DEINTERLACE_TYPE(type)	(((type) == CCD_DSP_DEINTERLACE_SINGLE)|| \
-	((type) == CCD_DSP_DEINTERLACE_FLIP_X)||((type) == CCD_DSP_DEINTERLACE_FLIP_Y)|| \
-	((type) == CCD_DSP_DEINTERLACE_FLIP_XY)||((type) == CCD_DSP_DEINTERLACE_SPLIT_PARALLEL)|| \
-        ((type) == CCD_DSP_DEINTERLACE_SPLIT_SERIAL)||((type) == CCD_DSP_DEINTERLACE_SPLIT_QUAD))
-
-/* These enum definitions should match with those in CCDLibrary.java */
-/**
  * Enum with values identifying which output amplifier to select for reading out the CCD.
  * Used with the CCD_DSP_SOS (select output source) manual command.
  * <ul>
@@ -140,9 +108,22 @@ enum CCD_DSP_DEINTERLACE_TYPE
  * <li>CCD_DSP_AMPLIFIER_TOP_RIGHT selects the top right amplifier.
  * <li>CCD_DSP_AMPLIFIER_BOTTOM_LEFT selects the bottom left amplifier.
  * <li>CCD_DSP_AMPLIFIER_BOTTOM_RIGHT selects the bottom right amplifier.
- * <li>CCD_DSP_AMPLIFIER_BOTH_LEFT selects the top and bottom left amplifier.
+ * <li>CCD_DSP_AMPLIFIER_BOTH_LEFT NO LONGER EXISTS, this was removed as it doesn't work to due an 
+ *     SXMIT addressing restriction.
  * <li>CCD_DSP_AMPLIFIER_BOTH_RIGHT selects the top and bottom right amplifier.
  * <li>CCD_DSP_AMPLIFIER_ALL selects all amplifiers.
+ * <li>CCD_DSP_AMPLIFIER_DUMMY_TOP_LEFT selects the top left amplifier to read accumulated charge out of, 
+ *     and a neighbouring amplifier to read to remove noise and clocking signal.
+ * <li>CCD_DSP_AMPLIFIER_DUMMY_TOP_RIGHT selects the top right amplifier to read accumulated charge out of, 
+ *     and a neighbouring amplifier to read to remove noise and clocking signal.
+ * <li>CCD_DSP_AMPLIFIER_DUMMY_BOTTOM_LEFT selects the bottom left amplifier to read accumulated charge out of, 
+ *     and a neighbouring amplifier to read to remove noise and clocking signal.
+ * <li>CCD_DSP_AMPLIFIER_DUMMY_BOTTOM_RIGHT selects the bottom right amplifier to read accumulated charge out of, 
+ *     and a neighbouring amplifier to read to remove noise and clocking signal.
+ * <li>CCD_DSP_AMPLIFIER_DUMMY_BOTH_LEFT selects the top and bottom left amplifier to read accumulated charge out of,
+ *     and the other two amplifiers to read to remove noise and clocking signal.
+ * <li>CCD_DSP_AMPLIFIER_DUMMY_BOTH_RIGHT selects the top and bottom right amplifier to read accumulated charge out of,
+ *     and the other two amplifiers to read to remove noise and clocking signal.
  * </ul>
  * @see #CCD_DSP_SOS
  * @see #CCD_DSP_Command_SOS
@@ -153,9 +134,15 @@ enum CCD_DSP_AMPLIFIER
 	CCD_DSP_AMPLIFIER_TOP_RIGHT   =0x5f5f42, 	/* Ascii __B */
 	CCD_DSP_AMPLIFIER_BOTTOM_LEFT =0x5f5f43, 	/* Ascii __C */
 	CCD_DSP_AMPLIFIER_BOTTOM_RIGHT=0x5f5f44, 	/* Ascii __D */
-	CCD_DSP_AMPLIFIER_BOTH_LEFT   =0x5f4143,        /* Ascii _AC */
+	/*CCD_DSP_AMPLIFIER_BOTH_LEFT   =0x5f4143,  Ascii _AC, removed as it doesn't work due to SXMIT restriction */
 	CCD_DSP_AMPLIFIER_BOTH_RIGHT  =0x5f4244,        /* Ascii _BD */
-	CCD_DSP_AMPLIFIER_ALL         =0x414c4c  	/* Ascii ALL */
+	CCD_DSP_AMPLIFIER_ALL         =0x414c4c,  	/* Ascii ALL */
+	CCD_DSP_AMPLIFIER_DUMMY_TOP_LEFT     =0x445f41, /* Ascii D_A */
+	CCD_DSP_AMPLIFIER_DUMMY_TOP_RIGHT    =0x445f42, /* Ascii D_B */
+	CCD_DSP_AMPLIFIER_DUMMY_BOTTOM_LEFT  =0x445f43, /* Ascii D_C */
+	CCD_DSP_AMPLIFIER_DUMMY_BOTTOM_RIGHT =0x445f44, /* Ascii D_D */
+	CCD_DSP_AMPLIFIER_DUMMY_BOTH_LEFT    =0x44424c, /* Ascii DBL */
+	CCD_DSP_AMPLIFIER_DUMMY_BOTH_RIGHT   =0x444252  /* Ascii DBR */
 };
 
 /**
@@ -163,8 +150,22 @@ enum CCD_DSP_AMPLIFIER
  */
 #define CCD_DSP_IS_AMPLIFIER(amplifier)	(((amplifier) == CCD_DSP_AMPLIFIER_TOP_LEFT)|| \
 	((amplifier) == CCD_DSP_AMPLIFIER_TOP_RIGHT)||((amplifier) == CCD_DSP_AMPLIFIER_BOTTOM_LEFT)|| \
-	((amplifier) == CCD_DSP_AMPLIFIER_BOTTOM_RIGHT)||((amplifier) == CCD_DSP_AMPLIFIER_BOTH_LEFT)|| \
-        ((amplifier) == CCD_DSP_AMPLIFIER_BOTH_RIGHT)||((amplifier) == CCD_DSP_AMPLIFIER_ALL))
+	((amplifier) == CCD_DSP_AMPLIFIER_BOTTOM_RIGHT)|| \
+        ((amplifier) == CCD_DSP_AMPLIFIER_BOTH_RIGHT)||((amplifier) == CCD_DSP_AMPLIFIER_ALL)|| \
+	((amplifier) == CCD_DSP_AMPLIFIER_DUMMY_TOP_LEFT)||((amplifier) == CCD_DSP_AMPLIFIER_DUMMY_TOP_RIGHT)|| \
+	((amplifier) == CCD_DSP_AMPLIFIER_DUMMY_BOTTOM_LEFT)||((amplifier) == CCD_DSP_AMPLIFIER_DUMMY_BOTTOM_RIGHT)|| \
+	((amplifier) == CCD_DSP_AMPLIFIER_DUMMY_BOTH_LEFT)||((amplifier) == CCD_DSP_AMPLIFIER_DUMMY_BOTH_RIGHT))
+/**
+ * Macro to check whether the specified amplifier includes dummy as well as real charge outputs.
+ * This is used to determine whether the pixel stream needs dividing into more than one image,
+ * and to double the number of serial pixels sent to the timing board as part of setting dimensions.
+ */
+#define CCD_DSP_IS_DUMMY_AMPLIFIER(amplifier)	(((amplifier) == CCD_DSP_AMPLIFIER_DUMMY_TOP_LEFT)|| \
+						 ((amplifier) == CCD_DSP_AMPLIFIER_DUMMY_TOP_RIGHT)|| \
+						 ((amplifier) == CCD_DSP_AMPLIFIER_DUMMY_BOTTOM_LEFT)|| \
+						 ((amplifier) == CCD_DSP_AMPLIFIER_DUMMY_BOTTOM_RIGHT)|| \
+						 ((amplifier) == CCD_DSP_AMPLIFIER_DUMMY_BOTH_LEFT)|| \
+						 ((amplifier) == CCD_DSP_AMPLIFIER_DUMMY_BOTH_RIGHT))
 
 /* Various CCD_DSP routine return these values to indicate success/failure */
 /**
@@ -387,7 +388,6 @@ extern char *CCD_DSP_Command_Manual_To_String(int manual_command);
 extern int CCD_DSP_Command_String_To_Manual(char *command_string);
 extern char *CCD_DSP_Print_Board_ID(enum CCD_DSP_BOARD_ID board_id);
 extern char *CCD_DSP_Print_Mem_Space(enum CCD_DSP_MEM_SPACE mem_space);
-extern char *CCD_DSP_Print_DeInterlace(enum CCD_DSP_DEINTERLACE_TYPE deinterlace);
 
 extern int CCD_DSP_Get_Abort(void);
 extern int CCD_DSP_Set_Abort(int value);
