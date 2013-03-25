@@ -1,13 +1,13 @@
 /* ngat_o_ccd_CCDLibrary.c
 ** implementation of Java Class ngat.o.ccd.CCDLibrary native interfaces
-** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ngat_o_ccd_CCDLibrary.c,v 1.3 2013-01-25 14:21:08 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ngat_o_ccd_CCDLibrary.c,v 1.4 2013-03-25 15:15:03 cjm Exp $
 */
 /**
  * ngat_o_ccd_CCDLibrary.c is the 'glue' between libo_ccd, the C library version of the SDSU CCD Controller
  * software, and CCDLibrary.java, a Java Class to drive the controller. CCDLibrary specifically
  * contains all the native C routines corresponding to native methods in Java.
  * @author Chris Mottram LJMU
- * @version $Revision: 1.3 $
+ * @version $Revision: 1.4 $
  */
 /**
  * This hash define is needed before including source files give us POSIX.4/IEEE1003.1b-1993 prototypes
@@ -30,6 +30,7 @@
 #include "ccd_filter_wheel.h"
 #include "ccd_interface.h"
 #include "ccd_pci.h"
+#include "ccd_pixel_stream.h"
 #include "ccd_setup.h"
 #include "ccd_temperature.h"
 #include "ccd_text.h"
@@ -69,7 +70,7 @@ struct Handle_Map_Struct
 /**
  * Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ngat_o_ccd_CCDLibrary.c,v 1.3 2013-01-25 14:21:08 cjm Exp $";
+static char rcsid[] = "$Id: ngat_o_ccd_CCDLibrary.c,v 1.4 2013-03-25 15:15:03 cjm Exp $";
 
 /**
  * Copy of the java virtual machine pointer, used for logging back up to the Java layer from C.
@@ -805,11 +806,65 @@ JNIEXPORT jint JNICALL Java_ngat_o_ccd_CCDLibrary_CCD_1Interface_1Get_1Error_1Nu
  * Signature: ()I<br>
  * Java Native Interface routine to get the error number for this module.
  * @return The current value of the error number for this module. A zero error number means an error has not occured.
- * @see ccd_interface.html#CCD_PCI_Get_Error_Number
+ * @see ccd_pci.html#CCD_PCI_Get_Error_Number
  */
 JNIEXPORT jint JNICALL Java_ngat_o_ccd_CCDLibrary_CCD_1PCI_1Get_1Error_1Number(JNIEnv *env,jobject obj)
 {
 	return CCD_PCI_Get_Error_Number();
+}
+/* ------------------------------------------------------------------------------
+** 		ccd_pixel_stream.c
+** ------------------------------------------------------------------------------ */
+/**
+ * Class:     ngat_o_ccd_CCDLibrary<br>
+ * Method:    CCD_Pixel_Stream_Set_Pixel_Stream_Entry<br>
+ * Signature: (ILjava/lang/String;Z)V<br>
+ * Java Native Interface routine to set a pixels stream entry for a specified amplifier.
+ * @see ccd_pixel_stream.html#CCD_Pixel_Stream_Parse_Pixel_List
+ * @see ccd_pixel_stream.html#CCD_Pixel_Stream_Set_Pixel_Stream_Entry
+ */
+JNIEXPORT void JNICALL Java_ngat_o_ccd_CCDLibrary_CCD_1Pixel_1Stream_1Set_1Pixel_1Stream_1Entry
+  (JNIEnv *env,jobject obj, jint amplifier, jstring pixel_list_jstring, jboolean is_split_serial)
+{
+	CCD_Interface_Handle_T *handle = NULL;
+	struct CCD_Pixel_Struct pixel_list[CCD_PIXEL_STREAM_MAX_PIXEL_COUNT];
+	const char *pixel_list_cstring = NULL;
+	int pixel_count,retval;
+
+	/* get interface handle from CCDLibrary instance map */
+	if(!CCDLibrary_Handle_Map_Find(env,obj,&handle))
+		return; /* CCDLibrary_Handle_Map_Find throws an exception on failure */
+	/* Change the java strings to a c null terminated string
+	** If the java String is null the C string should be null as well */
+	if(pixel_list_jstring != NULL)
+		pixel_list_cstring = (*env)->GetStringUTFChars(env,pixel_list_jstring,0);
+	/* parse the pixel list string into a pixel list */
+	retval = CCD_Pixel_Stream_Parse_Pixel_List((char *)pixel_list_cstring,pixel_list,&pixel_count);
+	/* If we created the C strings we need to free the memory it uses */
+	if(pixel_list_jstring != NULL)
+		(*env)->ReleaseStringUTFChars(env,pixel_list_jstring,pixel_list_cstring);
+	/* if an error occured throw an exception. */
+	if(retval == FALSE)
+		CCDLibrary_Throw_Exception(env,obj,
+					 "CCD_Pixel_Stream_Set_Pixel_Stream_Entry:CCD_Pixel_Stream_Parse_Pixel_List");
+	/* now set the pixel stream entry for the specified amplifier to the parsed list */
+	retval = CCD_Pixel_Stream_Set_Pixel_Stream_Entry(amplifier,pixel_list,pixel_count,is_split_serial);
+	/* if an error occured throw an exception. */
+	if(retval == FALSE)
+		CCDLibrary_Throw_Exception(env,obj,"CCD_Pixel_Stream_Set_Pixel_Stream_Entry");
+}
+
+/**
+ * Class:     ngat_o_ccd_CCDLibrary<br>
+ * Method:    CCD_Pixel_Stream_Get_Error_Number<br>
+ * Signature: ()I<br>
+ * Java Native Interface routine to get the error number for this module.
+ * @return The current value of the error number for this module. A zero error number means an error has not occured.
+ * @see ccd_pixel_stream.html#CCD_Pixel_Stream_Get_Error_Number
+ */
+JNIEXPORT jint JNICALL Java_ngat_o_ccd_CCDLibrary_CCD_1Pixel_1Stream_1Get_1Error_1Number(JNIEnv *env,jobject obj)
+{
+	return CCD_Pixel_Stream_Get_Error_Number();
 }
 
 /* ------------------------------------------------------------------------------
@@ -853,9 +908,11 @@ JNIEXPORT void JNICALL Java_ngat_o_ccd_CCDLibrary_CCD_1Setup_1Startup(JNIEnv *en
 		utility_filename = (*env)->GetStringUTFChars(env,utility_filename_string,0);
 	/* do setup */
 	retval = CCD_Setup_Startup(handle,pci_load_type,(char*)pci_filename,memory_map_length,
-		timing_load_type,timing_application_number,(char*)timing_filename,
-		utility_load_type,utility_application_number,(char*)utility_filename,
-		target_temperature,gain,gain_speed,idle);
+				   (timing_filename != NULL),timing_load_type,timing_application_number,
+				   (char*)timing_filename,
+				   (utility_filename != NULL),utility_load_type,utility_application_number,
+				   (char*)utility_filename,
+				   TRUE,target_temperature,gain,gain_speed,idle);
 	/* If we created the C strings we need to free the memory it uses */
 	if(pci_filename_string != NULL)
 		(*env)->ReleaseStringUTFChars(env,pci_filename_string,pci_filename);
@@ -910,7 +967,7 @@ JNIEXPORT void JNICALL Java_ngat_o_ccd_CCDLibrary_CCD_1Setup_1Shutdown(JNIEnv *e
  * @see #CCDLibrary_Throw_Exception
  */
 JNIEXPORT void JNICALL Java_ngat_o_ccd_CCDLibrary_CCD_1Setup_1Dimensions(JNIEnv *env,jobject obj,
-				 jint ncols,jint nrows,jint nsbin,jint npbin,jint amplifier, jint deinterlace_setting,
+				 jint ncols,jint nrows,jint nsbin,jint npbin,jint amplifier,
 				 jint window_flags,jobjectArray window_object_list)
 {
 	CCD_Interface_Handle_T *handle = NULL;
@@ -998,8 +1055,7 @@ JNIEXPORT void JNICALL Java_ngat_o_ccd_CCDLibrary_CCD_1Setup_1Dimensions(JNIEnv 
 		window_list[i].Y_End = (int)((*env)->CallIntMethod(env,window_object,get_y_end_method_id));
 	}
 /* call dimension setup routine */
-	retval = CCD_Setup_Dimensions(handle,ncols,nrows,nsbin,npbin,amplifier,deinterlace_setting,
-				      window_flags,window_list);
+	retval = CCD_Setup_Dimensions(handle,ncols,nrows,nsbin,npbin,amplifier,window_flags,window_list);
 	/* if an error occured throw an exception. */
 	if(retval == FALSE)
 		CCDLibrary_Throw_Exception(env,obj,"CCD_Setup_Dimensions");
@@ -1026,7 +1082,7 @@ JNIEXPORT void JNICALL Java_ngat_o_ccd_CCDLibrary_CCD_1Setup_1Hardware_1Test(JNI
 	if(!CCDLibrary_Handle_Map_Find(env,obj,&handle))
 		return; /* CCDLibrary_Handle_Map_Find throws an exception on failure */
 	/* hardware test */
-	retval = CCD_Setup_Hardware_Test(handle,test_count);
+	retval = CCD_Setup_Hardware_Test(handle,test_count,TRUE,TRUE);
 	/* if an error occured throw an exception. */
 	if(retval == FALSE)
 		CCDLibrary_Throw_Exception(env,obj,"CCD_Setup_Hardware_Test");
@@ -1147,27 +1203,6 @@ JNIEXPORT jint JNICALL Java_ngat_o_ccd_CCDLibrary_CCD_1Setup_1Get_1Amplifier(JNI
 	if(!CCDLibrary_Handle_Map_Find(env,obj,&handle))
 		return -1; /* CCDLibrary_Handle_Map_Find throws an exception on failure */
 	return (jint)CCD_Setup_Get_Amplifier(handle);
-}
-
-/**
- * Class:     ngat_o_ccd_CCDLibrary<br>
- * Method:    CCD_Setup_Get_DeInterlace_Type<br>
- * Signature: ()I<br>
- * Java Native Interface implementation of 
- * <a href="ccd_setup.html#CCD_Setup_Get_DeInterlace_Type">CCD_Setup_Get_DeInterlace_Type</a>,
- * which gets the de-interlace type.
- * @see ccd_setup.html#CCD_Setup_Get_DeInterlace_Type
- * @see ccd_interface.html#CCD_Interface_Handle_T
- * @see #CCDLibrary_Handle_Map_Find
- */
-JNIEXPORT jint JNICALL Java_ngat_o_ccd_CCDLibrary_CCD_1Setup_1Get_1DeInterlace_1Type(JNIEnv *env,jobject obj)
-{
-	CCD_Interface_Handle_T *handle = NULL;
-
-	/* get interface handle from CCDLibrary instance map */
-	if(!CCDLibrary_Handle_Map_Find(env,obj,&handle))
-		return -1; /* CCDLibrary_Handle_Map_Find throws an exception on failure */
-	return (jint)CCD_Setup_Get_DeInterlace_Type(handle);
 }
 
 /**
@@ -2054,6 +2089,10 @@ static int CCDLibrary_Handle_Map_Find(JNIEnv *env,jobject instance,CCD_Interface
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.3  2013/01/25 14:21:08  cjm
+** Changes to CCD_Setup_Startup and CCD_Interface_Memory_Map so
+** the mmap length can be passed from Java to the C layer.
+**
 ** Revision 1.2  2012/07/17 17:18:59  cjm
 ** Changed how binned and unbinned cols/rows are handled.
 **
