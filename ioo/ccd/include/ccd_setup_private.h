@@ -1,5 +1,5 @@
 /* ccd_setup_private.h
-** $Header: /space/home/eng/cjm/cvs/ioo/ccd/include/ccd_setup_private.h,v 1.2 2012-07-17 17:27:56 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/ioo/ccd/include/ccd_setup_private.h,v 1.3 2013-03-25 15:26:42 cjm Exp $
 */
 
 #ifndef CCD_SETUP_PRIVATE_H
@@ -13,20 +13,16 @@
  * <dl>
  * <dt>NCols</dt> <dd>The number of unbinned columns that will be used on the CCD.</dd>
  * <dt>NRows</dt> <dd>The number of unbinned rows that will be used on the CCD.</dd>
- * <dt>Binned_NCols</dt> <dd>The number of binned columns that will be used on the CCD.</dd>
- * <dt>Binned_NRows</dt> <dd>The number of binned rows that will be used on the CCD.</dd>
  * <dt>NSBin</dt> <dd>The amount of binning of columns on the CCD.</dd>
  * <dt>NPBin</dt> <dd>The amount of binning of rows on the CCD.</dd>
- * <dt>DeInterlace_Type</dt> <dd>The type of deinterlacing the image will require. This depends on the way the
- * 	SDSU CCD Controller reads out the CCD. Acceptable values in 
- * 	<a href="ccd_dsp.html#CCD_DSP_DEINTERLACE_TYPE">CCD_DSP_DEINTERLACE_TYPE</a> are:
- *	CCD_DSP_DEINTERLACE_SINGLE,
- *	CCD_DSP_DEINTERLACE_FLIP,
- *	CCD_DSP_DEINTERLACE_SPLIT_PARALLEL,
- * 	CCD_DSP_DEINTERLACE_SPLIT_SERIAL or
- * 	CCD_DSP_DEINTERLACE_SPLIT_QUAD.</dd>
+ * <dt>Binned_NCols</dt> <dd>The number of binned columns that will be readout of the CCD.</dd>
+ * <dt>Binned_NRows</dt> <dd>The number of binned rows that will be readout of the CCD.</dd>
+ * <dt>Final_NCols</dt> <dd>The number of columns sent to the SDSU timing board.</dd>
+ * <dt>Final_NRows</dt> <dd>The number of rows sent to the SDSU timing board.</dd>
  * <dt>Gain</dt> <dd>The gain setting used to configure the CCD electronics.</dd>
  * <dt>Amplifier</dt> <dd>The amplifier setting used to configure the CCD electronics.</dd>
+ * <dt>Is_Dummy</dt> <dd>A boolean, TRUE if the amplifier setting includes a dummy output which receive no charge, 
+ *                   in addition to real outputs.
  * <dt>Idle</dt> <dd>A boolean, set as to whether we set the CCD electronics to Idle clock or not.</dd>
  * <dt>Window_Flags</dt> <dd>The window flags for this setup. Determines which of the four possible windows
  * 	are in use for this setup.</dd>
@@ -50,13 +46,15 @@ struct CCD_Setup_Struct
 {
 	int NCols;
 	int NRows;
-	int Binned_NCols;
-	int Binned_NRows;
 	int NSBin;
 	int NPBin;
-	enum CCD_DSP_DEINTERLACE_TYPE DeInterlace_Type;
+	int Binned_NCols;
+	int Binned_NRows;
+	int Final_NCols;
+	int Final_NRows;
 	enum CCD_DSP_GAIN Gain;
 	enum CCD_DSP_AMPLIFIER Amplifier;
+	int Is_Dummy;
 	int Idle;
 	int Window_Flags;
 	struct CCD_Setup_Window_Struct Window_List[CCD_SETUP_WINDOW_COUNT];
@@ -70,6 +68,9 @@ struct CCD_Setup_Struct
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.2  2012/07/17 17:27:56  cjm
+** Added Binned_NCols / Binned_NRows.
+**
 ** Revision 1.1  2011/11/23 11:02:52  cjm
 ** Initial revision
 **
