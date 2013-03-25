@@ -1,5 +1,5 @@
 // CCDLibraryTestExposure.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/ccd/test/CCDLibraryTestExposure.java,v 1.2 2012-07-24 08:26:55 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/ccd/test/CCDLibraryTestExposure.java,v 1.3 2013-03-25 15:14:28 cjm Exp $
 package ngat.o.ccd.test;
 
 import java.io.*;
@@ -14,7 +14,7 @@ import ngat.util.logging.*;
  * This class tests the ngat.o.ccd.CCDLibrary class, which provides the Java interface for
  * the O SDSU CCD controller. It does a setup and exposure. 
  * @author Chris Mottram
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 public class CCDLibraryTestExposure implements Runnable
 {
@@ -22,7 +22,7 @@ public class CCDLibraryTestExposure implements Runnable
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: CCDLibraryTestExposure.java,v 1.2 2012-07-24 08:26:55 cjm Exp $");
+	public final static String RCSID = new String("$Id: CCDLibraryTestExposure.java,v 1.3 2013-03-25 15:14:28 cjm Exp $");
 	/**
 	 * Default device pathname /dev/astropci0.
 	 */
@@ -106,11 +106,6 @@ public class CCDLibraryTestExposure implements Runnable
 	 * Parallel (Y) binning. Default to 1.
 	 */
 	protected int nPBin = 1;
-	/**
-	 * De-Interlace setting.
-	 * @see ngat.o.ccd.CCDLibrary#DSP_DEINTERLACE_SINGLE
-	 */
-	protected int deinterlaceSetting = CCDLibrary.DSP_DEINTERLACE_SINGLE;
 	/**
 	 * Amplifier setting.
 	 * @see ngat.o.ccd.CCDLibrary#DSP_AMPLIFIER_TOP_LEFT
@@ -512,7 +507,7 @@ public class CCDLibraryTestExposure implements Runnable
 			if(clte.doExposure)
 			{
 				clte.ccd.setupDimensions(clte.nCols,clte.nRows,clte.nSBin,clte.nPBin,
-							 clte.amplifier,clte.deinterlaceSetting,0,windowList);
+							 clte.amplifier,0,windowList);
 				clte.setFITSHeaders(clte.filename,clte.nCols,clte.nRows,clte.nSBin,clte.nPBin,
 						    clte.exposureLength);
 				clte.ccd.expose(true,-1L,clte.exposureLength,clte.filename);
@@ -532,6 +527,9 @@ public class CCDLibraryTestExposure implements Runnable
 }
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.2  2012/07/24 08:26:55  cjm
+// Added new memory map length parameter.
+//
 // Revision 1.1  2011/11/23 10:59:34  cjm
 // Initial revision
 //
