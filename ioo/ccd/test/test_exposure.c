@@ -1,5 +1,5 @@
 /* test_exposure.c
- * $Header: /space/home/eng/cjm/cvs/ioo/ccd/test/test_exposure.c,v 1.3 2013-03-21 16:06:27 cjm Exp $
+ * $Header: /space/home/eng/cjm/cvs/ioo/ccd/test/test_exposure.c,v 1.4 2013-03-25 15:31:17 cjm Exp $
  */
 #include <stdio.h>
 #include <string.h>
@@ -13,6 +13,7 @@
 #include "ccd_temperature.h"
 #include "ccd_setup.h"
 #include "ccd_exposure.h"
+#include "ccd_pixel_stream.h"
 #include "fitsio.h"
 
 /**
@@ -25,14 +26,16 @@
  * 	[-timing_filename &lt;filename&gt;][-utility_filename &lt;filename&gt;][-temperature &lt;temperature&gt;]
  * 	[-xs[ize] &lt;no. of pixels&gt;][-ys[ize] &lt;no. of pixels&gt;]
  * 	[-xb[in] &lt;binning factor&gt;][-yb[in] &lt;binning factor&gt;]
- * 	[-a[mplifier] &lt;bottomleft|bottomright|topleft|topright|all&gt;]
+ * 	[-a[mplifier] &lt;bottomleft|bottomright|topleft|topright|all|dummybottomleft|dummybottomright|
+ *         dummytopleft|dummytopright&gt;]
+ *      [-pixel_stream_entry &lt;amplifier&gt; &lt;pixel stream&gt; &lt;is_split_serial&gt;]
  * 	[-w[indow] &lt;no&gt; &lt;xstart&gt; &lt;ystart&gt; &lt;xend&gt; &lt;yend&gt;]
  * 	[-b[ias]][-d[ark] &lt;exposure length&gt;][-e[xpose] &lt;exposure length&gt;]\n");
  * 	[-f[ilename] &lt;filename&gt;]
  * 	[-t[ext_print_level] &lt;commands|replies|values|all&gt;][-h[elp]]
  * </pre>
  * @author $Author: cjm $
- * @version $Revision: 1.3 $
+ * @version $Revision: 1.4 $
  */
 /* hash definitions */
 /**
@@ -55,10 +58,6 @@
  * Default amplifier.
  */
 #define DEFAULT_AMPLIFIER	(CCD_DSP_AMPLIFIER_BOTTOM_LEFT)
-/**
- * Default de-interlace type.
- */
-#define DEFAULT_DEINTERLACE_TYPE (CCD_DSP_DEINTERLACE_SINGLE)
 
 /* enums */
 /**
@@ -79,7 +78,7 @@ enum COMMAND_ID
 /**
  * Revision control system identifier.
  */
-static char rcsid[] = "$Id: test_exposure.c,v 1.3 2013-03-21 16:06:27 cjm Exp $";
+static char rcsid[] = "$Id: test_exposure.c,v 1.4 2013-03-25 15:31:17 cjm Exp $";
 /**
  * How much information to print out when using the text interface.
  */
@@ -154,10 +153,6 @@ static int Bin_X = 1;
  * The number binning factor in rows.
  */
 static int Bin_Y = 1;
-/**
- * The de-interlace type to use.
- */
-static enum CCD_DSP_DEINTERLACE_TYPE DeInterlace_Type = DEFAULT_DEINTERLACE_TYPE;
 /**
  * The amplifier to use.
  */
@@ -253,6 +248,7 @@ int main(int argc, char *argv[])
 	fprintf(stdout,"Initialise Controller:Using device %d.\n",Interface_Device);
 	CCD_Global_Initialise();
 	CCD_Global_Set_Log_Handler_Function(CCD_Global_Log_Handler_Stdout);
+	CCD_Global_Set_Log_Filter_Function(CCD_Global_Log_Filter_Level_Absolute);
 	CCD_Global_Set_Log_Filter_Level(Log_Filter_Level);
 /* open SDSU connection */
 	fprintf(stdout,"Opening SDSU device.\n");
@@ -298,8 +294,9 @@ int main(int argc, char *argv[])
 		fprintf(stdout,"Gain:%d : Gain_Speed:%d\n",Gain,Gain_Speed);
 		fprintf(stdout,"Temperature:%.2f\n",Temperature);
 		if(!CCD_Setup_Startup(handle,PCI_Load_Type,PCI_Filename,CCD_SETUP_DEFAULT_MEMORY_BUFFER_SIZE,
-				      Timing_Load_Type,0,Timing_Filename,
-				      Utility_Load_Type,0,Utility_Filename,Temperature,Gain,Gain_Speed,TRUE))
+				      (Timing_Filename != NULL),Timing_Load_Type,0,Timing_Filename,
+				      (Utility_Filename != NULL),Utility_Load_Type,0,Utility_Filename,
+				      (Temperature != 0.0f),Temperature,Gain,Gain_Speed,TRUE))
 		{
 			CCD_Global_Error();
 			return 3;
@@ -320,10 +317,9 @@ int main(int argc, char *argv[])
 	fprintf(stdout,"Calling CCD_Setup_Dimensions:\n");
 	fprintf(stdout,"Chip Size:(%d,%d)\n",Size_X,Size_Y);
 	fprintf(stdout,"Binning:(%d,%d)\n",Bin_X,Bin_Y);
-	fprintf(stdout,"Amplifier:%#x(%s):De-Interlace:%d(%s)\n",Amplifier,CCD_DSP_Command_Manual_To_String(Amplifier),
-		DeInterlace_Type,CCD_DSP_Print_DeInterlace(DeInterlace_Type));
+	fprintf(stdout,"Amplifier:%#x(%s):\n",Amplifier,CCD_DSP_Command_Manual_To_String(Amplifier));
 	fprintf(stdout,"Window Flags:%d\n",Window_Flags);
-	if(!CCD_Setup_Dimensions(handle,Size_X,Size_Y,Bin_X,Bin_Y,Amplifier,DeInterlace_Type,Window_Flags,Window_List))
+	if(!CCD_Setup_Dimensions(handle,Size_X,Size_Y,Bin_X,Bin_Y,Amplifier,Window_Flags,Window_List))
 	{
 		CCD_Global_Error();
 		return 3;
@@ -436,11 +432,19 @@ int main(int argc, char *argv[])
  * @see #Exposure_Length
  * @see #Filename
  * @see #Log_Filter_Level
+ * @see ccd_dsp.html#CCD_DSP_AMPLIFIER
+ * @see ccd_pixel_stream.html#CCD_Pixel_Struct
+ * @see ccd_pixel_stream.html#CCD_PIXEL_STREAM_MAX_PIXEL_COUNT
+ * @see ccd_pixel_stream.html#CCD_Pixel_Stream_Parse_Pixel_List
+ * @see ccd_pixel_stream.html#CCD_Pixel_Stream_Set_Pixel_Stream_Entry
+ * @see ccd_setup.html#CCD_Setup_Window_Struct
  */
 static int Parse_Arguments(int argc, char *argv[])
 {
 	struct CCD_Setup_Window_Struct window;
-	int i,retval,window_number;
+	struct CCD_Pixel_Struct pixel_list[CCD_PIXEL_STREAM_MAX_PIXEL_COUNT];
+	enum CCD_DSP_AMPLIFIER pixel_stream_amplifier;
+	int i,retval,window_number,pixel_count,is_split_serial;
 
 	for(i=1;i<argc;i++)
 	{
@@ -451,44 +455,58 @@ static int Parse_Arguments(int argc, char *argv[])
 				if(strcmp(argv[i+1],"bottomleft")==0)
 				{
 					Amplifier = CCD_DSP_AMPLIFIER_BOTTOM_LEFT;
-					DeInterlace_Type = CCD_DSP_DEINTERLACE_SINGLE;
 				}
 				else if(strcmp(argv[i+1],"bottomright")==0)
 				{
 					Amplifier = CCD_DSP_AMPLIFIER_BOTTOM_RIGHT;
-					DeInterlace_Type = CCD_DSP_DEINTERLACE_FLIP_X;
 				}
 				else if(strcmp(argv[i+1],"topleft")==0)
 				{
 					Amplifier = CCD_DSP_AMPLIFIER_TOP_LEFT;
-					DeInterlace_Type = CCD_DSP_DEINTERLACE_FLIP_Y;
 				}
 				else if(strcmp(argv[i+1],"topright")==0)
 				{
 					Amplifier = CCD_DSP_AMPLIFIER_TOP_RIGHT;
-					DeInterlace_Type = CCD_DSP_DEINTERLACE_FLIP_XY;
 				}
 				else if(strcmp(argv[i+1],"bothright")==0)
 				{
 					Amplifier = CCD_DSP_AMPLIFIER_BOTH_RIGHT;
-					DeInterlace_Type = CCD_DSP_DEINTERLACE_SPLIT_PARALLEL;
 				}
 				else if(strcmp(argv[i+1],"all")==0)
 				{
 					Amplifier = CCD_DSP_AMPLIFIER_ALL;
-					DeInterlace_Type = CCD_DSP_DEINTERLACE_SPLIT_QUAD;
+				}
+				else if(strcmp(argv[i+1],"dummybottomleft")==0)
+				{
+					Amplifier = CCD_DSP_AMPLIFIER_DUMMY_BOTTOM_LEFT;
+				}
+				else if(strcmp(argv[i+1],"dummybottomright")==0)
+				{
+					Amplifier = CCD_DSP_AMPLIFIER_DUMMY_BOTTOM_RIGHT;
+				}
+				else if(strcmp(argv[i+1],"dummytopleft")==0)
+				{
+					Amplifier = CCD_DSP_AMPLIFIER_DUMMY_TOP_LEFT;
+				}
+				else if(strcmp(argv[i+1],"dummytopright")==0)
+				{
+					Amplifier = CCD_DSP_AMPLIFIER_DUMMY_TOP_RIGHT;
 				}
 				else
 				{
 					fprintf(stderr,"Parse_Arguments:Illegal Amplifier '%s', "
-						"<bottomleft|bottomright|topleft|topright|bothright|all> required.\n",argv[i+1]);
+						"<bottomleft|bottomright|topleft|topright|bothright|all|"
+						"dummybottomleft|dummybottomright|dummytopleft|dummytopright> "
+						"required.\n",argv[i+1]);
 					return FALSE;
 				}
 				i++;
 			}
 			else
 			{
-				fprintf(stderr,"Parse_Arguments:Amplifier requires one of: <bottomleft|bottomright|topleft|topright|bothright|all>.\n");
+				fprintf(stderr,"Parse_Arguments:Amplifier requires one of: "
+					"<bottomleft|bottomright|topleft|topright|bothright|all|"
+					"dummybottomleft|dummybottomright|dummytopleft|dummytoprigh>.\n");
 				return FALSE;
 			}
 		}
@@ -671,6 +689,93 @@ static int Parse_Arguments(int argc, char *argv[])
 			else
 			{
 				fprintf(stderr,"Parse_Arguments:PCI Filename required.\n");
+				return FALSE;
+			}
+		}
+		else if((strcmp(argv[i],"-pixel_stream_entry")==0))
+		{
+			if((i+3)<argc)
+			{
+				if(strcmp(argv[i+1],"bottomleft")==0)
+				{
+					pixel_stream_amplifier = CCD_DSP_AMPLIFIER_BOTTOM_LEFT;
+				}
+				else if(strcmp(argv[i+1],"bottomright")==0)
+				{
+					pixel_stream_amplifier = CCD_DSP_AMPLIFIER_BOTTOM_RIGHT;
+				}
+				else if(strcmp(argv[i+1],"topleft")==0)
+				{
+					pixel_stream_amplifier = CCD_DSP_AMPLIFIER_TOP_LEFT;
+				}
+				else if(strcmp(argv[i+1],"topright")==0)
+				{
+					pixel_stream_amplifier = CCD_DSP_AMPLIFIER_TOP_RIGHT;
+				}
+				else if(strcmp(argv[i+1],"bothright")==0)
+				{
+					pixel_stream_amplifier = CCD_DSP_AMPLIFIER_BOTH_RIGHT;
+				}
+				else if(strcmp(argv[i+1],"all")==0)
+				{
+					pixel_stream_amplifier = CCD_DSP_AMPLIFIER_ALL;
+				}
+				else if(strcmp(argv[i+1],"dummybottomleft")==0)
+				{
+					pixel_stream_amplifier = CCD_DSP_AMPLIFIER_DUMMY_BOTTOM_LEFT;
+				}
+				else if(strcmp(argv[i+1],"dummybottomright")==0)
+				{
+					pixel_stream_amplifier = CCD_DSP_AMPLIFIER_DUMMY_BOTTOM_RIGHT;
+				}
+				else if(strcmp(argv[i+1],"dummytopleft")==0)
+				{
+					pixel_stream_amplifier = CCD_DSP_AMPLIFIER_DUMMY_TOP_LEFT;
+				}
+				else if(strcmp(argv[i+1],"dummytopright")==0)
+				{
+					pixel_stream_amplifier = CCD_DSP_AMPLIFIER_DUMMY_TOP_RIGHT;
+				}
+				else
+				{
+					fprintf(stderr,"Parse_Arguments:pixel_stream_entry:Illegal Amplifier '%s', "
+						"<bottomleft|bottomright|topleft|topright|bothright|all|"
+						"dummybottomleft|dummybottomright|dummytopleft|dummytopright> "
+						"required.\n",argv[i+1]);
+					return FALSE;
+				}
+				if(!CCD_Pixel_Stream_Parse_Pixel_List(argv[i+2],pixel_list,&pixel_count))
+				{
+					fprintf(stderr,"Parse_Arguments:pixel_stream_entry:"
+						"Failed to parse pixel list.\n");
+					CCD_Global_Error();
+					return FALSE;
+				}
+				if(strcmp(argv[i+3],"true")==0)
+					is_split_serial = TRUE;
+				else if(strcmp(argv[i+3],"false")==0)
+					is_split_serial = FALSE;
+				else
+				{
+					fprintf(stderr,"Parse_Arguments:pixel_stream_entry:"
+						"Illegal is_split_serial argument  '%s', "
+						"should be either true|false.\n",argv[i+3]);
+					return FALSE;
+				}
+				if(!CCD_Pixel_Stream_Set_Pixel_Stream_Entry(pixel_stream_amplifier,
+									    pixel_list,pixel_count,is_split_serial))
+				{
+					fprintf(stderr,"Parse_Arguments:pixel_stream_entry:"
+						"Setting pixel stream entry failed.\n");
+					CCD_Global_Error();
+					return FALSE;
+				}
+				i+= 3;
+			}
+			else
+			{
+				fprintf(stderr,"Parse_Arguments:pixel_stream_entry requires 3 arguments: "
+					"<amplifier> <pixel stream> <is_split_serial>.\n");
 				return FALSE;
 			}
 		}
@@ -927,12 +1032,14 @@ static void Help(void)
 	fprintf(stdout,"\t[-g[ain] <1|2|4|9> <true|false>]\n");
 	fprintf(stdout,"\t[-xs[ize] <no. of pixels>][-ys[ize] <no. of pixels>]\n");
 	fprintf(stdout,"\t[-xb[in] <binning factor>][-yb[in] <binning factor>]\n");
-	fprintf(stdout,"\t[-a[mplifier] <bottomleft|bottomright|topleft|topright|bothright|all>]\n");
+	fprintf(stdout,"\t[-a[mplifier] <bottomleft|bottomright|topleft|topright|bothright|all|\n");
+	fprintf(stdout,"\t\tdummybottomleft|dummybottomright|dummytopleft|dummytopright>]\n");
+	fprintf(stdout,"\t[-pixel_stream_entry <amplifier> <pixel stream> <is_split_serial>]\n");
 	fprintf(stdout,"\t[-w[indow] <no> <xstart> <ystart> <xend> <yend>]\n");
 	fprintf(stdout,"\t[-f[ilename] <filename>][-noclear|-nc]\n");
 	fprintf(stdout,"\t[-b[ias]][-d[ark] <exposure length>][-e[xpose] <exposure length>]\n");
 	fprintf(stdout,"\t[-t[ext_print_level] <commands|replies|values|all>][-h[elp]]\n");
-	fprintf(stdout,"\t[-log_level <bit number>]\n");
+	fprintf(stdout,"\t[-log_level <0-5>]\n");
 	fprintf(stdout,"\n");
 	fprintf(stdout,"\t-interface_device selects the device to communicate with the SDSU controller.\n");
 	fprintf(stdout,"\t-device_pathname can select which controller (/dev/astropci[0|1]) or text output file.\n");
@@ -1056,6 +1163,10 @@ static void Test_Fits_Header_Error(int status)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.3  2013/03/21 16:06:27  cjm
+** CCD_Setup_Startup call parameters modified.
+** CCD_Interface_Memory_Map call parameters modified.
+**
 ** Revision 1.2  2012/01/11 15:06:45  cjm
 ** Added bothright amplifier support.
 **
