@@ -1,19 +1,19 @@
 // CCDLibraryNativeException.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/ccd/CCDLibraryNativeException.java,v 1.1 2011-11-23 10:59:30 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/ccd/CCDLibraryNativeException.java,v 1.2 2013-03-25 15:07:13 cjm Exp $
 package ngat.o.ccd;
 
 /**
  * This class extends Exception. Objects of this class are thrown when the underlying C code in CCDLibrary produces an
  * error. The JNI interface itself can also generate these exceptions.
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class CCDLibraryNativeException extends Exception
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class
 	 */
-	public final static String RCSID = new String("$Id: CCDLibraryNativeException.java,v 1.1 2011-11-23 10:59:30 cjm Exp $");
+	public final static String RCSID = new String("$Id: CCDLibraryNativeException.java,v 1.2 2013-03-25 15:07:13 cjm Exp $");
 	/**
 	 * The current value of the error number in the DSP module.
 	 */
@@ -34,6 +34,10 @@ public class CCDLibraryNativeException extends Exception
 	 * The current value of the error number in the PCI module.
 	 */
 	protected int pciErrorNumber = 0;
+	/**
+	 * The current value of the error number in the pixel stream module.
+	 */
+	protected int pixelStreamErrorNumber = 0;
 	/**
 	 * The current value of the error number in the Setup module.
 	 */
@@ -67,6 +71,7 @@ public class CCDLibraryNativeException extends Exception
 	 * @see #filterWheelErrorNumber
 	 * @see #interfaceErrorNumber
 	 * @see #pciErrorNumber
+	 * @see #pixelStreamErrorNumber
 	 * @see #setupErrorNumber
 	 * @see #temperatureErrorNumber
 	 * @see #textErrorNumber
@@ -74,6 +79,7 @@ public class CCDLibraryNativeException extends Exception
 	 * @see CCDLibrary#getExposureErrorNumber
 	 * @see CCDLibrary#getInterfaceErrorNumber
 	 * @see CCDLibrary#getPCIErrorNumber
+	 * @see CCDLibrary#getPixelStreamErrorNumber
 	 * @see CCDLibrary#getSetupErrorNumber
 	 * @see CCDLibrary#getTemperatureErrorNumber
 	 * @see CCDLibrary#getTextErrorNumber
@@ -86,6 +92,7 @@ public class CCDLibraryNativeException extends Exception
 		//this.filterWheelErrorNumber = libo_ccd.getFilterWheelErrorNumber();
 		this.interfaceErrorNumber = libo_ccd.getInterfaceErrorNumber();
 		this.pciErrorNumber = libo_ccd.getPCIErrorNumber();
+		this.pixelStreamErrorNumber = libo_ccd.getPixelStreamErrorNumber();
 		this.setupErrorNumber = libo_ccd.getSetupErrorNumber();
 		this.temperatureErrorNumber = libo_ccd.getTemperatureErrorNumber();
 		this.textErrorNumber = libo_ccd.getTextErrorNumber();
@@ -150,6 +157,17 @@ public class CCDLibraryNativeException extends Exception
 	 * Retrieve routine for the error number for the relevant C module.
 	 * @return Returns the error number supplied for this exception, 
 	 * 	if the number was supplied in a constructor.
+	 * @see #pixelStreamErrorNumber
+	 */
+	public int getPixelStreamErrorNumber()
+	{
+		return pixelStreamErrorNumber;
+	}
+
+	/**
+	 * Retrieve routine for the error number for the relevant C module.
+	 * @return Returns the error number supplied for this exception, 
+	 * 	if the number was supplied in a constructor.
 	 * @see #setupErrorNumber
 	 */
 	public int getSetupErrorNumber()
@@ -182,4 +200,7 @@ public class CCDLibraryNativeException extends Exception
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2011/11/23 10:59:30  cjm
+// Initial revision
+//
 //
