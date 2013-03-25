@@ -1,5 +1,5 @@
 // GET_STATUSImplementation.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/GET_STATUSImplementation.java,v 1.2 2012-07-17 17:17:45 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/GET_STATUSImplementation.java,v 1.3 2013-03-25 15:01:38 cjm Exp $
 package ngat.o;
 
 import java.lang.*;
@@ -16,14 +16,14 @@ import ngat.util.ExecuteCommand;
  * This class provides the implementation for the GET_STATUS command sent to a server using the
  * Java Message System.
  * @author Chris Mottram
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 public class GET_STATUSImplementation extends INTERRUPTImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: GET_STATUSImplementation.java,v 1.2 2012-07-17 17:17:45 cjm Exp $");
+	public final static String RCSID = new String("$Id: GET_STATUSImplementation.java,v 1.3 2013-03-25 15:01:38 cjm Exp $");
 	/**
 	 * Local copy of the O status object.
 	 * @see O#getStatus
@@ -92,8 +92,6 @@ public class GET_STATUSImplementation extends INTERRUPTImplementation implements
 	 * <li><b>NRows, NCols</b> Number of rows and columns setup on the CCD(from libo_ccd, not the camera hardware).
 	 * <li><b>NSBin, NPBin</b> Binning factor for rows and columns setup on the CCD 
 	 * 	(from libo_ccd, not the camera hardware).
-	 * <li><b>DeInterlace Type</b> The de-interlace type, which tells us how many readouts we are using 
-	 * 	(from libo_ccd, not the camera hardware).
 	 * <li><b>Window Flags</b> The window flags, which tell us which windows are in effect
 	 * 	(from libo_ccd, not the camera hardware).
 	 * <li><b>Setup Status</b> Whether the camera has been setup sufficiently for exposures to be taken
@@ -122,7 +120,6 @@ public class GET_STATUSImplementation extends INTERRUPTImplementation implements
 	 * @see CCDLibrary#getBinnedNRows
 	 * @see CCDLibrary#getXBin
 	 * @see CCDLibrary#getYBin
-	 * @see CCDLibrary#getDeInterlaceType
 	 * @see CCDLibrary#getSetupWindowFlags
 	 * @see CCDLibrary#getSetupComplete
 	 * @see OStatus#getExposureCount
@@ -166,7 +163,6 @@ public class GET_STATUSImplementation extends INTERRUPTImplementation implements
 		hashTable.put("NRows",new Integer(ccd.getBinnedNRows()));
 		hashTable.put("NSBin",new Integer(ccd.getXBin()));
 		hashTable.put("NPBin",new Integer(ccd.getYBin()));
-		hashTable.put("DeInterlace Type",new Integer(ccd.getDeInterlaceType()));
 		hashTable.put("Window Flags",new Integer(ccd.getSetupWindowFlags()));
 		hashTable.put("Setup Status",new Boolean(ccd.getSetupComplete()));
 		hashTable.put("Exposure Length",new Integer(ccd.getExposureLength()));
@@ -599,6 +595,9 @@ public class GET_STATUSImplementation extends INTERRUPTImplementation implements
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.2  2012/07/17 17:17:45  cjm
+// Changed CCDLibrary calls for getting binned rows and column data as per API change.
+//
 // Revision 1.1  2011/11/23 10:55:24  cjm
 // Initial revision
 //
