@@ -1,5 +1,5 @@
 // CCDLibrary.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/ccd/CCDLibrary.java,v 1.4 2012-07-24 08:26:13 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/ccd/CCDLibrary.java,v 1.5 2013-03-25 15:07:13 cjm Exp $
 package ngat.o.ccd;
 
 import java.lang.*;
@@ -10,14 +10,14 @@ import ngat.util.logging.*;
 /**
  * This class supports an interface to the SDSU CCD Controller library, for controlling the FrodoSpec CCD.
  * @author Chris Mottram
- * @version $Revision: 1.4 $
+ * @version $Revision: 1.5 $
  */
 public class CCDLibrary
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class
 	 */
-	public final static String RCSID = new String("$Id: CCDLibrary.java,v 1.4 2012-07-24 08:26:13 cjm Exp $");
+	public final static String RCSID = new String("$Id: CCDLibrary.java,v 1.5 2013-03-25 15:07:13 cjm Exp $");
 	// ccd_dsp.h
 	/* These constants should be the same as those in ccd_dsp.h */
 	/**
@@ -75,7 +75,8 @@ public class CCDLibrary
 	 * @see #setupDimensions
 	 * @link http://ltdevsrv.livjm.ac.uk/~dev/o/ccd/cdocs/ccd_dsp.html#CCD_DSP_AMPLIFIER
 	 */
-	public final static int DSP_AMPLIFIER_BOTH_LEFT   =            0x5f4143;	
+	// Removed as it doesn't work due to SXMIT restriction
+	//public final static int DSP_AMPLIFIER_BOTH_LEFT   =            0x5f4143;	
 	/**
 	 * Set Output Source parameter, to make the controller read out images from both right amplifiers (_BD).
 	 * @see #setupDimensions
@@ -88,52 +89,60 @@ public class CCDLibrary
 	 * @link http://ltdevsrv.livjm.ac.uk/~dev/o/ccd/cdocs/ccd_dsp.html#CCD_DSP_AMPLIFIER
 	 */
 	public final static int DSP_AMPLIFIER_ALL          =            0x414c4c;
-
-	/* These constants should be the same as those in ccd_dsp.h */
 	/**
-	 * De-interlace type. This setting does no deinterlacing, as the CCD was read out from a single readout.
+	 * Set Output Source parameter, to make the SDSU controller clock charge to and read out images from 
+	 * the top left amplifier (D_A). A second amplifier is also A/D converted and it's values returned
+	 * to create a 'dummy' image, which will hopefully contain clock signals that can be subtracted from the
+	 * real image to improve noise.
 	 * @see #setupDimensions
+	 * @link http://ltdevsrv.livjm.ac.uk/~dev/o/ccd/cdocs/ccd_dsp.html#CCD_DSP_AMPLIFIER
 	 */
-	public final static int DSP_DEINTERLACE_SINGLE = 		0;
+	public final static int DSP_AMPLIFIER_DUMMY_TOP_LEFT   =         0x445f41;	
 	/**
-	 * De-interlace type. This setting flips the output image in X, if the CCD was readout from the
-	 * "wrong" amplifier, i.e. to ensure east is to the left.
+	 * Set Output Source parameter, to make the SDSU controller clock charge to and read out images from 
+	 * the top right amplifier (D_B). A second amplifier is also A/D converted and it's values returned
+	 * to create a 'dummy' image, which will hopefully contain clock signals that can be subtracted from the
+	 * real image to improve noise.
 	 * @see #setupDimensions
-	 * @link http://ltdevsrv.livjm.ac.uk/~dev/o/ccd/cdocs/ccd_dsp.html#CCD_DSP_DEINTERLACE_TYPE
+	 * @link http://ltdevsrv.livjm.ac.uk/~dev/o/ccd/cdocs/ccd_dsp.html#CCD_DSP_AMPLIFIER
 	 */
-	public final static int DSP_DEINTERLACE_FLIP_X = 		1;
+	public final static int DSP_AMPLIFIER_DUMMY_TOP_RIGHT   =         0x445f42;	
 	/**
-	 * De-interlace type. This setting flips the output image in Y, if the CCD was readout from the
-	 * "wrong" (bottom?) amplifier, i.e. to ensure north is to the top.
+	 * Set Output Source parameter, to make the SDSU controller clock charge to and read out images from 
+	 * the bottom left amplifier (D_C). A second amplifier is also A/D converted and it's values returned
+	 * to create a 'dummy' image, which will hopefully contain clock signals that can be subtracted from the
+	 * real image to improve noise.
 	 * @see #setupDimensions
-	 * @link http://ltdevsrv.livjm.ac.uk/~dev/o/ccd/cdocs/ccd_dsp.html#CCD_DSP_DEINTERLACE_TYPE
+	 * @link http://ltdevsrv.livjm.ac.uk/~dev/o/ccd/cdocs/ccd_dsp.html#CCD_DSP_AMPLIFIER
 	 */
-	public final static int DSP_DEINTERLACE_FLIP_Y = 		2;
+	public final static int DSP_AMPLIFIER_DUMMY_BOTTOM_LEFT   =        0x445f43;	
 	/**
-	 * De-interlace type. This setting flips the output image in X and Y, if the CCD was readout from the
-	 * "wrong" amplifier, i.e. to ensure north is to the top and east to the left.
+	 * Set Output Source parameter, to make the SDSU controller clock charge to and read out images from 
+	 * the bottom right amplifier (D_D). A second amplifier is also A/D converted and it's values returned
+	 * to create a 'dummy' image, which will hopefully contain clock signals that can be subtracted from the
+	 * real image to improve noise.
 	 * @see #setupDimensions
-	 * @link http://ltdevsrv.livjm.ac.uk/~dev/o/ccd/cdocs/ccd_dsp.html#CCD_DSP_DEINTERLACE_TYPE
+	 * @link http://ltdevsrv.livjm.ac.uk/~dev/o/ccd/cdocs/ccd_dsp.html#CCD_DSP_AMPLIFIER
 	 */
-	public final static int DSP_DEINTERLACE_FLIP_XY = 		3;
+	public final static int DSP_AMPLIFIER_DUMMY_BOTTOM_RIGHT   =        0x445f44;	
 	/**
-	 * De-interlace type. This setting deinterlaces split parallel readout.
+	 * Set Output Source parameter, to make the SDSU controller clock charge to and read out images from 
+	 * the both left amplifiers (DBL). The other two amplifiers are also A/D converted and their values returned
+	 * to create a 'dummy' image, which will hopefully contain clock signals that can be subtracted from the
+	 * real image to improve noise.
 	 * @see #setupDimensions
-	 * @link http://ltdevsrv.livjm.ac.uk/~dev/o/ccd/cdocs/ccd_dsp.html#CCD_DSP_DEINTERLACE_TYPE
+	 * @link http://ltdevsrv.livjm.ac.uk/~dev/o/ccd/cdocs/ccd_dsp.html#CCD_DSP_AMPLIFIER
 	 */
-	public final static int DSP_DEINTERLACE_SPLIT_PARALLEL = 	4;
+	public final static int DSP_AMPLIFIER_DUMMY_BOTH_LEFT   =            0x44424c;	
 	/**
-	 * De-interlace type. This setting deinterlaces split serial readout.
+	 * Set Output Source parameter, to make the SDSU controller clock charge to and read out images from 
+	 * the both left amplifiers (DBR). The other two amplifiers are also A/D converted and their values returned
+	 * to create a 'dummy' image, which will hopefully contain clock signals that can be subtracted from the
+	 * real image to improve noise.
 	 * @see #setupDimensions
-	 * @link http://ltdevsrv.livjm.ac.uk/~dev/o/ccd/cdocs/ccd_dsp.html#CCD_DSP_DEINTERLACE_TYPE
+	 * @link http://ltdevsrv.livjm.ac.uk/~dev/o/ccd/cdocs/ccd_dsp.html#CCD_DSP_AMPLIFIER
 	 */
-	public final static int DSP_DEINTERLACE_SPLIT_SERIAL =  	5;
-	/**
-	 * De-interlace type. This setting deinterlaces split quad readout.
-	 * @see #setupDimensions
-	 * @link http://ltdevsrv.livjm.ac.uk/~dev/o/ccd/cdocs/ccd_dsp.html#CCD_DSP_DEINTERLACE_TYPE
-	 */
-	public final static int DSP_DEINTERLACE_SPLIT_QUAD = 	        6;
+	public final static int DSP_AMPLIFIER_DUMMY_BOTH_RIGHT   =            0x444252;
 
 // ccd_exposure.h
 	/* These constants should be the same as those in ccd_exposure.h */
@@ -458,6 +467,18 @@ public class CCDLibrary
 	 * Native wrapper to return this module's error number.
 	 */
 	private native int CCD_PCI_Get_Error_Number();
+	// ccd_pixel_stream.h
+	/**
+	 * Native wrapper of CCD_Pixel_Stream_Parse_Pixel_List and CCD_Pixel_Stream_Set_Pixel_Stream_Entry
+	 * to set a pixel stream entry.
+	 * @exception CCDLibraryNativeException This method throws a CCDLibraryNativeException if it failed.
+	 */
+	private native void CCD_Pixel_Stream_Set_Pixel_Stream_Entry(int amplifier,String pixelListString,
+						 boolean isSplitSerial) throws CCDLibraryNativeException;
+	/**
+	 * Native wrapper to return this module's error number.
+	 */
+	private native int CCD_Pixel_Stream_Get_Error_Number();
 // ccd_setup.h
 	/**
 	 * Native wrapper to libo_ccd routine that does the CCD setup.
@@ -477,7 +498,7 @@ public class CCDLibrary
 	 * @exception CCDLibraryNativeException This method throws a CCDLibraryNativeException if it failed.
 	 */
 	private native void CCD_Setup_Dimensions(int ncols,int nrows,int nsbin,int npbin,
-						 int amplifier,int deinterlace_setting,int window_flags,
+						 int amplifier,int window_flags,
 						 CCDLibrarySetupWindow window_list[]) throws CCDLibraryNativeException;
 	/**
 	 * Native wrapper to libo_ccd routine that performs a hardware test data link.
@@ -508,10 +529,6 @@ public class CCDLibrary
 	 * Native wrapper to libo_ccd routine that gets the last configured readout amplifier.
 	 */
 	private native int CCD_Setup_Get_Amplifier();
-	/**
-	 * Native wrapper to libo_ccd routine that gets the last configured deinterlace type.
-	 */
-	private native int CCD_Setup_Get_DeInterlace_Type();
 	/**
 	 * Native wrapper to libo_ccd routine that gets whether a setup operation has been completed 
 	 * successfully.
@@ -704,9 +721,14 @@ public class CCDLibrary
 	 * 	<li><a href="#DSP_AMPLIFIER_TOP_RIGHT">DSP_AMPLIFIER_TOP_RIGHT</a>
 	 * 	<li><a href="#DSP_AMPLIFIER_BOTTOM_LEFT">DSP_AMPLIFIER_BOTTOM_LEFT</a>
 	 * 	<li><a href="#DSP_AMPLIFIER_BOTTOM_RIGHT">DSP_AMPLIFIER_BOTTOM_RIGHT</a>
-	 * 	<li><a href="#DSP_AMPLIFIER_BOTH_LEFT">DSP_AMPLIFIER_BOTH_LEFT</a>
 	 * 	<li><a href="#DSP_AMPLIFIER_BOTH_RIGHT">DSP_AMPLIFIER_BOTH_RIGHT</a>
 	 * 	<li><a href="#DSP_AMPLIFIER_ALL">DSP_AMPLIFIER_ALL</a>
+	 * 	<li><a href="#DSP_AMPLIFIER_DUMMY_TOP_LEFT">DSP_AMPLIFIER_DUMMY_TOP_LEFT</a>
+	 * 	<li><a href="#DSP_AMPLIFIER_DUMMY_TOP_RIGHT">DSP_AMPLIFIER_DUMMY_TOP_RIGHT</a>
+	 * 	<li><a href="#DSP_AMPLIFIER_DUMMY_BOTTOM_LEFT">DSP_AMPLIFIER_DUMMY_BOTTOM_LEFT</a>
+	 * 	<li><a href="#DSP_AMPLIFIER_DUMMY_BOTTOM_RIGHT">DSP_AMPLIFIER_DUMMY_BOTTOM_RIGHT</a>
+	 * 	<li><a href="#DSP_AMPLIFIER_DUMMY_BOTH_LEFT">DSP_AMPLIFIER_DUMMY_BOTH_LEFT</a>
+	 * 	<li><a href="#DSP_AMPLIFIER_DUMMY_BOTH_RIGHT">DSP_AMPLIFIER_DUMMY_BOTH_RIGHT</a>
 	 * 	</ul>.
 	 * @exception CCDLibraryFormatException If the string was not an accepted value an exception is thrown.
 	 */
@@ -720,49 +742,72 @@ public class CCDLibrary
 			return DSP_AMPLIFIER_BOTTOM_LEFT;
 		if(s.equals("DSP_AMPLIFIER_BOTTOM_RIGHT"))
 			return DSP_AMPLIFIER_BOTTOM_RIGHT;
-		if(s.equals("DSP_AMPLIFIER_BOTH_LEFT"))
-			return DSP_AMPLIFIER_BOTH_LEFT;
 		if(s.equals("DSP_AMPLIFIER_BOTH_RIGHT"))
 			return DSP_AMPLIFIER_BOTH_RIGHT;
 		if(s.equals("DSP_AMPLIFIER_ALL"))
 			return DSP_AMPLIFIER_ALL;
+		if(s.equals("DSP_AMPLIFIER_DUMMY_TOP_LEFT"))
+			return DSP_AMPLIFIER_DUMMY_TOP_LEFT;
+		if(s.equals("DSP_AMPLIFIER_DUMMY_TOP_RIGHT"))
+			return DSP_AMPLIFIER_DUMMY_TOP_RIGHT;
+		if(s.equals("DSP_AMPLIFIER_DUMMY_BOTTOM_LEFT"))
+			return DSP_AMPLIFIER_DUMMY_BOTTOM_LEFT;
+		if(s.equals("DSP_AMPLIFIER_DUMMY_BOTTOM_RIGHT"))
+			return DSP_AMPLIFIER_DUMMY_BOTTOM_RIGHT;
+		if(s.equals("DSP_AMPLIFIER_DUMMY_BOTH_LEFT"))
+			return DSP_AMPLIFIER_DUMMY_BOTH_LEFT;
+		if(s.equals("DSP_AMPLIFIER_DUMMY_BOTH_RIGHT"))
+			return DSP_AMPLIFIER_DUMMY_BOTH_RIGHT;
 		throw new CCDLibraryFormatException("ngat.o.ccd.CCDLibrary","dspAmplifierFromString",s);
 	}
 
 	/**
-	 * Routine to parse a string containing a representation of a valid deinterlace type and to return
-	 * the numeric value of that type, suitable for passing into 
-	 * <a href="#setupDimensions">setupDimensions</a> and other methods.
-	 * @param s The string to parse.
-	 * @return The deinterlace type number, one of:
+	 * Method to take an amplifier and return a String describing it.
+	 * @param amplifier The amplifier number, one of:
 	 * 	<ul>
-	 * 	<li><a href="#DSP_DEINTERLACE_SINGLE">DSP_DEINTERLACE_SINGLE</a>
-	 * 	<li><a href="#DSP_DEINTERLACE_FLIP_X">DSP_DEINTERLACE_FLIP_X</a>
-	 * 	<li><a href="#DSP_DEINTERLACE_FLIP_Y">DSP_DEINTERLACE_FLIP_Y</a>
-	 * 	<li><a href="#DSP_DEINTERLACE_FLIP_XY">DSP_DEINTERLACE_FLIP_XY</a>
-	 * 	<li><a href="#DSP_DEINTERLACE_SPLIT_PARALLEL">DSP_DEINTERLACE_SPLIT_PARALLEL</a>
-	 * 	<li><a href="#DSP_DEINTERLACE_SPLIT_SERIAL">DSP_DEINTERLACE_SPLIT_SERIAL</a>
-	 * 	<li><a href="#DSP_DEINTERLACE_SPLIT_QUAD">DSP_DEINTERLACE_SPLIT_QUAD</a>
+	 * 	<li><a href="#DSP_AMPLIFIER_TOP_LEFT">DSP_AMPLIFIER_TOP_LEFT</a>
+	 * 	<li><a href="#DSP_AMPLIFIER_TOP_RIGHT">DSP_AMPLIFIER_TOP_RIGHT</a>
+	 * 	<li><a href="#DSP_AMPLIFIER_BOTTOM_LEFT">DSP_AMPLIFIER_BOTTOM_LEFT</a>
+	 * 	<li><a href="#DSP_AMPLIFIER_BOTTOM_RIGHT">DSP_AMPLIFIER_BOTTOM_RIGHT</a>
+	 * 	<li><a href="#DSP_AMPLIFIER_BOTH_RIGHT">DSP_AMPLIFIER_BOTH_RIGHT</a>
+	 * 	<li><a href="#DSP_AMPLIFIER_ALL">DSP_AMPLIFIER_ALL</a>
+	 * 	<li><a href="#DSP_AMPLIFIER_DUMMY_TOP_LEFT">DSP_AMPLIFIER_DUMMY_TOP_LEFT</a>
+	 * 	<li><a href="#DSP_AMPLIFIER_DUMMY_TOP_RIGHT">DSP_AMPLIFIER_DUMMY_TOP_RIGHT</a>
+	 * 	<li><a href="#DSP_AMPLIFIER_DUMMY_BOTTOM_LEFT">DSP_AMPLIFIER_DUMMY_BOTTOM_LEFT</a>
+	 * 	<li><a href="#DSP_AMPLIFIER_DUMMY_BOTTOM_RIGHT">DSP_AMPLIFIER_DUMMY_BOTTOM_RIGHT</a>
+	 * 	<li><a href="#DSP_AMPLIFIER_DUMMY_BOTH_LEFT">DSP_AMPLIFIER_DUMMY_BOTH_LEFT</a>
+	 * 	<li><a href="#DSP_AMPLIFIER_DUMMY_BOTH_RIGHT">DSP_AMPLIFIER_DUMMY_BOTH_RIGHT</a>
 	 * 	</ul>.
-	 * @exception CCDLibraryFormatException If the string was not an accepted value an exception is thrown.
+	 * @return A string representation of the amplifier.
+	 * @exception CCDLibraryFormatException If the amplifier was not a known value an exception is thrown.
 	 */
-	public static int dspDeinterlaceFromString(String s) throws CCDLibraryFormatException
+	public static String dspAmplifierToString(int amplifier) throws CCDLibraryFormatException
 	{
-		if(s.equals("DSP_DEINTERLACE_SINGLE"))
-			return DSP_DEINTERLACE_SINGLE;
-		if(s.equals("DSP_DEINTERLACE_FLIP_X"))
-			return DSP_DEINTERLACE_FLIP_X;
-		if(s.equals("DSP_DEINTERLACE_FLIP_Y"))
-			return DSP_DEINTERLACE_FLIP_Y;
-		if(s.equals("DSP_DEINTERLACE_FLIP_XY"))
-			return DSP_DEINTERLACE_FLIP_XY;
-		if(s.equals("DSP_DEINTERLACE_SPLIT_PARALLEL"))
-			return DSP_DEINTERLACE_SPLIT_PARALLEL;
-		if(s.equals("DSP_DEINTERLACE_SPLIT_SERIAL"))
-			return DSP_DEINTERLACE_SPLIT_SERIAL;
-		if(s.equals("DSP_DEINTERLACE_SPLIT_QUAD"))
-			return DSP_DEINTERLACE_SPLIT_QUAD;
-		throw new CCDLibraryFormatException("ngat.o.ccd.CCDLibrary","dspDeinterlaceFromString",s);
+		if(amplifier == DSP_AMPLIFIER_TOP_LEFT)
+			return "TOP_LEFT";
+		if(amplifier == DSP_AMPLIFIER_TOP_RIGHT)
+			return "TOP_RIGHT";
+		if(amplifier == DSP_AMPLIFIER_BOTTOM_LEFT)
+			return "BOTTOM_LEFT";
+		if(amplifier == DSP_AMPLIFIER_BOTTOM_RIGHT)
+			return "BOTTOM_RIGHT";
+		if(amplifier == DSP_AMPLIFIER_BOTH_RIGHT)
+			return "BOTH_RIGHT";
+		if(amplifier == DSP_AMPLIFIER_ALL)
+			return "ALL";
+		if(amplifier == DSP_AMPLIFIER_DUMMY_TOP_LEFT)
+			return "DUMMY_TOP_LEFT";
+		if(amplifier == DSP_AMPLIFIER_DUMMY_TOP_RIGHT)
+			return "DUMMY_TOP_RIGHT";
+		if(amplifier == DSP_AMPLIFIER_DUMMY_BOTTOM_LEFT)
+			return "DUMMY_BOTTOM_LEFT";
+		if(amplifier == DSP_AMPLIFIER_DUMMY_BOTTOM_RIGHT)
+			return "DUMMY_BOTTOM_RIGHT";
+		if(amplifier == DSP_AMPLIFIER_DUMMY_BOTH_LEFT)
+			return "DUMMY_BOTH_LEFT";
+		if(amplifier == DSP_AMPLIFIER_DUMMY_BOTH_RIGHT)
+			return "DUMMY_BOTH_RIGHT";
+		throw new CCDLibraryFormatException("ngat.o.ccd.CCDLibrary","dspAmplifierToString",amplifier);
 	}
 
 // ccd_exposure.h
@@ -1202,6 +1247,49 @@ public class CCDLibrary
 		return CCD_PCI_Get_Error_Number();
 	}
 
+	// ccd_pixel_stream.h
+	/**
+	 * Method to set the pixel stream entry for a specified amplifier. This determines
+	 * how the pixel stream received from the SDSU controller on a readout, is de-interlaced
+	 * into the image memory then saved to disk in a FITS file.
+	 * @param amplifier The amplifier to use when reading out CCD data. One of:
+	 * 	<a href="#DSP_AMPLIFIER_TOP_LEFT">DSP_AMPLIFIER_TOP_LEFT</a>,
+	 * 	<a href="#DSP_AMPLIFIER_TOP_RIGHT">DSP_AMPLIFIER_TOP_RIGHT</a>,
+	 * 	<a href="#DSP_AMPLIFIER_BOTTOM_LEFT">DSP_AMPLIFIER_BOTTOM_LEFT</a>,
+	 * 	<a href="#DSP_AMPLIFIER_BOTTOM_RIGHT">DSP_AMPLIFIER_BOTTOM_RIGHT</a>,
+	 * 	<a href="#DSP_AMPLIFIER_BOTH_LEFT">DSP_AMPLIFIER_BOTH_LEFT</a>,
+	 * 	<a href="#DSP_AMPLIFIER_BOTH_RIGHT">DSP_AMPLIFIER_BOTH_RIGHT</a>, 
+	 * 	<a href="#DSP_AMPLIFIER_ALL">DSP_AMPLIFIER_ALL</a>,
+	 * 	<a href="#DSP_AMPLIFIER_DUMMY_TOP_LEFT">DSP_AMPLIFIER_DUMMY_TOP_LEFT</a>,
+	 * 	<a href="#DSP_AMPLIFIER_DUMMY_TOP_RIGHT">DSP_AMPLIFIER_DUMMY_TOP_RIGHT</a>,
+	 * 	<a href="#DSP_AMPLIFIER_DUMMY_BOTTOM_LEFT">DSP_AMPLIFIER_DUMMY_BOTTOM_LEFT</a>,
+	 * 	<a href="#DSP_AMPLIFIER_DUMMY_BOTTOM_RIGHT">DSP_AMPLIFIER_DUMMY_BOTTOM_RIGHT</a>,
+	 * 	<a href="#DSP_AMPLIFIER_DUMMY_BOTH_LEFT">DSP_AMPLIFIER_DUMMY_BOTH_LEFT</a>,
+	 * 	<a href="#DSP_AMPLIFIER_DUMMY_BOTH_RIGHT">DSP_AMPLIFIER_DUMMY_BOTH_RIGHT</a>.
+	 * @param pixelListString The string containing the string representation of the list, of the form:
+	 *        [I|i]&lt;image number&gt;[C|c]&lt;corner number&gt;
+	 *        [[I|i]&lt;image number&gt;[C|c]&lt;corner number&gt;...]
+	 * @param isSplitSerial A boolean. If TRUE, the pixel stream is split in a serial direction, 
+	 *        and hence a differentcalculation is needed for determine the pixel's position 
+	 *        in the de-interlaced image.
+	 * @see #CCD_Pixel_Stream_Set_Pixel_Stream_Entry
+	 */
+	public void pixelStreamEntrySet(int amplifier,String pixelListString,boolean isSplitSerial) 
+		throws CCDLibraryNativeException
+	{
+		CCD_Pixel_Stream_Set_Pixel_Stream_Entry(amplifier,pixelListString,isSplitSerial);
+	}
+
+	/**
+	 * Returns the current error number from this module of the library. A zero means there is no error.
+	 * @return Returns an error number.
+	 * @see #CCD_Pixel_Stream_Get_Error_Number
+	 */
+	public int getPixelStreamErrorNumber()
+	{
+		return CCD_Pixel_Stream_Get_Error_Number();
+	}
+
 // ccd_setup.h
 	/**
 	 * This routine sets up the SDSU CCD Controller.
@@ -1278,16 +1366,15 @@ public class CCDLibrary
 	 * 	<a href="#DSP_AMPLIFIER_TOP_RIGHT">DSP_AMPLIFIER_TOP_RIGHT</a>,
 	 * 	<a href="#DSP_AMPLIFIER_BOTTOM_LEFT">DSP_AMPLIFIER_BOTTOM_LEFT</a>,
 	 * 	<a href="#DSP_AMPLIFIER_BOTTOM_RIGHT">DSP_AMPLIFIER_BOTTOM_RIGHT</a>,
-	 * 	<a href="#DSP_AMPLIFIER_BOTH_LEFT">DSP_AMPLIFIER_BOTH_LEFT</a> or 
-	 * 	<a href="#DSP_AMPLIFIER_BOTH_RIGHT">DSP_AMPLIFIER_BOTH_RIGHT</a> or 
-	 * 	<a href="#DSP_AMPLIFIER_ALL">DSP_AMPLIFIER_ALL</a>.
-	 * @param deinterlaceSetting The algorithm to use for deinterlacing the resulting data. The data needs to be
-	 * 	deinterlaced if the CCD is read out from multiple readouts.One of:
-	 * 	<a href="#DSP_DEINTERLACE_SINGLE">DSP_DEINTERLACE_SINGLE</a>,
-	 * 	<a href="#DSP_DEINTERLACE_FLIP">DSP_DEINTERLACE_FLIP</a>,
-	 * 	<a href="#DSP_DEINTERLACE_SPLIT_PARALLEL">DSP_DEINTERLACE_SPLIT_PARALLEL</a>,
-	 * 	<a href="#DSP_DEINTERLACE_SPLIT_SERIAL">DSP_DEINTERLACE_SPLIT_SERIAL</a>,
-	 * 	<a href="#DSP_DEINTERLACE_SPLIT_QUAD">DSP_DEINTERLACE_SPLIT_QUAD</a>.
+	 * 	<a href="#DSP_AMPLIFIER_BOTH_LEFT">DSP_AMPLIFIER_BOTH_LEFT</a>,
+	 * 	<a href="#DSP_AMPLIFIER_BOTH_RIGHT">DSP_AMPLIFIER_BOTH_RIGHT</a>, 
+	 * 	<a href="#DSP_AMPLIFIER_ALL">DSP_AMPLIFIER_ALL</a>,
+	 * 	<a href="#DSP_AMPLIFIER_DUMMY_TOP_LEFT">DSP_AMPLIFIER_DUMMY_TOP_LEFT</a>,
+	 * 	<a href="#DSP_AMPLIFIER_DUMMY_TOP_RIGHT">DSP_AMPLIFIER_DUMMY_TOP_RIGHT</a>,
+	 * 	<a href="#DSP_AMPLIFIER_DUMMY_BOTTOM_LEFT">DSP_AMPLIFIER_DUMMY_BOTTOM_LEFT</a>,
+	 * 	<a href="#DSP_AMPLIFIER_DUMMY_BOTTOM_RIGHT">DSP_AMPLIFIER_DUMMY_BOTTOM_RIGHT</a>,
+	 * 	<a href="#DSP_AMPLIFIER_DUMMY_BOTH_LEFT">DSP_AMPLIFIER_DUMMY_BOTH_LEFT</a>,
+	 * 	<a href="#DSP_AMPLIFIER_DUMMY_BOTH_RIGHT">DSP_AMPLIFIER_DUMMY_BOTH_RIGHT</a>.
 	 * @param windowFlags Flags describing which windows are in use. A bit-field combination of:
 	 * 	<a href="#SETUP_WINDOW_ONE">SETUP_WINDOW_ONE</a>,
 	 * 	<a href="#SETUP_WINDOW_TWO">SETUP_WINDOW_TWO</a>,
@@ -1300,11 +1387,10 @@ public class CCDLibrary
 	 * @see #setupAbort
 	 * @see #CCD_Setup_Dimensions
 	 */
-	public void setupDimensions(int ncols,int nrows,int nsbin,int npbin,
-		int amplifier,int deinterlaceSetting,
-		int windowFlags,CCDLibrarySetupWindow windowList[]) throws CCDLibraryNativeException
+	public void setupDimensions(int ncols,int nrows,int nsbin,int npbin,int amplifier,int windowFlags,
+				    CCDLibrarySetupWindow windowList[]) throws CCDLibraryNativeException
 	{
-		CCD_Setup_Dimensions(ncols,nrows,nsbin,npbin,amplifier,deinterlaceSetting,windowFlags,windowList);
+		CCD_Setup_Dimensions(ncols,nrows,nsbin,npbin,amplifier,windowFlags,windowList);
 	}
 
 	/**
@@ -1388,32 +1474,18 @@ public class CCDLibrary
 	 * @see #DSP_AMPLIFIER_TOP_RIGHT
 	 * @see #DSP_AMPLIFIER_BOTTOM_LEFT
 	 * @see #DSP_AMPLIFIER_BOTTOM_RIGHT
-	 * @see #DSP_AMPLIFIER_BOTH_LEFT
 	 * @see #DSP_AMPLIFIER_BOTH_RIGHT
 	 * @see #DSP_AMPLIFIER_ALL
+	 * @see #DSP_AMPLIFIER_DUMMY_TOP_LEFT
+	 * @see #DSP_AMPLIFIER_DUMMY_TOP_RIGHT
+	 * @see #DSP_AMPLIFIER_DUMMY_BOTTOM_LEFT
+	 * @see #DSP_AMPLIFIER_DUMMY_BOTTOM_RIGHT
+	 * @see #DSP_AMPLIFIER_DUMMY_BOTH_LEFT
+	 * @see #DSP_AMPLIFIER_DUMMY_BOTH_RIGHT
 	 */
 	public int getAmplifier()
 	{
 		return CCD_Setup_Get_Amplifier();
-	}
-
-	/**
-	 * Routine to get the deinterlace type last passed into setupDimensions. This value
-	 * is got from the stored setup data, rather than querying the camera directly.
-	 * @return Returns an integer representing the deinterlace type.
-	 * @see #setupDimensions
-	 * @see #CCD_Setup_Get_DeInterlace_Type
-	 * @see #DSP_DEINTERLACE_SINGLE
-	 * @see #DSP_DEINTERLACE_FLIP_X
-	 * @see #DSP_DEINTERLACE_FLIP_Y
-	 * @see #DSP_DEINTERLACE_FLIP_XY
-	 * @see #DSP_DEINTERLACE_SPLIT_PARALLEL
-	 * @see #DSP_DEINTERLACE_SPLIT_SERIAL
-	 * @see #DSP_DEINTERLACE_SPLIT_QUAD 
-	 */
-	public int getDeInterlaceType()
-	{
-		return CCD_Setup_Get_DeInterlace_Type();
 	}
 
 	/**
@@ -1691,6 +1763,10 @@ public class CCDLibrary
  
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.4  2012/07/24 08:26:13  cjm
+// CHanged CCD_Setup_Startup and CCD_Interface_Memory_Map to supply
+// the length parameter to make length changes easier.
+//
 // Revision 1.3  2012/07/17 17:17:34  cjm
 // Changed API for retrieving binned ncols and nrows.
 // Added DSP_AMPLIFIER_BOTH_LEFT.
