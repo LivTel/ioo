@@ -1,5 +1,5 @@
 /* ccd_setup.h
-** $Header: /space/home/eng/cjm/cvs/ioo/ccd/include/ccd_setup.h,v 1.4 2013-03-21 16:05:53 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/ioo/ccd/include/ccd_setup.h,v 1.5 2013-03-25 15:26:42 cjm Exp $
 */
 #ifndef CCD_SETUP_H
 #define CCD_SETUP_H
@@ -43,14 +43,16 @@
  * @see #CCD_Setup_Dimensions
  */
 #define CCD_SETUP_WINDOW_ALL	(CCD_SETUP_WINDOW_ONE|CCD_SETUP_WINDOW_TWO| \
-					CCD_SETUP_WINDOW_THREE|CCD_SETUP_WINDOW_FOUR)
+				 CCD_SETUP_WINDOW_THREE|CCD_SETUP_WINDOW_FOUR)
 
 /**
  * Memory buffer size for mmap/malloc. Should be bigger than 1 array (4096x4112) number of pixels
  * (pixels are 16 bits/2 bytes). Add in prescan (50 pixels) at each amplifier.
  * We currently have a large POSTSCAN region as well (200 pixels).
+ * We must now double the size needed when dummy outputs are used, as the number of pixels
+ * returned in a readout doubles.
  */
-#define CCD_SETUP_DEFAULT_MEMORY_BUFFER_SIZE      (4400*4400*2)
+#define CCD_SETUP_DEFAULT_MEMORY_BUFFER_SIZE      (8800*4400*2)
 
 /* These enum definitions should match with those in CCDLibrary.java */
 /**
@@ -96,25 +98,29 @@ struct CCD_Setup_Window_Struct
 extern void CCD_Setup_Initialise(void);
 extern void CCD_Setup_Data_Initialise(CCD_Interface_Handle_T* handle);
 extern int CCD_Setup_Startup(CCD_Interface_Handle_T* handle,enum CCD_SETUP_LOAD_TYPE pci_load_type,char *pci_filename,
-			     long memory_map_length,
-	enum CCD_SETUP_LOAD_TYPE timing_load_type,int timing_application_number,char *timing_filename,
-	enum CCD_SETUP_LOAD_TYPE utility_load_type,int utility_application_number,char *utility_filename,
-	double target_temperature,enum CCD_DSP_GAIN gain,int gain_speed,int idle);
+		     long memory_map_length,int load_timing_software,
+		     enum CCD_SETUP_LOAD_TYPE timing_load_type,int timing_application_number,char *timing_filename,
+		     int load_utility_software,
+		     enum CCD_SETUP_LOAD_TYPE utility_load_type,int utility_application_number,char *utility_filename,
+		     int set_temperature,double target_temperature,
+		     enum CCD_DSP_GAIN gain,int gain_speed,int idle);
 extern int CCD_Setup_Shutdown(CCD_Interface_Handle_T* handle);
 extern int CCD_Setup_Dimensions(CCD_Interface_Handle_T* handle,int ncols,int nrows,int nsbin,int npbin,
-	enum CCD_DSP_AMPLIFIER amplifier,enum CCD_DSP_DEINTERLACE_TYPE deinterlace_setting,
-	int window_flags,struct CCD_Setup_Window_Struct window_list[]);
-extern int CCD_Setup_Hardware_Test(CCD_Interface_Handle_T* handle,int test_count);
+				enum CCD_DSP_AMPLIFIER amplifier,
+				int window_flags,struct CCD_Setup_Window_Struct window_list[]);
+extern int CCD_Setup_Hardware_Test(CCD_Interface_Handle_T* handle,int test_count,
+				   int test_timing_board,int test_utility_board);
 extern void CCD_Setup_Abort(void);
 extern int CCD_Setup_Get_Binned_NCols(CCD_Interface_Handle_T* handle);
 extern int CCD_Setup_Get_Binned_NRows(CCD_Interface_Handle_T* handle);
 extern int CCD_Setup_Get_NSBin(CCD_Interface_Handle_T* handle);
 extern int CCD_Setup_Get_NPBin(CCD_Interface_Handle_T* handle);
+extern int CCD_Setup_Get_Final_NCols(CCD_Interface_Handle_T* handle);
+extern int CCD_Setup_Get_Final_NRows(CCD_Interface_Handle_T* handle);
 extern int CCD_Setup_Get_Readout_Pixel_Count(CCD_Interface_Handle_T* handle);
 extern int CCD_Setup_Get_Window_Pixel_Count(CCD_Interface_Handle_T* handle,int window_index);
 extern int CCD_Setup_Get_Window_Width(CCD_Interface_Handle_T* handle,int window_index);
 extern int CCD_Setup_Get_Window_Height(CCD_Interface_Handle_T* handle,int window_index);
-extern enum CCD_DSP_DEINTERLACE_TYPE CCD_Setup_Get_DeInterlace_Type(CCD_Interface_Handle_T* handle);
 extern enum CCD_DSP_GAIN CCD_Setup_Get_Gain(CCD_Interface_Handle_T* handle);
 extern enum CCD_DSP_AMPLIFIER CCD_Setup_Get_Amplifier(CCD_Interface_Handle_T* handle);
 extern int CCD_Setup_Get_Idle(CCD_Interface_Handle_T* handle);
