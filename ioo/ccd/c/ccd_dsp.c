@@ -1,12 +1,12 @@
 /* ccd_dsp.c
 ** ccd library
-** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ccd_dsp.c,v 1.4 2012-07-17 16:54:04 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ccd_dsp.c,v 1.5 2013-03-25 15:15:03 cjm Exp $
 */
 /**
  * ccd_dsp.c contains all the SDSU CCD Controller commands. Commands are passed to the 
  * controller using the <a href="ccd_interface.html">CCD_Interface_</a> calls.
  * @author SDSU, Chris Mottram
- * @version $Revision: 1.4 $
+ * @version $Revision: 1.5 $
  */
 /**
  * This hash define is needed before including source files give us POSIX.4/IEEE1003.1b-1993 prototypes
@@ -44,7 +44,7 @@
 /**
  * Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ccd_dsp.c,v 1.4 2012-07-17 16:54:04 cjm Exp $";
+static char rcsid[] = "$Id: ccd_dsp.c,v 1.5 2013-03-25 15:15:03 cjm Exp $";
 
 /* defines */
 /**
@@ -853,7 +853,10 @@ int CCD_DSP_Command_SGN(CCD_Interface_Handle_T* handle,enum CCD_DSP_GAIN gain,in
  * @param amplifier The amplifier to use when reading out the CCD. One of:
  * 	CCD_DSP_AMPLIFIER_TOP_LEFT, CCD_DSP_AMPLIFIER_TOP_RIGHT , 
  *      CCD_DSP_AMPLIFIER_BOTTOM_LEFT, CCD_DSP_AMPLIFIER_BOTTOM_RIGHT, 
- *      CCD_DSP_AMPLIFIER_BOTH_LEFT,CCD_DSP_AMPLIFIER_BOTH_RIGHT or CCD_DSP_AMPLIFIER_ALL.
+ *      CCD_DSP_AMPLIFIER_BOTH_RIGHT, CCD_DSP_AMPLIFIER_ALL,
+ * 	CCD_DSP_AMPLIFIER_DUMMY_TOP_LEFT, CCD_DSP_AMPLIFIER_DUMMY_TOP_RIGHT , 
+ *      CCD_DSP_AMPLIFIER_DUMMY_BOTTOM_LEFT, CCD_DSP_AMPLIFIER_DUMMY_BOTTOM_RIGHT, 
+ *      CCD_DSP_AMPLIFIER_DUMMY_BOTH_LEFT or CCD_DSP_AMPLIFIER_DUMMY_BOTH_RIGHT.
  * @return The routine returns DON if the command succeeded and FALSE if the command failed.
  * @see #DSP_Send_Sos
  * @see #DSP_Check_Reply
@@ -2081,36 +2084,6 @@ char *CCD_DSP_Print_Mem_Space(enum CCD_DSP_MEM_SPACE mem_space)
 }
 
 /**
- * Return a descriptive string based on the specified deinterlace type.
- * @param deinterlace The deinterlace type.
- * @return A descriptive string, one of: "Single","Flip X","Flip Y","Flip XY",
- *         "Split Parallel","Split Serial","Split Quad","UNKNOWN".
- * @see #CCD_DSP_DEINTERLACE_TYPE
- */
-char *CCD_DSP_Print_DeInterlace(enum CCD_DSP_DEINTERLACE_TYPE deinterlace)
-{
-	switch(deinterlace)
-	{
-		case CCD_DSP_DEINTERLACE_SINGLE:
-			return "Single";
-		case CCD_DSP_DEINTERLACE_FLIP_X:
-			return "Flip X";
-		case CCD_DSP_DEINTERLACE_FLIP_Y:
-			return "Flip Y";
-		case CCD_DSP_DEINTERLACE_FLIP_XY:
-			return "Flip XY";
-		case CCD_DSP_DEINTERLACE_SPLIT_PARALLEL:
-			return "Split Parallel";
-		case CCD_DSP_DEINTERLACE_SPLIT_SERIAL:
-			return "Split Serial";
-		case CCD_DSP_DEINTERLACE_SPLIT_QUAD:
-			return "Split Quad";
-		default:
-			return "UNKNOWN";
-	}
-}
-
-/**
  * This routine returns the current stste of the Abort flag.
  * The Abort flag is defined in DSP_Data and is set to true when
  * the user wants to stop execution mid-commend.
@@ -3165,6 +3138,9 @@ static int DSP_String_To_Manual_Command(char *command_string)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.4  2012/07/17 16:54:04  cjm
+** Changed comment.
+**
 ** Revision 1.3  2012/01/11 15:04:55  cjm
 ** Comment changes relating to adding CCD_DSP_AMPLIFIER_BOTH_RIGHT.
 **
