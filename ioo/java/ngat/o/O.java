@@ -1,5 +1,5 @@
 // O.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/O.java,v 1.3 2012-07-24 08:24:45 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/O.java,v 1.4 2013-03-25 15:01:38 cjm Exp $
 package ngat.o;
 
 import java.lang.*;
@@ -23,14 +23,14 @@ import ngat.message.INST_DP.*;
 /**
  * This class is the start point for the O Control System.
  * @author Chris Mottram
- * @version $Revision: 1.3 $
+ * @version $Revision: 1.4 $
  */
 public class O
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: O.java,v 1.3 2012-07-24 08:24:45 cjm Exp $");
+	public final static String RCSID = new String("$Id: O.java,v 1.4 2013-03-25 15:01:38 cjm Exp $");
 	/**
 	 * Logger channel id.
 	 */
@@ -868,12 +868,14 @@ public class O
 	 * <ul>
 	 * <li>It gets it's configuration from the O config file.
 	 * <li>The CCD library is initialised, the interface opened, and the controller setup.
+	 * <li>It calls configurePixelStream to configure pixel stream entries (de-interlacing)
 	 * </ul>
 	 * @exception CCDLibraryFormatException Thrown if the configuration properties cannot be determined.
 	 * @exception CCDLibraryNativeException Thrown if the call to open or setup the CCD controller fails.
 	 * @exception Exception Thrown if an error occurs.
 	 * @see #ccd
 	 * @see #status
+	 * @see #configurePixelStream
 	 * @see OStatus#getProperty
 	 * @see OStatus#getPropertyInteger
 	 * @see OStatus#getPropertyBoolean
@@ -971,6 +973,8 @@ public class O
 			error(this.getClass().getName()+":startupController:CCD:",e);
 			throw e;
 		}
+		// configure pixel stream entries
+		configurePixelStream();
 	}
 
 	/**
@@ -987,6 +991,56 @@ public class O
 	{
 		ccd.setupShutdown();
 		ccd.interfaceClose();
+	}
+
+	/**
+	 * Configure the CCD library's pixel stream entries (de-interlacing configuration).
+	 * @exception CCDLibraryNativeException Thrown if pixelStreamEntrySet fails.
+	 * @eception CCDLibraryFormatException Thrown if dspAmplifierFromString fails.
+	 * @see #ccd
+	 * @see #status
+	 * @see #log
+	 * @see OStatus#getProperty
+	 * @see OStatus#getPropertyBoolean
+	 * @see ngat.o.ccd.CCDLibrary#dspAmplifierFromString
+	 * @see ngat.o.ccd.CCDLibrary#dspAmplifierToString
+	 * @see ngat.o.ccd.CCDLibrary#pixelStreamEntrySet
+	 */
+	protected void configurePixelStream() throws CCDLibraryNativeException,  CCDLibraryFormatException
+	{
+		int amplifier,index;
+		String pixelListString = null;
+		String amplifierString = null;
+		boolean isSplitSerial,done;
+
+		log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+":configurePixelStream:Started.");
+		done = false;
+		index = 0;
+		while(done == false)
+		{
+			amplifierString = status.getProperty("o.ccd.pixel_stream.entry."+index+".amplifier");
+			// does this entry exist
+			if(amplifierString != null)
+			{
+				log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+":configurePixelStream:Entry:"+
+				    index+" is for amplifier:"+amplifierString);
+				// find other parmeters
+				pixelListString = status.getProperty("o.ccd.pixel_stream.entry."+index+".pixel_list");
+				isSplitSerial  = status.getPropertyBoolean("o.ccd.pixel_stream.entry."+index+
+									   ".split_serial");
+				amplifier = CCDLibrary.dspAmplifierFromString(amplifierString);
+				log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+":configurePixelStream:Entry:"+
+				    index+" amplifier:"+CCDLibrary.dspAmplifierToString(amplifier)+
+				    " pixel list:"+pixelListString+" split serial:"+isSplitSerial);
+				// set this pixel stream entry
+				ccd.pixelStreamEntrySet(amplifier,pixelListString,isSplitSerial);
+				// increment index
+				index++;
+			}
+			else
+				done = true;
+		}// end while
+		log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+":configurePixelStream:Finished.");
 	}
 
 	/**
@@ -1929,6 +1983,9 @@ public class O
 }
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.3  2012/07/24 08:24:45  cjm
+// Changed ccd.setup so the memory map length is retrieved from config and passed in.
+//
 // Revision 1.2  2012/01/11 14:55:18  cjm
 // Added sendBSSCommand method for sending RCS_TO_BSS commands for
 // TWILIGHT_CALIBRATE to send BEAM_STEER.
