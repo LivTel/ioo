@@ -1,5 +1,5 @@
 // FITSImplementation.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/FITSImplementation.java,v 1.11 2012-10-25 14:37:41 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/FITSImplementation.java,v 1.12 2013-03-25 15:01:38 cjm Exp $
 package ngat.o;
 
 import java.lang.*;
@@ -22,14 +22,14 @@ import ngat.util.logging.*;
  * use the hardware  libraries as this is needed to generate FITS files.
  * @see HardwareImplementation
  * @author Chris Mottram
- * @version $Revision: 1.11 $
+ * @version $Revision: 1.12 $
  */
 public class FITSImplementation extends HardwareImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: FITSImplementation.java,v 1.11 2012-10-25 14:37:41 cjm Exp $");
+	public final static String RCSID = new String("$Id: FITSImplementation.java,v 1.12 2013-03-25 15:01:38 cjm Exp $");
 	/**
 	 * Internal constant used when the order number offset defined in the property
 	 * 'o.get_fits.order_number_offset' is not found or is not a valid number.
@@ -991,7 +991,6 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 	 * If windowed is true, the amplifier to use is got from the "o.ccd.config.window.amplifier"
 	 * configuration property. If windowed is false, the amplifier to use is got from the "o.ccd.config.amplifier"
 	 * configuration property.
-	 * This implementation should agree with the eqivalent getDeInterlaceSetting method.
 	 * @param windowed A boolean, should be true if we want to use the amplifier for windowing, false
 	 *         if we want to use the default amplifier.
 	 * @return An integer, representing a valid value to pass into setupDimensions to set the specified
@@ -1047,113 +1046,12 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 	}
 
 	/**
-	 * Method to get an integer representing a SDSU output De-Interlace setting,
-	 * that can be passed into the setupDimensions method of ngat.o.ccd.CCDLibrary. 
-	 * The setting to use depends on whether the exposure will be windowed
-	 * or not, as windowed exposures  sometimes have to use a different amplifier 
-	 * (they can't use the DUAL/QUAD readout amplifier setting). 
-	 * If windowed is true, the amplifier to use is got from the "o.ccd.config.window.amplifier"
-	 * configuration property. If windowed is false, the amplifier to use is got from the "o.ccd.config.amplifier"
-	 * configuration property. The chosen property name is passed to getDeInterlaceSetting to get the
-	 * equivalent de-interlace setting.
-	 * This implementation should agree with the eqivalent getAmplifier method.
-	 * @param windowed A boolean, should be true if we want to use the de-interlace setting for windowing, false
-	 *         if we want to use the default de-interlace setting.
-	 * @return An integer, representing a valid value to pass into setupDimensions to set the specified
-	 *         de-interlace setting.
-	 * @exception NullPointerException Thrown if getDeInterlaceSetting fails.
-	 * @exception CCDLibraryFormatException Thrown if getDeInterlaceSetting fails.
-	 * @see #getDeInterlaceSetting(java.lang.String)
-	 */
-	public int getDeInterlaceSetting(boolean windowed) throws NullPointerException,CCDLibraryFormatException
-	{
-		int deInterlaceSetting;
-
-		if(windowed)
-			deInterlaceSetting = getDeInterlaceSetting("o.ccd.config.window.amplifier");
-		else
-			deInterlaceSetting = getDeInterlaceSetting("o.ccd.config.amplifier");
-		return deInterlaceSetting;
-	}
-
-	/**
-	 * Method to get an integer represeting a SDSU de-interlace setting,
-	 * that can be passed into the setupDimensions method of ngat.o.ccd.CCDLibrary. 
-	 * The amplifier to use is retrieved from the specified property, and the de-interlace setting determined 
-	 * from this.
-	 * @param amplifierPropertyName A string, of the property keyword, the value of which is used to specify the
-	 *        amplifier.
-	 * @return An integer, representing a valid value to pass into setupDimensions to set the specified
-	 *         de-interlace setting.
-	 * @exception NullPointerException Thrown if the property name, or it's value, are null.
-	 * @exception IllegalArgumentException Thrown if the amplifier was not recognised by this method.
-	 * @exception CCDLibraryFormatException Thrown if the derived de-interlace string, which is passed into
-	 *            dspDeinterlaceFromString, does not contain a valid de-interlace setting.
-	 * @see #getAmplifier
-	 * @see ngat.o.ccd.CCDLibrary#dspDeinterlaceFromString
-	 */
-	public int getDeInterlaceSetting(String amplifierPropertyName) throws NullPointerException,
-	                                 IllegalArgumentException,CCDLibraryFormatException
-	{
-		String deInterlaceString = null;
-		int amplifier,deInterlaceSetting;
-
-		amplifier = getAmplifier(amplifierPropertyName);
-		// convert Amplifier to De-Interlace Setting string
-		switch(amplifier)
-		{
-			case CCDLibrary.DSP_AMPLIFIER_TOP_LEFT:
-				// If TOP_LEFT is the natural setting
-				//deInterlaceString = "DSP_DEINTERLACE_SINGLE";
-				// diddly to make this all agree with BOTH_RIGHT
-				deInterlaceString = "DSP_DEINTERLACE_FLIP_XY";
-				break;
-			case CCDLibrary.DSP_AMPLIFIER_TOP_RIGHT:
-				// If TOP_LEFT is the natural setting
-				//deInterlaceString = "DSP_DEINTERLACE_FLIP_X";
-				// diddly to make this all agree with BOTH_RIGHT
-				deInterlaceString = "DSP_DEINTERLACE_FLIP_Y";
-				break;
-			case CCDLibrary.DSP_AMPLIFIER_BOTTOM_LEFT:
-				// If TOP_LEFT is the natural setting
-				//deInterlaceString = "DSP_DEINTERLACE_FLIP_Y";
-				// diddly to make this all agree with BOTH_RIGHT This one untested atm
-				deInterlaceString = "DSP_DEINTERLACE_FLIP_X";
-				break;
-			case CCDLibrary.DSP_AMPLIFIER_BOTTOM_RIGHT:
-				// If TOP_LEFT is the natural setting
-				//deInterlaceString = "DSP_DEINTERLACE_FLIP_XY";
-				// diddly to make this all agree with BOTH_RIGHT
-				deInterlaceString = "DSP_DEINTERLACE_SINGLE";
-				break;
-			case CCDLibrary.DSP_AMPLIFIER_BOTH_LEFT:
-				// If TOP_LEFT is the natural setting
-				//deInterlaceString = "DSP_DEINTERLACE_SPLIT_PARALLEL";
-				// diddly to make this all agree with BOTH_RIGHT
-				// probably also a flip in X? So this is definately wrong atm
-				deInterlaceString = "DSP_DEINTERLACE_SPLIT_PARALLEL";
-				break;
-			case CCDLibrary.DSP_AMPLIFIER_BOTH_RIGHT:
-				deInterlaceString = "DSP_DEINTERLACE_SPLIT_PARALLEL";
-				break;
-			case CCDLibrary.DSP_AMPLIFIER_ALL:
-				deInterlaceString = "DSP_DEINTERLACE_SPLIT_QUAD";
-				break;
-			default:
-				throw new IllegalArgumentException(this.getClass().getName()+
-						       ":getDeInterlaceSetting:Amplifier String of keyword "+
-						       amplifierPropertyName+" was illegal value "+amplifier+".");
-		}
-		// convert de-interlace string into value to pass to ccd.
-		deInterlaceSetting = ccd.dspDeinterlaceFromString(deInterlaceString);
-		return deInterlaceSetting;
-	}
-
-	/**
 	 * This method retrieves the current Amplifier configuration used to configure the CCD controller.
 	 * This determines which readout(s) the CCD uses. The numeric setting is then converted into a 
 	 * valid string as specified by the LT FITS standard.
-	 * @return A String is returned, either 'TOPLEFT', 'TOPRIGHT', 'BOTTOMLEFT', 'BOTTOMRIGHT', or 'ALL'. 
+	 * @return A String is returned, either 'TOPLEFT', 'TOPRIGHT', 'BOTTOMLEFT', 'BOTTOMRIGHT', 'BOTHRIGHT', 'ALL',
+	 *         'DUMMYTOPLEFT', 'DUMMYTOPRIGHT', 'DUMMYBOTTOMLEFT', 'DUMMYBOTTOMRIGHT', 
+	 *         'DUMMYBOTHLEFT','DUMMYBOTHRIGHT'. 
 	 *         If the amplifier cannot be determined an exception is thrown.
 	 * @exception IllegalArgumentException Thrown if the amplifier string cannot be determined.
 	 * @see ngat.o.ccd.CCDLibrary#getAmplifier
@@ -1161,9 +1059,14 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 	 * @see ngat.o.ccd.CCDLibrary#DSP_AMPLIFIER_TOP_RIGHT
 	 * @see ngat.o.ccd.CCDLibrary#DSP_AMPLIFIER_BOTTOM_LEFT
 	 * @see ngat.o.ccd.CCDLibrary#DSP_AMPLIFIER_BOTTOM_RIGHT
-	 * @see ngat.o.ccd.CCDLibrary#DSP_AMPLIFIER_BOTH_LEFT
 	 * @see ngat.o.ccd.CCDLibrary#DSP_AMPLIFIER_BOTH_RIGHT
 	 * @see ngat.o.ccd.CCDLibrary#DSP_AMPLIFIER_ALL
+	 * @see ngat.o.ccd.CCDLibrary#DSP_AMPLIFIER_DUMMY_TOP_LEFT
+	 * @see ngat.o.ccd.CCDLibrary#DSP_AMPLIFIER_DUMMY_TOP_RIGHT
+	 * @see ngat.o.ccd.CCDLibrary#DSP_AMPLIFIER_DUMMY_BOTTOM_LEFT
+	 * @see ngat.o.ccd.CCDLibrary#DSP_AMPLIFIER_DUMMY_BOTTOM_RIGHT
+	 * @see ngat.o.ccd.CCDLibrary#DSP_AMPLIFIER_DUMMY_BOTH_LEFT
+	 * @see ngat.o.ccd.CCDLibrary#DSP_AMPLIFIER_DUMMY_BOTH_RIGHT
 	 * @see #ccd
 	 */
 	private String getCCDRDOUTValue() throws IllegalArgumentException
@@ -1187,14 +1090,32 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 			case CCDLibrary.DSP_AMPLIFIER_BOTTOM_RIGHT:
 				amplifierString = "BOTTOMRIGHT";
 				break;
-			case CCDLibrary.DSP_AMPLIFIER_BOTH_LEFT:
-				amplifierString = "BOTHLEFT";
-				break;
+				//case CCDLibrary.DSP_AMPLIFIER_BOTH_LEFT:
+				//amplifierString = "BOTHLEFT";
+				//break;
 			case CCDLibrary.DSP_AMPLIFIER_BOTH_RIGHT:
 				amplifierString = "BOTHRIGHT";
 				break;
 			case CCDLibrary.DSP_AMPLIFIER_ALL:
 				amplifierString = "ALL";
+				break;
+			case CCDLibrary.DSP_AMPLIFIER_DUMMY_TOP_LEFT:
+				amplifierString = "DUMMYTOPLEFT";
+				break;
+			case CCDLibrary.DSP_AMPLIFIER_DUMMY_TOP_RIGHT:
+				amplifierString = "DUMMYTOPRIGHT";
+				break;
+			case CCDLibrary.DSP_AMPLIFIER_DUMMY_BOTTOM_LEFT:
+				amplifierString = "DUMMYBOTTOMLEFT";
+				break;
+			case CCDLibrary.DSP_AMPLIFIER_DUMMY_BOTTOM_RIGHT:
+				amplifierString = "DUMMYBOTTOMRIGHT";
+				break;
+			case CCDLibrary.DSP_AMPLIFIER_DUMMY_BOTH_LEFT:
+				amplifierString = "DUMMYBOTHLEFT";
+				break;
+			case CCDLibrary.DSP_AMPLIFIER_DUMMY_BOTH_RIGHT:
+				amplifierString = "DUMMYBOTHRIGHT";
 				break;
 			default:
 				throw new IllegalArgumentException("getCCDRDOUTValue:amplifier:"+amplifier+
@@ -1310,7 +1231,6 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 	 * @param id The Id is used as the BEAM_STEER command's id.
 	 * @param lowerSlide The position the lower filter slide should be in.
 	 * @param upperSlide The position the upper filter slide should be in.
-	 * @return The method returns true if the BEAM_STEER command returned successfully, false if an error occured.
 	 * @exception Exception Thrown if the beam steer command fails, or returns an error.
 	 * @see O#sendBSSCommand(RCS_TO_BSS,OTCPServerConnectionThread,boolean)
 	 */
@@ -1371,6 +1291,11 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.11  2012/10/25 14:37:41  cjm
+// Changed getDeInterlaceSetting implementation.
+// The de-interlace ws setup as though we wanted the resultant image to look like a natural TOP_LEFT read-out image.
+// Now setup to look as though a TOPLEFT readout image flipped in X and Y, which matches the sky orientation of IO:O.
+//
 // Revision 1.10  2012/07/17 17:15:08  cjm
 // Added BOTHLEFT.
 //
