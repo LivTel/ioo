@@ -1,5 +1,5 @@
 /* test_setup_startup.c
- * $Header: /space/home/eng/cjm/cvs/ioo/ccd/test/test_generate_waveform.c,v 1.6 2013-03-21 16:06:27 cjm Exp $
+ * $Header: /space/home/eng/cjm/cvs/ioo/ccd/test/test_generate_waveform.c,v 1.7 2013-03-25 15:31:17 cjm Exp $
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,7 +28,7 @@
  * 	[-pta|-pixel_table_address <address>]
  * </pre>
  * @author $Author: cjm $
- * @version $Revision: 1.6 $
+ * @version $Revision: 1.7 $
  */
 /* hash definitions */
 /**
@@ -48,10 +48,6 @@
  */
 #define DEFAULT_AMPLIFIER	(CCD_DSP_AMPLIFIER_BOTTOM_LEFT)
 /**
- * Default de-interlace type.
- */
-#define DEFAULT_DEINTERLACE_TYPE (CCD_DSP_DEINTERLACE_SINGLE)
-/**
  * Default pixel table address. Should be the results of <code>grep PXL_TBL tim.lod</code>.
  * Should be in timing board Y memory space.
  */
@@ -61,7 +57,7 @@
 /**
  * Revision control system identifier.
  */
-static char rcsid[] = "$Id: test_generate_waveform.c,v 1.6 2013-03-21 16:06:27 cjm Exp $";
+static char rcsid[] = "$Id: test_generate_waveform.c,v 1.7 2013-03-25 15:31:17 cjm Exp $";
 /**
  * How much information to print out when using the text interface.
  */
@@ -132,10 +128,6 @@ static int Bin_X = 1;
  * The number binning factor in rows.
  */
 static int Bin_Y = 1;
-/**
- * The de-interlace type to use.
- */
-static enum CCD_DSP_DEINTERLACE_TYPE DeInterlace_Type = DEFAULT_DEINTERLACE_TYPE;
 /**
  * The amplifier to use.
  */
@@ -259,8 +251,9 @@ int main(int argc, char *argv[])
 			fprintf(stdout,"Utility Type:%d:Filename:NULL\n",Utility_Load_Type);
 		fprintf(stdout,"Temperature:%.2f\n",Temperature);
 		if(!CCD_Setup_Startup(handle,PCI_Load_Type,PCI_Filename,CCD_SETUP_DEFAULT_MEMORY_BUFFER_SIZE,
-				      Timing_Load_Type,0,Timing_Filename,
-				      Utility_Load_Type,0,Utility_Filename,Temperature,CCD_DSP_GAIN_ONE,TRUE,TRUE))
+				      (Timing_Filename != NULL),Timing_Load_Type,0,Timing_Filename,
+				      (Utility_Filename != NULL),Utility_Load_Type,0,Utility_Filename,
+				      (Temperature != 0.0f),Temperature,CCD_DSP_GAIN_ONE,TRUE,TRUE))
 		{
 			CCD_Global_Error();
 			return 3;
@@ -275,10 +268,9 @@ int main(int argc, char *argv[])
 		fprintf(stdout,"Calling CCD_Setup_Dimensions:\n");
 		fprintf(stdout,"Chip Size:(%d,%d)\n",Size_X,Size_Y);
 		fprintf(stdout,"Binning:(%d,%d)\n",Bin_X,Bin_Y);
-		fprintf(stdout,"Amplifier:%d:De-Interlace:%d\n",Amplifier,DeInterlace_Type);
+		fprintf(stdout,"Amplifier:%d\n",Amplifier);
 		fprintf(stdout,"Window Flags:%d\n",Window_Flags);
-		if(!CCD_Setup_Dimensions(handle,Size_X,Size_Y,Bin_X,Bin_Y,Amplifier,DeInterlace_Type,
-					 Window_Flags,Window_List))
+		if(!CCD_Setup_Dimensions(handle,Size_X,Size_Y,Bin_X,Bin_Y,Amplifier,Window_Flags,Window_List))
 		{
 			CCD_Global_Error();
 			return 5;
@@ -570,44 +562,58 @@ static int Parse_Arguments(int argc, char *argv[])
 				if(strcmp(argv[i+1],"bottomleft")==0)
 				{
 					Amplifier = CCD_DSP_AMPLIFIER_BOTTOM_LEFT;
-					DeInterlace_Type = CCD_DSP_DEINTERLACE_SINGLE;
 				}
 				else if(strcmp(argv[i+1],"bottomright")==0)
 				{
 					Amplifier = CCD_DSP_AMPLIFIER_BOTTOM_RIGHT;
-					DeInterlace_Type = CCD_DSP_DEINTERLACE_FLIP_X;
 				}
 				else if(strcmp(argv[i+1],"topleft")==0)
 				{
 					Amplifier = CCD_DSP_AMPLIFIER_TOP_LEFT;
-					DeInterlace_Type = CCD_DSP_DEINTERLACE_FLIP_Y;
 				}
 				else if(strcmp(argv[i+1],"topright")==0)
 				{
 					Amplifier = CCD_DSP_AMPLIFIER_TOP_RIGHT;
-					DeInterlace_Type = CCD_DSP_DEINTERLACE_FLIP_XY;
 				}
 				else if(strcmp(argv[i+1],"bothright")==0)
 				{
 					Amplifier = CCD_DSP_AMPLIFIER_BOTH_RIGHT;
-					DeInterlace_Type = CCD_DSP_DEINTERLACE_SPLIT_PARALLEL;
 				}
 				else if(strcmp(argv[i+1],"all")==0)
 				{
 					Amplifier = CCD_DSP_AMPLIFIER_ALL;
-					DeInterlace_Type = CCD_DSP_DEINTERLACE_SPLIT_QUAD;
+				}
+				else if(strcmp(argv[i+1],"dummybottomleft")==0)
+				{
+					Amplifier = CCD_DSP_AMPLIFIER_DUMMY_BOTTOM_LEFT;
+				}
+				else if(strcmp(argv[i+1],"dummybottomright")==0)
+				{
+					Amplifier = CCD_DSP_AMPLIFIER_DUMMY_BOTTOM_RIGHT;
+				}
+				else if(strcmp(argv[i+1],"dummytopleft")==0)
+				{
+					Amplifier = CCD_DSP_AMPLIFIER_DUMMY_TOP_LEFT;
+				}
+				else if(strcmp(argv[i+1],"dummytopright")==0)
+				{
+					Amplifier = CCD_DSP_AMPLIFIER_DUMMY_TOP_RIGHT;
 				}
 				else
 				{
 					fprintf(stderr,"Parse_Arguments:Illegal Amplifier '%s', "
-						"<bottomleft|bottomright|topleft|topright|bothright|all> required.\n",argv[i+1]);
+						"<bottomleft|bottomright|topleft|topright|bothright|all|"
+						"dummybottomleft|dummybottomright|dummytopleft|dummytopright> "
+						"required.\n",argv[i+1]);
 					return FALSE;
 				}
 				i++;
 			}
 			else
 			{
-				fprintf(stderr,"Parse_Arguments:Amplifier requires one of: <bottomleft|bottomright|topleft|topright|bothright|all>.\n");
+				fprintf(stderr,"Parse_Arguments:Amplifier requires one of: "
+					"<bottomleft|bottomright|topleft|topright|bothright|all|"
+					"dummybottomleft|dummybottomright|dummytopleft|dummytopright>.\n");
 				return FALSE;
 			}
 		}
@@ -868,7 +874,8 @@ static void Help(void)
 	fprintf(stdout,"\t[-dimensions]\n");
 	fprintf(stdout,"\t[-xs[ize] <no. of pixels>][-ys[ize] <no. of pixels>]\n");
 	fprintf(stdout,"\t[-xb[in] <binning factor>][-yb[in] <binning factor>]\n");
-	fprintf(stdout,"\t[-a[mplifier] <bottomleft|bottomright|topleft|topright|bothright|all>]\n");
+	fprintf(stdout,"\t[-a[mplifier] <bottomleft|bottomright|topleft|topright|bothright|all|\n");
+	fprintf(stdout,"\t\tdummybottomleft|dummybottomright|dummytopleft|dummytopright>]\n");
 	fprintf(stdout,"\t[-t[ext_print_level] <commands|replies|values|all>][-h[elp]]\n");
 	fprintf(stdout,"\t[-pta|-pixel_table_address <address>]\n");
 	fprintf(stdout,"\t[-clock_config|-cc <filename> ]\n");
@@ -891,6 +898,9 @@ static void Help(void)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.6  2013/03/21 16:06:27  cjm
+** CCD_Setup_Startup call parameters modified.
+**
 ** Revision 1.5  2012/01/11 15:06:45  cjm
 ** Added bothright amplifier support.
 **
