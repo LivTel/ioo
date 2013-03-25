@@ -1,5 +1,5 @@
 // DAY_CALIBRATEImplementation.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/DAY_CALIBRATEImplementation.java,v 1.1 2011-11-23 10:55:24 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/DAY_CALIBRATEImplementation.java,v 1.2 2013-03-25 15:01:38 cjm Exp $
 package ngat.o;
 
 import java.io.*;
@@ -21,14 +21,14 @@ import ngat.util.logging.*;
  * Java Message System. It performs a series of BIAS and DARK frames from a configurable list,
  * taking into account frames done in previous invocations of this command (it saves it's state).
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: DAY_CALIBRATEImplementation.java,v 1.1 2011-11-23 10:55:24 cjm Exp $");
+	public final static String RCSID = new String("$Id: DAY_CALIBRATEImplementation.java,v 1.2 2013-03-25 15:01:38 cjm Exp $");
 	/**
 	 * Initial part of a key string, used to create a list of potential day calibrations to
 	 * perform from a Java property file.
@@ -625,7 +625,7 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 				   boolean useWindowAmplifier)
 	{
 		CCDLibrarySetupWindow windowList[] = new CCDLibrarySetupWindow[CCDLibrary.SETUP_WINDOW_COUNT];
-		int numberColumns,numberRows,amplifier,deInterlaceSetting;
+		int numberColumns,numberRows,amplifier;
 
 	// load other required config for dimension configuration from O properties file.
 		try
@@ -633,7 +633,6 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 			numberColumns = status.getNumberColumns(bin);
 			numberRows = status.getNumberRows(bin);
 			amplifier = getAmplifier(useWindowAmplifier);
-			deInterlaceSetting = getDeInterlaceSetting(useWindowAmplifier);
 		}
 	// CCDLibraryFormatException,IllegalArgumentException,NumberFormatException.
 		catch(Exception e)
@@ -658,8 +657,7 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 	// send dimension configuration to the SDSU controller
 		try
 		{
-			ccd.setupDimensions(numberColumns,numberRows,bin,bin,
-					    amplifier,deInterlaceSetting,0,windowList);
+			ccd.setupDimensions(numberColumns,numberRows,bin,bin,amplifier,0,windowList);
 		}
 		catch(Exception e)
 		{
@@ -1328,4 +1326,7 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2011/11/23 10:55:24  cjm
+// Initial revision
+//
 //

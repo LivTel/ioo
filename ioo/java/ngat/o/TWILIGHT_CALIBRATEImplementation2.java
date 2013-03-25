@@ -1,5 +1,5 @@
 // TWILIGHT_CALIBRATEImplementation2.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/TWILIGHT_CALIBRATEImplementation2.java,v 1.2 2012-10-16 09:44:53 eng Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/TWILIGHT_CALIBRATEImplementation2.java,v 1.3 2013-03-25 15:01:38 cjm Exp $
 package ngat.o;
 
 import java.io.*;
@@ -29,14 +29,14 @@ import ngat.util.logging.*;
  * The exposure length is dynamically adjusted as the sky gets darker or brighter. TWILIGHT_CALIBRATE commands
  * should be sent to O just after sunset and just before sunrise.
  * @author Chris Mottram
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: TWILIGHT_CALIBRATEImplementation2.java,v 1.2 2012-10-16 09:44:53 eng Exp $");
+	public final static String RCSID = new String("$Id: TWILIGHT_CALIBRATEImplementation2.java,v 1.3 2013-03-25 15:01:38 cjm Exp $");
 	/**
 	 * The number of different binning factors we should min/best/max count data for.
 	 * Actually 1 more than the maximum used binning, as we go from 1 not 0.
@@ -1126,7 +1126,7 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 				   String lowerSlide,String upperSlide,String filter)
 	{
 		CCDLibrarySetupWindow windowList[] = new CCDLibrarySetupWindow[CCDLibrary.SETUP_WINDOW_COUNT];
-		int numberColumns,numberRows,amplifier,deInterlaceSetting;
+		int numberColumns,numberRows,amplifier;
 		int filterWheelPosition = -1;
 		boolean filterWheelEnable;
 
@@ -1136,7 +1136,6 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 			numberColumns = status.getNumberColumns(bin);
 			numberRows = status.getNumberRows(bin);
 			amplifier = getAmplifier(useWindowAmplifier);
-			deInterlaceSetting = getDeInterlaceSetting(useWindowAmplifier);
 			filterWheelEnable = status.getPropertyBoolean("o.config.filter_wheel.enable");
 			filterWheelPosition = status.getFilterWheelPosition(filter);
 		}
@@ -1165,8 +1164,7 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 	// send configuration to the SDSU controller
 		try
 		{
-			ccd.setupDimensions(numberColumns,numberRows,bin,bin,
-				amplifier,deInterlaceSetting,0,windowList);
+			ccd.setupDimensions(numberColumns,numberRows,bin,bin,amplifier,0,windowList);
 			if(testAbort(twilightCalibrateCommand,twilightCalibrateDone) == true)
 				return false;
 			if(filterWheelEnable)
@@ -2244,6 +2242,9 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.2  2012/10/16 09:44:53  eng
+// set lastExposureLength to current one.
+//
 // Revision 1.1  2012/10/12 14:29:09  cjm
 // Initial revision
 //

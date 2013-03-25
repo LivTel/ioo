@@ -1,5 +1,5 @@
 // ACQUIREImplementation.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/ACQUIREImplementation.java,v 1.2 2012-02-08 10:48:32 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/ACQUIREImplementation.java,v 1.3 2013-03-25 15:01:38 cjm Exp $
 package ngat.o;
 
 import java.io.*;
@@ -17,14 +17,14 @@ import ngat.util.logging.*;
  * This class provides the implementation for the ACQUIRE command sent to a server using the
  * Java Message System.
  * @author Chris Mottram
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 public class ACQUIREImplementation extends FITSImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: ACQUIREImplementation.java,v 1.2 2012-02-08 10:48:32 cjm Exp $");
+	public final static String RCSID = new String("$Id: ACQUIREImplementation.java,v 1.3 2013-03-25 15:01:38 cjm Exp $");
 	/**
 	 * How many arc-seconds in 1 second of RA. A double, of value 15.
 	 */
@@ -385,7 +385,6 @@ public class ACQUIREImplementation extends FITSImplementation implements JMSComm
 	 * @see FITSImplementation#setFocusOffset
 	 * @see FITSImplementation#beamSteer
 	 * @see #getAmplifier
-	 * @see #getDeInterlaceSetting
 	 * @see #ccd
 	 * @see #o
 	 * @see OStatus#incConfigId
@@ -410,7 +409,7 @@ public class ACQUIREImplementation extends FITSImplementation implements JMSComm
 						  FileUtilitiesNativeException, Exception
 	{
 		CCDLibrarySetupWindow windowList[] = new CCDLibrarySetupWindow[CCDLibrary.SETUP_WINDOW_COUNT];
-		int numberColumns,numberRows,amplifier,deInterlaceSetting;
+		int numberColumns,numberRows,amplifier;
 		int filterWheelPosition;
 		boolean filterWheelEnable;
 
@@ -418,7 +417,6 @@ public class ACQUIREImplementation extends FITSImplementation implements JMSComm
 		numberColumns = status.getNumberColumns(bin);
 		numberRows = status.getNumberRows(bin);
 		amplifier = getAmplifier(false);
-		deInterlaceSetting = getDeInterlaceSetting(false);
 		filterWheelEnable = status.getPropertyBoolean("o.config.filter_wheel.enable");
 		filterWheelPosition = status.getFilterWheelPosition(filter);
 	// set up blank windows
@@ -427,7 +425,7 @@ public class ACQUIREImplementation extends FITSImplementation implements JMSComm
 			windowList[i] = new CCDLibrarySetupWindow(-1,-1,-1,-1);
 		}
 	// send configuration to the SDSU controller
-		ccd.setupDimensions(numberColumns,numberRows,bin,bin,amplifier,deInterlaceSetting,0,windowList);
+		ccd.setupDimensions(numberColumns,numberRows,bin,bin,amplifier,0,windowList);
 		if(filterWheelEnable)
 		{
 			ccd.filterWheelMove(filterWheelPosition);
@@ -1186,6 +1184,9 @@ public class ACQUIREImplementation extends FITSImplementation implements JMSComm
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.2  2012/02/08 10:48:32  cjm
+// Added beamSteer to doConfig. This configures the dichroics to a known position.
+//
 // Revision 1.1  2011/11/23 10:55:24  cjm
 // Initial revision
 //

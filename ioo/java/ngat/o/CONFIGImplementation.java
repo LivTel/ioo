@@ -1,5 +1,5 @@
 // CONFIGImplementation.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/CONFIGImplementation.java,v 1.1 2011-11-23 10:55:24 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/CONFIGImplementation.java,v 1.2 2013-03-25 15:01:38 cjm Exp $
 package ngat.o;
 
 import java.lang.*;
@@ -16,14 +16,14 @@ import ngat.util.logging.*;
  * Java Message System. It extends SETUPImplementation.
  * @see SETUPImplementation
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class CONFIGImplementation extends SETUPImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: CONFIGImplementation.java,v 1.1 2011-11-23 10:55:24 cjm Exp $");
+	public final static String RCSID = new String("$Id: CONFIGImplementation.java,v 1.2 2013-03-25 15:01:38 cjm Exp $");
 
 	/**
 	 * Constructor. 
@@ -99,7 +99,7 @@ public class CONFIGImplementation extends SETUPImplementation implements JMSComm
 		CONFIG_DONE configDone = null;
 		CCDLibrarySetupWindow windowList[] = new CCDLibrarySetupWindow[CCDLibrary.SETUP_WINDOW_COUNT];
 		OStatus status = null;
-		int numberColumns,numberRows,amplifier,deInterlaceSetting;
+		int numberColumns,numberRows,amplifier;
 		int filterWheelPosition;
 		boolean filterWheelEnable;
 
@@ -137,7 +137,6 @@ public class CONFIGImplementation extends SETUPImplementation implements JMSComm
 			numberColumns = status.getNumberColumns(detector.getXBin());
 			numberRows = status.getNumberRows(detector.getYBin());
 	                amplifier = getAmplifier(detector.getWindowFlags() > 0);
-			deInterlaceSetting = getDeInterlaceSetting(detector.getWindowFlags() > 0);
 			filterWheelEnable = status.getPropertyBoolean("o.config.filter_wheel.enable");
 			filterWheelPosition = status.getFilterWheelPosition(config.getFilterWheel());
 		}
@@ -214,7 +213,7 @@ public class CONFIGImplementation extends SETUPImplementation implements JMSComm
 		try
 		{
 			ccd.setupDimensions(numberColumns,numberRows,detector.getXBin(),detector.getYBin(),
-					    amplifier,deInterlaceSetting,detector.getWindowFlags(),windowList);
+					    amplifier,detector.getWindowFlags(),windowList);
 			if(testAbort(configCommand,configDone) == true)
 				return configDone;
 			if(filterWheelEnable)
@@ -290,4 +289,7 @@ public class CONFIGImplementation extends SETUPImplementation implements JMSComm
 }
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2011/11/23 10:55:24  cjm
+// Initial revision
+//
 //
