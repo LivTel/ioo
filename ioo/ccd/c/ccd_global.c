@@ -1,11 +1,11 @@
 /* ccd_global.c
 ** low level ccd library
-** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ccd_global.c,v 1.1 2011-11-23 10:59:52 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ccd_global.c,v 1.2 2013-03-25 15:15:03 cjm Exp $
 */
 /**
  * ccd_global.c contains routines that tie together all the modules that make up libccd.
  * @author SDSU, Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 /**
  * This hash define is needed before including source files give us POSIX.4/IEEE1003.1b-1993 prototypes.
@@ -56,16 +56,17 @@
 #include <sys/mman.h>
 #endif /* CCD_GLOBAL_READOUT_MLOCK */
 #include "log_udp.h"
-#include "ccd_filter_wheel.h"
-#include "ccd_global.h"
-#include "ccd_pci.h"
-#include "ccd_text.h"
-#include "ccd_interface.h"
 #include "ccd_dsp.h"
 #include "ccd_dsp_download.h"
 #include "ccd_exposure.h"
-#include "ccd_temperature.h"
+#include "ccd_filter_wheel.h"
+#include "ccd_global.h"
+#include "ccd_interface.h"
+#include "ccd_pci.h"
+#include "ccd_pixel_stream.h"
 #include "ccd_setup.h"
+#include "ccd_text.h"
+#include "ccd_temperature.h"
 
 /* hash definitions */
 /**
@@ -142,7 +143,7 @@ struct Global_Struct
 /**
  * Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ccd_global.c,v 1.1 2011-11-23 10:59:52 cjm Exp $";
+static char rcsid[] = "$Id: ccd_global.c,v 1.2 2013-03-25 15:15:03 cjm Exp $";
 /**
  * Variable holding error code of last operation performed by ccd_dsp.
  */
@@ -197,6 +198,7 @@ static char Global_Buff[CCD_GLOBAL_ERROR_STRING_LENGTH];
  * @see ccd_dsp_download.html#CCD_DSP_Download_Initialise
  * @see ccd_filter_wheel.html#CCD_Filter_Wheel_Initialise
  * @see ccd_exposure.html#CCD_Exposure_Initialise
+ * @see ccd_pixel_stream.html#CCD_Pixel_Stream_Initialise
  * @see ccd_setup.html#CCD_Setup_Initialise
  */
 void CCD_Global_Initialise(void)
@@ -207,6 +209,7 @@ void CCD_Global_Initialise(void)
 	if(!CCD_DSP_Download_Initialise())
 		CCD_DSP_Download_Error();
 	CCD_Exposure_Initialise();
+	CCD_Pixel_Stream_Initialise();
 	CCD_Setup_Initialise();
 	CCD_Filter_Wheel_Initialise();
 /* print some compile time information to stdout */
@@ -237,6 +240,8 @@ void CCD_Global_Initialise(void)
  * A second call to one of these routines will generate a 'Error not found' error!.
  * @see ccd_setup.html#CCD_Setup_Get_Error_Number
  * @see ccd_setup.html#CCD_Setup_Error
+ * @see ccd_pixel_stream.html#CCD_Pixel_Stream_Get_Error_Number
+ * @see ccd_pixel_stream.html#CCD_Pixel_Stream_Error
  * @see ccd_exposure.html#CCD_Exposure_Get_Error_Number
  * @see ccd_exposure.html#CCD_Exposure_Error
  * @see ccd_filter_wheel.html#CCD_Filter_Wheel_Get_Error_Number
@@ -260,6 +265,11 @@ void CCD_Global_Error(void)
 	char time_string[32];
 	int found = FALSE;
 
+	if(CCD_Pixel_Stream_Get_Error_Number() != 0)
+	{
+		found = TRUE;
+		CCD_Pixel_Stream_Error();
+	}
 	if(CCD_Setup_Get_Error_Number() != 0)
 	{
 		found = TRUE;
@@ -333,6 +343,8 @@ void CCD_Global_Error(void)
  * A second call to one of these routines will generate a 'Error not found' error!.
  * @param error_string A character buffer big enough to store the longest possible error message. It is
  * recomended that it is at least 1024 bytes in size.
+ * @see ccd_pixel_stream.html#CCD_Pixel_Stream_Get_Error_Number
+ * @see ccd_pixel_stream.html#CCD_Pixel_Stream_Error_String
  * @see ccd_setup.html#CCD_Setup_Get_Error_Number
  * @see ccd_setup.html#CCD_Setup_Error_String
  * @see ccd_exposure.html#CCD_Exposure_Get_Error_Number
@@ -361,6 +373,10 @@ void CCD_Global_Error_String(char *error_string)
 	if(CCD_Setup_Get_Error_Number() != 0)
 	{
 		CCD_Setup_Error_String(error_string);
+	}
+	if(CCD_Pixel_Stream_Get_Error_Number() != 0)
+	{
+		CCD_Pixel_Stream_Error_String(error_string);
 	}
 	if(CCD_Exposure_Get_Error_Number() != 0)
 	{
@@ -934,6 +950,9 @@ void CCD_Global_Subtract_Time_Ms(struct timespec *time,int ms)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.1  2011/11/23 10:59:52  cjm
+** Initial revision
+**
 ** Revision 0.14  2009/02/05 11:40:27  cjm
 ** Swapped Bitwise for Absolute logging levels.
 **
