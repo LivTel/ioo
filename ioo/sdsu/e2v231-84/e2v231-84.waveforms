@@ -1,7 +1,7 @@
        COMMENT *
-	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/e2v231-84/e2v231-84.waveforms,v 1.11 2013-04-18 16:20:27 cjm Exp $
-	Id: 	 $Id: e2v231-84.waveforms,v 1.11 2013-04-18 16:20:27 cjm Exp $
-	Version: $Revision: 1.11 $
+	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/e2v231-84/e2v231-84.waveforms,v 1.12 2013-04-18 16:23:24 cjm Exp $
+	Id: 	 $Id: e2v231-84.waveforms,v 1.12 2013-04-18 16:23:24 cjm Exp $
+	Version: $Revision: 1.12 $
 Waveform tables for CCD231-84. Waveforms based on E2V spec sheet A1A-765136 V1, October 2008.
 Waveforms are Mode 1 (low read noise, lower pixel charge capacity).
 Assumes usage with an SDSU ARC-22 timing board, ARC-32 clock driver board, and 2 x ARC-45 video boards.
@@ -31,6 +31,7 @@ NPAR	EQU	1		; Repeat number for SLOW_CLOCKS
 
 ;INT_TIM	EQU	$060000		; Signal integration time for ~1 microsec/pixel (300ns delay)
 INT_TIM	EQU	$0A0000		; Signal integration time for several microsec/pixel (longer delay)
+;INT_TIM	EQU	$180000		; Signal integration time for several microsec/pixel (longer delay)
 
 ; CCD clock voltages
 RG_HI	EQU	 5.0		; Reset Gate High
@@ -51,10 +52,10 @@ ZERO	EQU	 0.0		; Unused pins
 
 ; Output video offset parameters
 OFFSET	EQU	$800		; 0 TO $FFF -> 12 bits
-OFFSET0	EQU	OFFSET
-OFFSET1	EQU	$7DF
-OFFSET2	EQU	OFFSET
-OFFSET3	EQU	OFFSET
+OFFSET0	EQU	$71F   ;   BOTTOM_LEFT
+OFFSET1	EQU	$750   ;   BOTTOM_RIGHT
+OFFSET2	EQU	$78A   ;   TOP_RIGHT 
+OFFSET3	EQU	$73F   ;   TOP_LEFT
 
 ; DC Bias voltages
 VOD	EQU	24.0		; Output Drain (from chip operating conditions, spec sheet says 29v)
