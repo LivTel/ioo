@@ -1,5 +1,5 @@
 # Makefile
-# $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/Makefile,v 1.2 2012-10-12 14:30:19 cjm Exp $
+# $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/Makefile,v 1.3 2013-05-21 09:21:29 cjm Exp $
 include ../../../Makefile.common
 include ../../../../Makefile.common
 
@@ -29,7 +29,7 @@ DOCS 		= $(SRCS:%.java=$(DOCSDIR)/%.html)
 CONFIG_SRCS	= o1.o.net.properties o1.o.properties o1.fits.properties
 CONFIG_OBJS	= $(CONFIG_SRCS:%.properties=$(CONFIG_BINDIR)/%.properties)
 
-DIRS 		= ccd test
+DIRS 		= ccd ndfilter test
  
 top: $(OBJS) config
 	@for i in $(DIRS); \
@@ -85,6 +85,9 @@ backup: tidy checkin
 
 #
 # $Log: not supported by cvs2svn $
+# Revision 1.2  2012/10/12 14:30:19  cjm
+# Added TWILIGHT_CALIBRATEImplementation2.java .
+#
 # Revision 1.1  2011/11/23 10:59:46  cjm
 # Initial revision
 #
