@@ -1,15 +1,16 @@
 // ACQUIREImplementation.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/ACQUIREImplementation.java,v 1.3 2013-03-25 15:01:38 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/ACQUIREImplementation.java,v 1.4 2013-06-04 08:26:15 cjm Exp $
 package ngat.o;
 
 import java.io.*;
 import ngat.astrometry.*;
 import ngat.o.ccd.*;
+import ngat.o.ndfilter.*;
 import ngat.fits.*;
 import ngat.message.base.*;
 import ngat.message.ISS_INST.*;
 import ngat.message.INST_DP.*;
-import ngat.phase2.TelescopeConfig;
+import ngat.phase2.*;
 import ngat.util.FileUtilitiesNativeException;
 import ngat.util.logging.*;
 
@@ -17,14 +18,14 @@ import ngat.util.logging.*;
  * This class provides the implementation for the ACQUIRE command sent to a server using the
  * Java Message System.
  * @author Chris Mottram
- * @version $Revision: 1.3 $
+ * @version $Revision: 1.4 $
  */
 public class ACQUIREImplementation extends FITSImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: ACQUIREImplementation.java,v 1.3 2013-03-25 15:01:38 cjm Exp $");
+	public final static String RCSID = new String("$Id: ACQUIREImplementation.java,v 1.4 2013-06-04 08:26:15 cjm Exp $");
 	/**
 	 * How many arc-seconds in 1 second of RA. A double, of value 15.
 	 */
@@ -45,11 +46,19 @@ public class ACQUIREImplementation extends FITSImplementation implements JMSComm
 	/**
 	 * The lower dichroic slide position to attain before taking acquisition images.
 	 */
-	protected String lowerSlide = null;
+	protected String lowerDichroicSlide = null;
 	/**
 	 * The upper dichroic slide position to attain before taking acquisition images.
 	 */
-	protected String upperSlide = null;
+	protected String upperDichroicSlide = null;
+	/**
+	 * The lower filter slide position to attain before taking acquisition images.
+	 */
+	protected String lowerFilterSlide = null;
+	/**
+	 * The upper filter slide position to attain before taking acquisition images.
+	 */
+	protected String upperFilterSlide = null;
 	/**
 	 * Exposure length (in milliseconds) of acquisition images.
 	 */
@@ -333,6 +342,10 @@ public class ACQUIREImplementation extends FITSImplementation implements JMSComm
 	 * <dl>
 	 * <dt>bin</dt><dd>Loaded from the <b>o.acquire.bin</b></dd>
 	 * <dt>filter</dt><dd>Loaded from the <b>o.acquire.filter</b></dd>
+	 * <dt>lowerDichroicSlide</dt><dd>Loaded from the <b>o.acquire.dichroic.slide.lower</b></dd>
+	 * <dt>upperDichroicSlide</dt><dd>Loaded from the <b>o.acquire.dichroic.slide.upper</b></dd>
+	 * <dt>lowerFilterSlide</dt><dd>Loaded from the <b>o.acquire.filter.slide.lower</b></dd>
+	 * <dt>upperFilterSlide</dt><dd>Loaded from the <b>o.acquire.filter.slide.upper</b></dd>
 	 * <dt>exposureLength</dt><dd>Loaded from the <b>o.acquire.exposure_length.brightest</b> or 
 	 *     <b>o.acquire.exposure_length.wcs</b> depending on <i>acquisitionMode</i></dd>
 	 * <dt>frameOverhead</dt><dd>Loaded from the <b>o.acquire.frame_overhead</b></dd>
@@ -342,8 +355,10 @@ public class ACQUIREImplementation extends FITSImplementation implements JMSComm
 	 * @exception NumberFormatException Thrown if the specified property is not a valid number.
 	 * @see #bin
 	 * @see #filter
-	 * @see #lowerSlide
-	 * @see #upperSlide
+	 * @see #lowerDichroicSlide
+	 * @see #upperDichroicSlide
+	 * @see #lowerFilterSlide
+	 * @see #upperFilterSlide
 	 * @see #exposureLength
 	 * @see #status
 	 * @see #frameOverhead
@@ -356,8 +371,10 @@ public class ACQUIREImplementation extends FITSImplementation implements JMSComm
 	{
 		bin = status.getPropertyInteger("o.acquire.bin");
 		filter = status.getProperty("o.acquire.filter");
-		lowerSlide = status.getProperty("o.acquire.slide.lower");
-		upperSlide = status.getProperty("o.acquire.slide.upper");
+		lowerDichroicSlide = status.getProperty("o.acquire.dichroic.slide.lower");
+		upperDichroicSlide = status.getProperty("o.acquire.dichroic.slide.upper");
+		lowerFilterSlide = status.getProperty("o.acquire.filter.slide.lower");
+		upperFilterSlide = status.getProperty("o.acquire.filter.slide.upper");
 	        if(acquisitionMode == TelescopeConfig.ACQUIRE_MODE_WCS)
 			exposureLength = status.getPropertyInteger("o.acquire.exposure_length.wcs");
 		if(acquisitionMode == TelescopeConfig.ACQUIRE_MODE_BRIGHTEST)
@@ -373,20 +390,28 @@ public class ACQUIREImplementation extends FITSImplementation implements JMSComm
 	 * <li>Some configuration is loaded from the properties files.
 	 * <li>setupDimensions is called to setup the CCDs windows/binning.
 	 * <li>filterWheelMove is called to move the filter wheel.
+	 * <li>ndFilterArduino.move is called to move the filter slides to the correct location.
 	 * <li>beamSteer is called to move the dichroics slides to a configured position.
 	 * <li>setFocusOffset is called to set the focus offset for that filter setting. This must be done after
-	 *     beamSteer for the right BSS offsets to be returned.
+	 *     beamSteer/filterWheelMove/ndFilterArduino.move  for the right BSS offsets to be returned.
 	 * <li>incConfigId is called to increment the config's unique ID.
 	 * <li>The status's setConfigName is used to set a name for the config.
 	 * </ul>
 	 * @param id The command ID string used as an ID string is commands.
 	 * @see #bin
 	 * @see #filter
+	 * @see #lowerDichroicSlide
+	 * @see #upperDichroicSlide
+	 * @see #lowerFilterSlide
+	 * @see #upperFilterSlide
 	 * @see FITSImplementation#setFocusOffset
 	 * @see FITSImplementation#beamSteer
 	 * @see #getAmplifier
 	 * @see #ccd
 	 * @see #o
+	 * @see #ndFilterArduino
+	 * @see OConstants#O_ERROR_CODE_BASE
+	 * @see OConstants#O_ERROR_CODE_NO_ERROR
 	 * @see OStatus#incConfigId
 	 * @see OStatus#setConfigName
 	 * @see OStatus#getNumberColumns
@@ -397,28 +422,62 @@ public class ACQUIREImplementation extends FITSImplementation implements JMSComm
 	 * @see ngat.o.ccd.CCDLibrarySetupWindow
 	 * @see ngat.o.ccd.CCDLibrary#setupDimensions
 	 * @see ngat.o.ccd.CCDLibrary#filterWheelMove
+	 * @see ngat.o.ndfilter.NDFilterArduino
+	 * @see ngat.o.ndfilter.NDFilterArduino#move
+	 * @see ngat.phase2.OConfig#O_FILTER_INDEX_FILTER_WHEEL
+	 * @see ngat.phase2.OConfig#O_FILTER_INDEX_FILTER_SLIDE_LOWER
+	 * @see ngat.phase2.OConfig#O_FILTER_INDEX_FILTER_SLIDE_UPPER
+	 * @see ngat.phase2.OConfig#O_FILTER_INDEX_COUNT
 	 * @exception CCDLibraryFormatException Thrown if the config load fails.
 	 * @exception CCDLibraryNativeException Thrown if setupDimensions/filterWheelMove fails.
 	 * @exception IllegalArgumentException Thrown if the config is an illegal value.
 	 * @exception NumberFormatException Thrown if a config value is an illegal number.
 	 * @exception FileUtilitiesNativeException Thrown if incConfigId fails.
 	 * @exception Exception Thrown if setFocusOffset or beamSteer fails.
+	 * @exception NDFilterArduinoMoveException Thrown if moving the neutral density filter slide fails.
+	 * @exception IOException Thrown if talking to the neutral density filter slide Arduino fails.
+	 * @exception NullPointerException Thrown if talking to the neutral density filter slide Arduino fails.
 	 */
 	protected void doConfig(String id) throws CCDLibraryFormatException,IllegalArgumentException,
 						  NumberFormatException,CCDLibraryNativeException, 
+						  NDFilterArduinoMoveException, IOException,
+						  NullPointerException,
 						  FileUtilitiesNativeException, Exception
 	{
 		CCDLibrarySetupWindow windowList[] = new CCDLibrarySetupWindow[CCDLibrary.SETUP_WINDOW_COUNT];
+		String filterSlideName[] = new String[OConfig.O_FILTER_INDEX_COUNT];
 		int numberColumns,numberRows,amplifier;
-		int filterWheelPosition;
+		int filterWheelPosition,filterSlidePositionNumber;
 		boolean filterWheelEnable;
+		boolean filterSlideEnable[] = new boolean[OConfig.O_FILTER_INDEX_COUNT];
+		boolean filterSlidePosition[] = new boolean[OConfig.O_FILTER_INDEX_COUNT];
 
 	// load other required config for dimension configuration from O properties file.
 		numberColumns = status.getNumberColumns(bin);
 		numberRows = status.getNumberRows(bin);
 		amplifier = getAmplifier(false);
+		// filter wheel config (filter 1)
 		filterWheelEnable = status.getPropertyBoolean("o.config.filter_wheel.enable");
-		filterWheelPosition = status.getFilterWheelPosition(filter);
+		filterWheelPosition = status.getFilterWheelPosition(OConfig.O_FILTER_INDEX_FILTER_WHEEL,filter);
+		// neutral density filter slide config (filter 2+3)
+		filterSlideName[OConfig.O_FILTER_INDEX_FILTER_SLIDE_LOWER] = lowerFilterSlide;
+		filterSlideName[OConfig.O_FILTER_INDEX_FILTER_SLIDE_UPPER] = upperFilterSlide;
+		for(int i = OConfig.O_FILTER_INDEX_FILTER_SLIDE_LOWER;
+		    i <= OConfig.O_FILTER_INDEX_FILTER_SLIDE_UPPER; i++)
+		{
+			filterSlideEnable[i] = status.getPropertyBoolean("o.config.filter_slide.enable."+i);
+			filterSlidePositionNumber = status.getFilterWheelPosition(i,filterSlideName[i]);
+			if(filterSlidePositionNumber == 0) // stow
+				filterSlidePosition[i] = false;
+			else if(filterSlidePositionNumber == 1) // deploy
+				filterSlidePosition[i] = true;
+			else
+			{
+				throw new Exception(this.getClass().getName()+
+					  ":doConfig:Filter slide position number out of range for filter wheel:"+i+
+						    " and filter name "+filterSlideName[i]);
+			}
+		}// end for
 	// set up blank windows
 		for(int i = 0; i < CCDLibrary.SETUP_WINDOW_COUNT; i++)
 		{
@@ -435,24 +494,32 @@ public class ACQUIREImplementation extends FITSImplementation implements JMSComm
 			o.log(Logging.VERBOSITY_VERY_TERSE,this.getClass().getName()+
 				":doConfig:Filter wheels not enabled:Filter wheels NOT moved.");
 		}
+		// configure filter slides by talking to the arduino
+		for(int i = OConfig.O_FILTER_INDEX_FILTER_SLIDE_LOWER;
+		    i <= OConfig.O_FILTER_INDEX_FILTER_SLIDE_UPPER; i++)
+		{
+			if(filterSlideEnable[i])
+			{
+				ndFilterArduino.move(i,filterSlidePosition[i]);
+			}
+			else
+			{
+				o.log(Logging.VERBOSITY_VERY_TERSE,this.getClass().getName()+
+				      ":doConfig:Filter slide "+i+" not enabled:Filter slide "+i+
+				      " NOT moved.");
+			}
+		}// end for
 		// send BEAM_STEER command to BSS to position dichroics.
-		beamSteer(id,lowerSlide,upperSlide);
+		beamSteer(id,lowerDichroicSlide,upperDichroicSlide);
 	// Issue ISS OFFSET_FOCUS commmand based on the optical thickness of the filter(s)
-		if(filterWheelEnable)
-		{
-			setFocusOffset(id,filter);
-		}
-		else
-		{
-			o.log(Logging.VERBOSITY_VERY_TERSE,this.getClass().getName()+
-			      ":doConfig:Filter wheels not enabled:Focus offset NOT set.");
-		}
+		setFocusOffset(id,filter,lowerFilterSlide,upperFilterSlide);
 	// Increment unique config ID.
 	// This is queried when saving FITS headers to get the CONFIGID value.
 		status.incConfigId();
 	// Store name of configuration used in status object.
 	// This is queried when saving FITS headers to get the CONFNAME value.
-		status.setConfigName("ACQUIRE:"+id+":"+bin+":"+upperSlide+":"+lowerSlide+":"+filter);
+		status.setConfigName("ACQUIRE:"+id+":"+bin+":"+upperDichroicSlide+":"+lowerDichroicSlide+":"+
+				     upperFilterSlide+":"+lowerFilterSlide+":"+filter);
 	}
 
 	/**
@@ -802,7 +869,7 @@ public class ACQUIREImplementation extends FITSImplementation implements JMSComm
 		status.setExposureFilename(filename);
 		// log exposure
 		o.log(Logging.VERBOSITY_VERBOSE,"Command:"+acquireCommand.getId()+
-			":doFrame:Attempting exposure:"+"length "+exposureLength+".");
+		      ":doFrame:Attempting exposure:"+"length "+exposureLength+".");
 		// do exposure
 		try
 		{
@@ -1184,6 +1251,10 @@ public class ACQUIREImplementation extends FITSImplementation implements JMSComm
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.3  2013/03/25 15:01:38  cjm
+// Removed deinterlace code.
+// Changed ccd.setupDimensions call removing deinterlace parameter.
+//
 // Revision 1.2  2012/02/08 10:48:32  cjm
 // Added beamSteer to doConfig. This configures the dichroics to a known position.
 //

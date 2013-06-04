@@ -1,5 +1,5 @@
 // TWILIGHT_CALIBRATEImplementation2.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/TWILIGHT_CALIBRATEImplementation2.java,v 1.4 2013-04-29 09:27:18 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/TWILIGHT_CALIBRATEImplementation2.java,v 1.5 2013-06-04 08:26:15 cjm Exp $
 package ngat.o;
 
 import java.io.*;
@@ -7,6 +7,7 @@ import java.lang.*;
 import java.util.*;
 
 import ngat.o.ccd.*;
+import ngat.o.ndfilter.*;
 import ngat.fits.*;
 import ngat.message.base.*;
 import ngat.message.ISS_INST.OFFSET_FOCUS;
@@ -29,14 +30,14 @@ import ngat.util.logging.*;
  * The exposure length is dynamically adjusted as the sky gets darker or brighter. TWILIGHT_CALIBRATE commands
  * should be sent to O just after sunset and just before sunrise.
  * @author Chris Mottram
- * @version $Revision: 1.4 $
+ * @version $Revision: 1.5 $
  */
 public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: TWILIGHT_CALIBRATEImplementation2.java,v 1.4 2013-04-29 09:27:18 cjm Exp $");
+	public final static String RCSID = new String("$Id: TWILIGHT_CALIBRATEImplementation2.java,v 1.5 2013-06-04 08:26:15 cjm Exp $");
 	/**
 	 * The number of different binning factors we should min/best/max count data for.
 	 * Actually 1 more than the maximum used binning, as we go from 1 not 0.
@@ -79,7 +80,12 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 	 * Middle part of a key string, used to create a list of potential twilight calibrations to
 	 * perform from a Java property file.
 	 */
-	protected final static String LIST_KEY_SLIDE_STRING = ".slide";
+	protected final static String LIST_KEY_DICHROIC_SLIDE_STRING = ".dichroic.slide";
+	/**
+	 * Middle part of a key string, used to create a list of potential twilight calibrations to
+	 * perform from a Java property file.
+	 */
+	protected final static String LIST_KEY_FILTER_SLIDE_STRING = ".filter.slide";
 	/**
 	 * Final part of a key string, used to create a list of potential twilight calibrations to
 	 * perform from a Java property file.
@@ -583,7 +589,8 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 	 * @see #getFilterSensitivity
 	 * @see #LIST_KEY_STRING
 	 * @see #LIST_KEY_CALIBRATION_STRING
-	 * @see #LIST_KEY_SLIDE_STRING
+	 * @see #LIST_KEY_DICHROIC_SLIDE_STRING
+	 * @see #LIST_KEY_FILTER_SLIDE_STRING
 	 * @see #LIST_KEY_LOWER_STRING
 	 * @see #LIST_KEY_UPPER_STRING
 	 * @see #LIST_KEY_FILTER_STRING
@@ -600,7 +607,7 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 		TWILIGHT_CALIBRATECalibration calibration = null;
 		String timeOfNightString = null;
 		String filter = null;
-		String lowerSlide,upperSlide;
+		String lowerDichroicSlide,upperDichroicSlide,lowerFilterSlide,upperFilterSlide;
 		int index,bin;
 		long frequency;
 		double filterSensitivity;
@@ -632,16 +639,26 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 											LIST_KEY_CALIBRATION_STRING+
 											timeOfNightString+index+
 											LIST_KEY_AMPLIFIER_STRING);
-					lowerSlide = status.getProperty(LIST_KEY_STRING+
-									LIST_KEY_CALIBRATION_STRING+
-									timeOfNightString+index+
-									LIST_KEY_SLIDE_STRING+
-									LIST_KEY_LOWER_STRING);
-					upperSlide = status.getProperty(LIST_KEY_STRING+
-									LIST_KEY_CALIBRATION_STRING+
-									timeOfNightString+index+
-									LIST_KEY_SLIDE_STRING+
-									LIST_KEY_UPPER_STRING);
+					lowerDichroicSlide = status.getProperty(LIST_KEY_STRING+
+										LIST_KEY_CALIBRATION_STRING+
+										timeOfNightString+index+
+										LIST_KEY_DICHROIC_SLIDE_STRING+
+										LIST_KEY_LOWER_STRING);
+					upperDichroicSlide = status.getProperty(LIST_KEY_STRING+
+										LIST_KEY_CALIBRATION_STRING+
+										timeOfNightString+index+
+										LIST_KEY_DICHROIC_SLIDE_STRING+
+										LIST_KEY_UPPER_STRING);
+					lowerFilterSlide = status.getProperty(LIST_KEY_STRING+
+									      LIST_KEY_CALIBRATION_STRING+
+									      timeOfNightString+index+
+									      LIST_KEY_FILTER_SLIDE_STRING+
+									      LIST_KEY_LOWER_STRING);
+					upperFilterSlide = status.getProperty(LIST_KEY_STRING+
+									      LIST_KEY_CALIBRATION_STRING+
+									      timeOfNightString+index+
+									      LIST_KEY_FILTER_SLIDE_STRING+
+									      LIST_KEY_UPPER_STRING);
 				}
 				catch(Exception e)
 				{
@@ -658,8 +675,10 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 				{
 					calibration.setBin(bin);
 					calibration.setUseWindowAmplifier(useWindowAmplifier);
-					calibration.setLowerSlide(lowerSlide);
-					calibration.setUpperSlide(upperSlide);
+					calibration.setLowerDichroicSlide(lowerDichroicSlide);
+					calibration.setUpperDichroicSlide(upperDichroicSlide);
+					calibration.setLowerFilterSlide(lowerFilterSlide);
+					calibration.setUpperFilterSlide(upperFilterSlide);
 					calibration.setFilter(filter);
 					calibration.setFrequency(frequency);
 				}
@@ -678,6 +697,7 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 			// get filter sensitivity, and set calibration sensitivities
 				try
 				{
+					// diddly take into account dichroicSlide and filterSlides
 					filterSensitivity = getFilterSensitivity(filter);
 					calibration.setFilterSensitivity(filterSensitivity);
 				}
@@ -701,8 +721,10 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 					":Loaded calibration:"+index+
 					":bin:"+calibration.getBin()+
 					":use window amplifier:"+calibration.useWindowAmplifier()+
-					":upper slide:"+calibration.getUpperSlide()+
-					":lower slide:"+calibration.getLowerSlide()+
+					":upper dichroic slide:"+calibration.getUpperDichroicSlide()+
+					":lower dichroic slide:"+calibration.getLowerDichroicSlide()+
+					":upper filter slide:"+calibration.getUpperFilterSlide()+
+					":lower filter slide:"+calibration.getLowerFilterSlide()+
 					":filter:"+calibration.getFilter()+
 					":frequency:"+calibration.getFrequency()+".");
 			}
@@ -726,6 +748,7 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 	{
 		double filterSensitivity;
 
+		// diddly take into account dichroicSlide and filterSlides
 		filterSensitivity = status.getPropertyDouble(LIST_KEY_STRING+LIST_KEY_FILTER_SENSITIVITY_STRING+
 								filterType);
 		if((filterSensitivity < 0.0)||(filterSensitivity > 1.0))
@@ -866,7 +889,7 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 	{
 		TWILIGHT_CALIBRATECalibration calibration = null;
 		String filter = null;
-		String lowerSlide,upperSlide;
+		String lowerDichroicSlide,upperDichroicSlide,lowerFilterSlide,upperFilterSlide;
 		int bin;
 		long lastTime;
 		boolean useWindowAmplifier;
@@ -876,18 +899,23 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 			calibration = (TWILIGHT_CALIBRATECalibration)(calibrationList.get(i));
 			bin = calibration.getBin();
 			useWindowAmplifier = calibration.useWindowAmplifier();
-			lowerSlide = calibration.getLowerSlide();
-			upperSlide = calibration.getUpperSlide();
+			lowerDichroicSlide = calibration.getLowerDichroicSlide();
+			upperDichroicSlide = calibration.getUpperDichroicSlide();
+			lowerFilterSlide = calibration.getLowerFilterSlide();
+			upperFilterSlide = calibration.getUpperFilterSlide();
 			filter = calibration.getFilter();
 			lastTime = twilightCalibrateState.getLastTime(bin,useWindowAmplifier,
-								      lowerSlide,upperSlide,filter);
+								      lowerDichroicSlide,upperDichroicSlide,
+								      lowerFilterSlide,upperFilterSlide,filter);
 			calibration.setLastTime(lastTime);
 			o.log(Logging.VERBOSITY_VERBOSE,
 			      "Command:"+twilightCalibrateCommand.getClass().getName()+":Calibration:"+
 			      "bin:"+calibration.getBin()+
 			      ":use window amplifier:"+calibration.useWindowAmplifier()+
-			      ":upper slide:"+calibration.getUpperSlide()+
-			      ":lower slide:"+calibration.getLowerSlide()+
+			      ":upper dichroic slide:"+calibration.getUpperDichroicSlide()+
+			      ":lower dichroic slide:"+calibration.getLowerDichroicSlide()+
+			      ":upper filter slide:"+calibration.getUpperFilterSlide()+
+			      ":lower filter slide:"+calibration.getLowerFilterSlide()+
 			      ":filter:"+calibration.getFilter()+
 			      ":frequency:"+calibration.getFrequency()+
 			      " now has last time set to:"+lastTime+".");
@@ -939,7 +967,7 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 			TWILIGHT_CALIBRATE_DONE twilightCalibrateDone,TWILIGHT_CALIBRATECalibration calibration)
 	{
 		String filter = null;
-		String lowerSlide,upperSlide;
+		String lowerDichroicSlide,upperDichroicSlide,lowerFilterSlide,upperFilterSlide;
 		int bin,optimalExposureLength;
 		long lastTime,frequency;
 		long now;
@@ -951,8 +979,10 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 		      "Command:"+twilightCalibrateCommand.getClass().getName()+
 		      ":doCalibrate:"+"bin:"+calibration.getBin()+
 		      ":use window amplifier:"+calibration.useWindowAmplifier()+
-		      ":upper slide:"+calibration.getUpperSlide()+
-		      ":lower slide:"+calibration.getLowerSlide()+
+		      ":upper dichroic slide:"+calibration.getUpperDichroicSlide()+
+		      ":lower dichroic slide:"+calibration.getLowerDichroicSlide()+
+		      ":upper filter slide:"+calibration.getUpperFilterSlide()+
+		      ":lower filter slide:"+calibration.getLowerFilterSlide()+
 		      ":filter:"+calibration.getFilter()+
 		      ":frequency:"+calibration.getFrequency()+
 		      ":filter sensitivity:"+calibration.getFilterSensitivity()+
@@ -960,8 +990,10 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 	// get copy of calibration data
 		bin = calibration.getBin();
 		useWindowAmplifier = calibration.useWindowAmplifier();
-		upperSlide = calibration.getUpperSlide();
-		lowerSlide = calibration.getLowerSlide();
+		upperDichroicSlide = calibration.getUpperDichroicSlide();
+		lowerDichroicSlide = calibration.getLowerDichroicSlide();
+		upperFilterSlide = calibration.getUpperFilterSlide();
+		lowerFilterSlide = calibration.getLowerFilterSlide();
 		filter = calibration.getFilter();
 		frequency = calibration.getFrequency();
 		lastTime = calibration.getLastTime();
@@ -975,8 +1007,10 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 			      "Command:"+twilightCalibrateCommand.getClass().getName()+
 			      ":doCalibrate:"+"bin:"+calibration.getBin()+
 			      ":use window amplifier:"+calibration.useWindowAmplifier()+
-			      ":upper slide:"+calibration.getUpperSlide()+
-			      ":lower slide:"+calibration.getLowerSlide()+
+			      ":upper dichroic slide:"+calibration.getUpperDichroicSlide()+
+			      ":lower dichroic slide:"+calibration.getLowerDichroicSlide()+
+			      ":upper filter slide:"+calibration.getUpperFilterSlide()+
+			      ":lower filter slide:"+calibration.getLowerFilterSlide()+
 			      ":filter:"+calibration.getFilter()+
 			      ":frequency:"+calibration.getFrequency()+
 			      ":last time:"+lastTime+
@@ -1051,20 +1085,21 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 			return false;
 	// configure slide/filter/CCD camera
 		if(doConfig(twilightCalibrateCommand,twilightCalibrateDone,bin,useWindowAmplifier,
-			    lowerSlide,upperSlide,filter) == false)
+			    lowerDichroicSlide,upperDichroicSlide,lowerFilterSlide,upperFilterSlide,filter) == false)
 			return false;
 	// send an ack before the frame, so the client doesn't time out during the first exposure
 		if(sendBasicAck(twilightCalibrateCommand,twilightCalibrateDone,exposureLength+frameOverhead) == false)
 			return false;
 	// do the frames with this configuration
 		calibrationFrameCount = 0;
-		if(doOffsetList(twilightCalibrateCommand,twilightCalibrateDone,bin,
-				lowerSlide,upperSlide,filter) == false)
+		if(doOffsetList(twilightCalibrateCommand,twilightCalibrateDone,bin,lowerDichroicSlide,
+				upperDichroicSlide,lowerFilterSlide,upperFilterSlide,filter) == false)
 			return false;
 	// update state, if we completed the whole calibration.
 		if(calibrationFrameCount == offsetList.size())
 		{
-			twilightCalibrateState.setLastTime(bin,useWindowAmplifier,lowerSlide,upperSlide,filter);
+			twilightCalibrateState.setLastTime(bin,useWindowAmplifier,lowerDichroicSlide,
+							 upperDichroicSlide,lowerFilterSlide,upperFilterSlide,filter);
 			try
 			{
 				twilightCalibrateState.save(stateFilename);
@@ -1080,15 +1115,18 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 				return false;
 			}
 			lastTime = twilightCalibrateState.getLastTime(bin,useWindowAmplifier,
-								      lowerSlide,upperSlide,filter);
+								      lowerDichroicSlide,upperDichroicSlide,
+								      lowerFilterSlide,upperFilterSlide,filter);
 			calibration.setLastTime(lastTime);
 			o.log(Logging.VERBOSITY_VERBOSE,
 			      "Command:"+twilightCalibrateCommand.getClass().getName()+
 			      ":doCalibrate:Calibration successfully completed:"+
 			      "bin:"+calibration.getBin()+
 			      ":use window amplifier:"+calibration.useWindowAmplifier()+
-			      ":upper slide:"+calibration.getUpperSlide()+
-			      ":lower slide:"+calibration.getLowerSlide()+
+			      ":upper dichroic slide:"+calibration.getUpperDichroicSlide()+
+			      ":lower dichroic slide:"+calibration.getLowerDichroicSlide()+
+			      ":upper filter slide:"+calibration.getUpperFilterSlide()+
+			      ":lower filter slide:"+calibration.getLowerFilterSlide()+
 			      ":filter:"+calibration.getFilter()+".");
 		}// end if done calibration
 		else
@@ -1098,8 +1136,10 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 			      ":doCalibrate:Calibration NOT completed:"+
 			      "bin:"+calibration.getBin()+
 			      ":use window amplifier:"+calibration.useWindowAmplifier()+
-			      ":upper slide:"+calibration.getUpperSlide()+
-			      ":lower slide:"+calibration.getLowerSlide()+
+			      ":upper dichroic slide:"+calibration.getUpperDichroicSlide()+
+			      ":lower dichroic slide:"+calibration.getLowerDichroicSlide()+
+			      ":upper filter slide:"+calibration.getUpperFilterSlide()+
+			      ":lower filter slide:"+calibration.getLowerFilterSlide()+
 			      ":filter:"+calibration.getFilter()+".");
 		}
 		return true;
@@ -1112,32 +1152,87 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 	 * @param bin The binning factor to use.
 	 * @param useWindowAmplifier Boolean specifying whether to use the default amplifier (false), or the
 	 *                           amplifier used for windowing readouts (true).
-	 * @param lowerSlide The position the lower filter slide should be in.
-	 * @param upperSlide The position the upper filter slide should be in.
+	 * @param lowerDichroicSlide The position the lower dichroic filter slide should be in.
+	 * @param upperDichroicSlide The position the upper dichroic filter slide should be in.
+	 * @param lowerFilterSlide The position the lower filter slide should be in.
+	 * @param upperFilterSlide The position the upper filter slide should be in.
 	 * @param filter The type of filter to use.
 	 * @return The method returns true if the calibration was done successfully, false if an error occured.
+	 * @see #o
+	 * @see #ccd
+	 * @see #ndFilterArduino
+	 * @see O#getStatus
+	 * @see O#error
+	 * @see O#log
+	 * @see OConstants#O_ERROR_CODE_BASE
+	 * @see OConstants#O_ERROR_CODE_NO_ERROR
+	 * @see FITSImplementation#getAmplifier
 	 * @see FITSImplementation#setFocusOffset
 	 * @see FITSImplementation#beamSteer
 	 * @see OStatus#getNumberColumns
 	 * @see OStatus#getNumberRows
+	 * @see OStatus#getFilterWheelPosition
+	 * @see OStatus#getPropertyBoolean
+	 * @see OStatus#incConfigId
+	 * @see OStatus#setConfigName
+	 * @see ngat.o.ndfilter.NDFilterArduino
+	 * @see ngat.o.ndfilter.NDFilterArduino#move
+	 * @see ngat.o.ccd.CCDLibrary#setupDimensions
+	 * @see ngat.o.ccd.CCDLibrary#filterWheelMove
+	 * @see ngat.o.ccd.CCDLibrarySetupWindow
+	 * @see ngat.phase2.OConfig#O_FILTER_INDEX_FILTER_WHEEL
+	 * @see ngat.phase2.OConfig#O_FILTER_INDEX_FILTER_SLIDE_LOWER
+	 * @see ngat.phase2.OConfig#O_FILTER_INDEX_FILTER_SLIDE_UPPER
+	 * @see ngat.phase2.OConfig#O_FILTER_INDEX_COUNT
 	 */
 	protected boolean doConfig(TWILIGHT_CALIBRATE twilightCalibrateCommand,
 				   TWILIGHT_CALIBRATE_DONE twilightCalibrateDone,int bin,boolean useWindowAmplifier,
-				   String lowerSlide,String upperSlide,String filter)
+				   String lowerDichroicSlide,String upperDichroicSlide,
+				   String lowerFilterSlide,String upperFilterSlide,String filter)
 	{
 		CCDLibrarySetupWindow windowList[] = new CCDLibrarySetupWindow[CCDLibrary.SETUP_WINDOW_COUNT];
+		String filterSlideName[] = new String[OConfig.O_FILTER_INDEX_COUNT];
 		int numberColumns,numberRows,amplifier;
-		int filterWheelPosition = -1;
+		int filterWheelPosition = -1,filterSlidePositionNumber;
 		boolean filterWheelEnable;
+		boolean filterSlideEnable[] = new boolean[OConfig.O_FILTER_INDEX_COUNT];
+		boolean filterSlidePosition[] = new boolean[OConfig.O_FILTER_INDEX_COUNT];
 
 	// load other required config for dimension configuration from the O properties file.
 		try
 		{
+			// detector config
 			numberColumns = status.getNumberColumns(bin);
 			numberRows = status.getNumberRows(bin);
 			amplifier = getAmplifier(useWindowAmplifier);
+			// filter wheel config (filter 1)
 			filterWheelEnable = status.getPropertyBoolean("o.config.filter_wheel.enable");
-			filterWheelPosition = status.getFilterWheelPosition(filter);
+			filterWheelPosition = status.getFilterWheelPosition(OConfig.O_FILTER_INDEX_FILTER_WHEEL,
+									    filter);
+			// neutral density filter slide config (filter 2+3)
+			filterSlideName[OConfig.O_FILTER_INDEX_FILTER_SLIDE_LOWER] = lowerFilterSlide;
+			filterSlideName[OConfig.O_FILTER_INDEX_FILTER_SLIDE_UPPER] = upperFilterSlide;
+			for(int i = OConfig.O_FILTER_INDEX_FILTER_SLIDE_LOWER;
+			    i <= OConfig.O_FILTER_INDEX_FILTER_SLIDE_UPPER; i++)
+			{
+				filterSlideEnable[i] = status.getPropertyBoolean("o.config.filter_slide.enable."+i);
+				filterSlidePositionNumber = status.getFilterWheelPosition(i,filterSlideName[i]);
+				if(filterSlidePositionNumber == 0) // stow
+					filterSlidePosition[i] = false;
+				else if(filterSlidePositionNumber == 1) // deploy
+					filterSlidePosition[i] = true;
+				else
+				{
+					String errorString = new String(twilightCalibrateCommand.getId()+
+					  ":doConfig::Filter slide position number out of range for filter wheel:"+i+
+					  " and filter name "+filterSlideName[i]);
+					o.error(this.getClass().getName()+":"+errorString);
+					twilightCalibrateDone.setErrorNum(OConstants.O_ERROR_CODE_BASE+2323);
+					twilightCalibrateDone.setErrorString(errorString);
+					twilightCalibrateDone.setSuccessful(false);
+					return false;
+				}
+			}// end for
 		}
 	// CCDLibraryFormatException,IllegalArgumentException,NumberFormatException.
 		catch(Exception e)
@@ -1161,9 +1256,9 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 	// test abort
 		if(testAbort(twilightCalibrateCommand,twilightCalibrateDone) == true)
 			return false;
-	// send configuration to the SDSU controller
 		try
 		{
+			// send configuration to the SDSU controller
 			ccd.setupDimensions(numberColumns,numberRows,bin,bin,amplifier,0,windowList);
 			if(testAbort(twilightCalibrateCommand,twilightCalibrateDone) == true)
 				return false;
@@ -1176,8 +1271,23 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 				o.log(Logging.VERBOSITY_VERY_TERSE,this.getClass().getName()+
 					":doConfig:Filter wheels not enabled:Filter wheels NOT moved.");
 			}
+			// configure filter slides by talking to the arduino
+			for(int i = OConfig.O_FILTER_INDEX_FILTER_SLIDE_LOWER;
+			    i <= OConfig.O_FILTER_INDEX_FILTER_SLIDE_UPPER; i++)
+			{
+				if(filterSlideEnable[i])
+				{
+					ndFilterArduino.move(i,filterSlidePosition[i]);
+				}
+				else
+				{
+					o.log(Logging.VERBOSITY_VERY_TERSE,this.getClass().getName()+
+					      ":doConfig:Filter slide "+i+" not enabled:Filter slide "+i+
+					      " NOT moved.");
+				}
+			}// end for
 			// send BEAM_STEER command to BSS to position dichroics.
-		        beamSteer(twilightCalibrateCommand.getId(),lowerSlide,upperSlide);
+		        beamSteer(twilightCalibrateCommand.getId(),lowerDichroicSlide,upperDichroicSlide);
 		}
 		catch(Exception e)
 		{
@@ -1193,27 +1303,23 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 		if(testAbort(twilightCalibrateCommand,twilightCalibrateDone) == true)
 			return false;
 	// Issue ISS OFFSET_FOCUS_CONTROL commmand based on the optical thickness of the filter(s)
-		if(filterWheelEnable)
+	// Note we do not take into account filterWheelEnable and filterSlideEnable[i] when deciding
+	// whether to call setFocusOffset. It is unclear whether we should do so, all the positions
+	// in the filter wheel are filled, so a focus offset should be made, even if filterWheelEnable
+	// is false.
+		try
 		{
-			try
-			{
-				setFocusOffset(twilightCalibrateCommand.getId(),filter);
-			}
-			catch(Exception e)
-			{
-				String errorString = new String(twilightCalibrateCommand.getId()+
-								"doConfig:setFocusOffset failed:");
-				o.error(this.getClass().getName()+":"+errorString,e);
-				twilightCalibrateDone.setErrorNum(OConstants.O_ERROR_CODE_BASE+2322);
-				twilightCalibrateDone.setErrorString(errorString+e);
-				twilightCalibrateDone.setSuccessful(false);
-				return false;
-			}
+			setFocusOffset(twilightCalibrateCommand.getId(),filter,lowerFilterSlide,upperFilterSlide);
 		}
-		else
+		catch(Exception e)
 		{
-			o.log(Logging.VERBOSITY_VERY_TERSE,this.getClass().getName()+
-			    ":doConfig:Filter wheels not enabled:Focus offset NOT set.");
+			String errorString = new String(twilightCalibrateCommand.getId()+
+							"doConfig:setFocusOffset failed:");
+			o.error(this.getClass().getName()+":"+errorString,e);
+			twilightCalibrateDone.setErrorNum(OConstants.O_ERROR_CODE_BASE+2322);
+			twilightCalibrateDone.setErrorString(errorString+e);
+			twilightCalibrateDone.setSuccessful(false);
+			return false;
 		}
 	// Increment unique config ID.
 	// This is queried when saving FITS headers to get the CONFIGID value.
@@ -1234,7 +1340,8 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 	// Store name of configuration used in status object.
 	// This is queried when saving FITS headers to get the CONFNAME value.
 		status.setConfigName("TWILIGHT_CALIBRATION:"+twilightCalibrateCommand.getId()+
-				     ":"+bin+":"+useWindowAmplifier+":"+upperSlide+":"+lowerSlide+":"+filter);
+				     ":"+bin+":"+useWindowAmplifier+":"+upperDichroicSlide+":"+lowerDichroicSlide+":"+
+				     upperFilterSlide+":"+lowerFilterSlide+":"+filter);
 		return true;
 	}
 
@@ -1244,8 +1351,14 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 	 * @param twilightCalibrateCommand The instance of TWILIGHT_CALIBRATE we are currently running.
 	 * @param twilightCalibrateDone The instance of TWILIGHT_CALIBRATE_DONE to fill in with errors we receive.
 	 * @param bin The binning factor we are doing the exposure at, used to select the correct min/best/max counts.
-	 * @param lowerSlide The position the lower filter slide should be in. Passed through for logging purposes.
-	 * @param upperSlide The position the upper filter slide should be in. Passed through for logging purposes.
+	 * @param lowerDichroicSlide The position the lower dichroic filter slide should be in. 
+	 *        Passed through for logging purposes.
+	 * @param upperDichroicSlide The position the upper dichroic filter slide should be in. 
+	 *        Passed through for logging purposes.
+	 * @param lowerFilterSlide The position the lower filter slide should be in. 
+	 *        Passed through for logging purposes.
+	 * @param upperFilterSlide The position the upper filter slide should be in. 
+	 *        Passed through for logging purposes.
 	 * @param filter The type of filter to use. Passed through for logging purposes.
 	 * @return The method returns true when the offset list is terminated, false if an error occured.
 	 * @see #offsetList
@@ -1255,7 +1368,8 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 	 */
 	protected boolean doOffsetList(TWILIGHT_CALIBRATE twilightCalibrateCommand,
 				       TWILIGHT_CALIBRATE_DONE twilightCalibrateDone,int bin,
-				       String lowerSlide,String upperSlide,String filter)
+				       String lowerDichroicSlide,String upperDichroicSlide,
+				       String lowerFilterSlide,String upperFilterSlide,String filter)
 	{
 		TWILIGHT_CALIBRATEOffset offset = null;
 		OFFSET_RA_DEC offsetRaDecCommand = null;
@@ -1293,8 +1407,9 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 				return false;
 			}
 		// do exposure at this offset
-			if(doFrame(twilightCalibrateCommand,twilightCalibrateDone,bin,lowerSlide,upperSlide,
-				   filter) == false)
+			if(doFrame(twilightCalibrateCommand,twilightCalibrateDone,bin,
+				   lowerDichroicSlide,upperDichroicSlide,
+				   lowerFilterSlide,upperFilterSlide,filter) == false)
 				return false;
 			offsetListIndex++;
 		}// end for on offset list
@@ -1340,8 +1455,14 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 	 * @param twilightCalibrateCommand The instance of TWILIGHT_CALIBRATE we are currently running.
 	 * @param twilightCalibrateDone The instance of TWILIGHT_CALIBRATE_DONE to fill in with errors we receive.
 	 * @param bin The binning factor we are doing the exposure at, used to select the correct min/best/max counts.
-	 * @param lowerSlide The position the lower filter slide should be in. Passed through for logging purposes.
-	 * @param upperSlide The position the upper filter slide should be in. Passed through for logging purposes.
+	 * @param lowerDichroicSlide The position the lower dichroic filter slide should be in. 
+	 *        Passed through for logging purposes.
+	 * @param upperDichroicSlide The position the upper dichroic filter slide should be in. 
+	 *        Passed through for logging purposes.
+	 * @param lowerFilterSlide The position the lower filter slide should be in. 
+	 *        Passed through for logging purposes.
+	 * @param upperFilterSlide The position the upper filter slide should be in. 
+	 *        Passed through for logging purposes.
 	 * @param filter The type of filter to use. Passed through for logging purposes.
 	 * @return The method returns true if no errors occured, false if an error occured.
 	 * @see FITSImplementation#testAbort
@@ -1371,7 +1492,8 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 	 */
 	protected boolean doFrame(TWILIGHT_CALIBRATE twilightCalibrateCommand,
 				  TWILIGHT_CALIBRATE_DONE twilightCalibrateDone,int bin,
-				  String lowerSlide,String upperSlide,String filter)
+				  String lowerDichroicSlide,String upperDichroicSlide,
+				  String lowerFilterSlide,String upperFilterSlide,String filter)
 	{
 		File temporaryFile = null;
 		File newFile = null;
@@ -1412,8 +1534,9 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 		// log exposure attempt
 			o.log(Logging.VERBOSITY_VERBOSE,"Command:"+twilightCalibrateCommand.getId()+
 			      ":doFrame:"+"bin:"+bin+
-			      ":upper slide:"+upperSlide+":lower slide:"+lowerSlide+":filter:"+filter+
-			      ":Attempting exposure: length:"+exposureLength+".");
+			      ":upper dichroic slide:"+upperDichroicSlide+":lower dichroic slide:"+lowerDichroicSlide+
+			      ":upper filter slide:"+upperFilterSlide+":lower filter slide:"+lowerFilterSlide+
+			      ":filter:"+filter+":Attempting exposure: length:"+exposureLength+".");
 		// do exposure
 			try
 			{
@@ -1457,7 +1580,9 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 			o.log(Logging.VERBOSITY_VERBOSE,
 			      "Command:"+twilightCalibrateCommand.getId()+
 			      ":doFrame:"+"bin:"+bin+
-			      ":upper slide:"+upperSlide+":lower slide:"+lowerSlide+":filter:"+filter+
+			      ":upper dichroic slide:"+upperDichroicSlide+":lower dichroic slide:"+lowerDichroicSlide+
+			      ":upper filter slide:"+upperFilterSlide+":lower filter slide:"+lowerFilterSlide+
+			      ":filter:"+filter+
 			      ":Exposure reduction:length "+exposureLength+
 			      ":filename:"+twilightCalibrateDone.getFilename()+
 			      ":mean counts:"+twilightCalibrateDone.getMeanCounts()+
@@ -1473,7 +1598,10 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 				o.log(Logging.VERBOSITY_VERBOSE,
 				      "Command:"+twilightCalibrateCommand.getId()+
 				      ":doFrame:"+"bin:"+bin+
-				      ":upper slide:"+upperSlide+":lower slide:"+lowerSlide+":filter:"+filter+
+				      ":upper dichroic slide:"+upperDichroicSlide+
+				      ":lower dichroic slide:"+lowerDichroicSlide+
+				      ":upper filter slide:"+upperFilterSlide+":lower filter slide:"+lowerFilterSlide+
+				      ":filter:"+filter+
 				      ":Exposure reduction:length "+exposureLength+
 				      ":filename:"+twilightCalibrateDone.getFilename()+
 				      ":mean counts:"+twilightCalibrateDone.getMeanCounts()+
@@ -1491,7 +1619,9 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 			o.log(Logging.VERBOSITY_VERBOSE,
 			      "Command:"+twilightCalibrateCommand.getId()+
 			      ":doFrame:"+"bin:"+bin+
-			      ":upper slide:"+upperSlide+":lower slide:"+lowerSlide+":filter:"+filter+
+			      ":upper dichroic slide:"+upperDichroicSlide+":lower dichroic slide:"+lowerDichroicSlide+
+			      ":upper filter slide:"+upperFilterSlide+":lower filter slide:"+lowerFilterSlide+
+			      ":filter:"+filter+
 			      ":Exposure frame state:length:"+exposureLength+
 			      ":mean counts:"+meanCounts+
 			      ":peak counts:"+twilightCalibrateDone.getPeakCounts()+
@@ -1535,7 +1665,10 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 				o.log(Logging.VERBOSITY_VERBOSE,
 				      "Command:"+twilightCalibrateCommand.getId()+
 				      ":doFrame:"+"bin:"+bin+
-				      ":upper slide:"+upperSlide+":lower slide:"+lowerSlide+":filter:"+filter+
+				      ":upper dichroic slide:"+upperDichroicSlide+
+				      ":lower dichroic slide:"+lowerDichroicSlide+
+				      ":upper filter slide:"+upperFilterSlide+":lower filter slide:"+lowerFilterSlide+
+				      ":filter:"+filter+
 				      ":Exposure raw frame rename:renamed "+temporaryFile+" to "+newFile+".");
 			// reset twilight calibrate done's filename to renamed file
 			// in case pipelined reduced filename does not exist/cannot be renamed
@@ -1587,7 +1720,11 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 					o.log(Logging.VERBOSITY_VERBOSE,
 					      "Command:"+twilightCalibrateCommand.getId()+
 					      ":doFrame:"+"bin:"+bin+
-					      ":upper slide:"+upperSlide+":lower slide:"+lowerSlide+":filter:"+filter+
+					      ":upper dichroic slide:"+upperDichroicSlide+
+					      ":lower dichroic slide:"+lowerDichroicSlide+
+					      ":upper filter slide:"+upperFilterSlide+
+					      ":lower filter slide:"+lowerFilterSlide+
+					      ":filter:"+filter+
 					      ":Exposure DpRt frame rename:renamed "+temporaryFile+" to "+newFile+".");
 				}// end if temporary file exists
 			}// end if frameState was OK
@@ -1608,7 +1745,11 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 			o.log(Logging.VERBOSITY_VERBOSE,
 			      "Command:"+twilightCalibrateCommand.getId()+
 			      ":doFrame:"+"bin:"+bin+
-			      ":upper slide:"+upperSlide+":lower slide:"+lowerSlide+":filter:"+filter+
+			      ":upper dichroic slide:"+upperDichroicSlide+
+			      ":lower dichroic slide:"+lowerDichroicSlide+
+			      ":upper filter slide:"+upperFilterSlide+
+			      ":lower filter slide:"+lowerFilterSlide+
+			      ":filter:"+filter+
 			      ":New Optimal exposure length:"+optimalExposureLength+
 			      ":New limited exposure length:"+exposureLength+
 			      ":Predicted mean counts:"+predictedMeanCounts+".");
@@ -1621,7 +1762,11 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 				o.log(Logging.VERBOSITY_VERBOSE,
 				      "Command:"+twilightCalibrateCommand.getId()+
 				      ":doFrame:"+"bin:"+bin+
-				      ":upper slide:"+upperSlide+":lower slide:"+lowerSlide+":filter:"+filter+
+				      ":upper dichroic slide:"+upperDichroicSlide+
+				      ":lower dichroic slide:"+lowerDichroicSlide+
+				      ":upper filter slide:"+upperFilterSlide+
+				      ":lower filter slide:"+lowerFilterSlide+
+				      ":filter:"+filter+
 				      ":Predicted mean counts "+predictedMeanCounts+
 				      " out of range(too low):moving to next calibration.");
 				// try next calibration
@@ -1635,7 +1780,11 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 				o.log(Logging.VERBOSITY_VERBOSE,
 				      "Command:"+twilightCalibrateCommand.getId()+
 				      ":doFrame:"+"bin:"+bin+
-				      ":upper slide:"+upperSlide+":lower slide:"+lowerSlide+":filter:"+filter+
+				      ":upper dichroic slide:"+upperDichroicSlide+
+				      ":lower dichroic slide:"+lowerDichroicSlide+
+				      ":upper filter slide:"+upperFilterSlide+
+				      ":lower filter slide:"+lowerFilterSlide+
+				      ":filter:"+filter+
 				      ":Predicted mean counts "+predictedMeanCounts+
 				      " out of range(too high):moving to next calibration.");
 				// try next calibration
@@ -1661,7 +1810,11 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 			// log
 				o.log(Logging.VERBOSITY_VERBOSE,"Command:"+twilightCalibrateCommand.getId()+
 				      ":doFrame:"+"bin:"+bin+
-				      ":upper slide:"+upperSlide+":lower slide:"+lowerSlide+":filter:"+filter+
+				      ":upper dichroic slide:"+upperDichroicSlide+
+				      ":lower dichroic slide:"+lowerDichroicSlide+
+				      ":upper filter slide:"+upperFilterSlide+
+				      ":lower filter slide:"+lowerFilterSlide+
+				      ":filter:"+filter+
 				      ":Frame completed.");
 			}
 			// have we run out of twilight calibrate time?
@@ -1676,7 +1829,11 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 				o.log(Logging.VERBOSITY_VERBOSE,
 				      "Command:"+twilightCalibrateCommand.getId()+
 				      ":doFrame:"+"bin:"+bin+
-				      ":upper slide:"+upperSlide+":lower slide:"+lowerSlide+":filter:"+filter+
+				      ":upper dichroic slide:"+upperDichroicSlide+
+				      ":lower dichroic slide:"+lowerDichroicSlide+
+				      ":upper filter slide:"+upperFilterSlide+
+				      ":lower filter slide:"+lowerFilterSlide+
+				      ":filter:"+filter+
 				      ":Ran out of time to complete:((now:"+now+
 				      ")+(exposureLength:"+exposureLength+
 				      ")+(frameOverhead:"+frameOverhead+")) > "+
@@ -1868,8 +2025,10 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 		 * @param useWindowAmplifier Whether we are using the default amplifier (false) or the amplifier
 		 *        used for windowing (true).
 		 * @param filter The filter type string used for this calibration.
-		 * @param lowerSlide The lower slide position used for this calibration. 
-		 * @param upperSlide The upper slide position used for this calibration. 
+		 * @param lowerDichroicSlide The lower dichroic slide position used for this calibration. 
+		 * @param upperDichroicSlide The upper dichroic slide position used for this calibration. 
+		 * @param lowerFilterSlide The lower filter slide position used for this calibration. 
+		 * @param upperFilterSlide The upper filter slide position used for this calibration. 
 		 * @return The number of milliseconds since the EPOCH, the last time a calibration with these
 		 * 	parameters was completed. If this calibraion has not been performed before, zero
 		 * 	is returned.
@@ -1877,15 +2036,18 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 		 * @see #LIST_KEY_LAST_TIME_STRING
 		 */
 		public long getLastTime(int bin,boolean useWindowAmplifier,
-					String lowerSlide,String upperSlide,String filter)
+					String lowerDichroicSlide,String upperDichroicSlide,
+					String lowerFilterSlide,String upperFilterSlide,String filter)
 		{
 			long time;
 
 			try
 			{
 				time = properties.getLong(LIST_KEY_STRING+LIST_KEY_LAST_TIME_STRING+bin+"."+
-					       useWindowAmplifier+"."+lowerSlide+"."+upperSlide+"."+
-					       filter);
+							  useWindowAmplifier+"."+
+							  lowerDichroicSlide+"."+upperDichroicSlide+"."+
+							  lowerFilterSlide+"."+upperFilterSlide+"."+
+							  filter);
 			}
 			catch(NGATPropertyException e)/* assume failure due to key not existing */
 			{
@@ -1900,20 +2062,25 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 		 * @param bin The binning factor used for this calibration.
 		 * @param useWindowAmplifier Whether we are using the default amplifier (false) or the amplifier
 		 *        used for windowing (true).
-		 * @param lowerSlide The lower slide position used for this calibration.
-		 * @param upperSlide The upper slide position used for this calibration.
+		 * @param lowerDichroicSlide The lower dichroic slide position used for this calibration. 
+		 * @param upperDichroicSlide The upper dichroic slide position used for this calibration. 
+		 * @param lowerFilterSlide The lower filter slide position used for this calibration. 
+		 * @param upperFilterSlide The upper filter slide position used for this calibration. 
 		 * @param filter The filter type string used for this calibration.
 		 * @see #LIST_KEY_STRING
 		 * @see #LIST_KEY_LAST_TIME_STRING
 		 */
 		public void setLastTime(int bin,boolean useWindowAmplifier,
-					String lowerSlide,String upperSlide,String filter)
+					String lowerDichroicSlide,String upperDichroicSlide,
+					String lowerFilterSlide,String upperFilterSlide,String filter)
 		{
 			long now;
 
 			now = System.currentTimeMillis();
 			properties.setProperty(LIST_KEY_STRING+LIST_KEY_LAST_TIME_STRING+bin+"."+
-					       useWindowAmplifier+"."+lowerSlide+"."+upperSlide+"."+
+					       useWindowAmplifier+"."+
+					       lowerDichroicSlide+"."+upperDichroicSlide+"."+
+					       lowerFilterSlide+"."+upperFilterSlide+"."+
 					       filter,new String(""+now));
 		}
 	}// end class TWILIGHT_CALIBRATESavedState
@@ -1935,13 +2102,21 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 		 */
 		protected boolean useWindowAmplifier;
 		/**
-		 * What position the lower slide should be in. 
+		 * What position the dichroic lower slide should be in. 
 		 */
-		protected String lowerSlide;
+		protected String lowerDichroicSlide;
 		/**
-		 * What position the upper slide should be in. 
+		 * What position the dichroic upper slide should be in. 
 		 */
-		protected String upperSlide;
+		protected String upperDichroicSlide;
+		/**
+		 * What position the lower filter slide should be in. 
+		 */
+		protected String lowerFilterSlide;
+		/**
+		 * What position the upper filter slide should be in. 
+		 */
+		protected String upperFilterSlide;
 		/**
 		 * The filter to use in the filter wheel.
 		 */
@@ -2017,43 +2192,83 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 		}
 
 		/**
-		 * Set the lower slide position.
-		 * @param s The lower slide position.
-		 * @see #lowerSlide
+		 * Set the lower dichroic slide position.
+		 * @param s The lower dichroic slide position.
+		 * @see #lowerDichroicSlide
 		 */
-		public void setLowerSlide(String s)
+		public void setLowerDichroicSlide(String s)
 		{
-			lowerSlide = s;
+			lowerDichroicSlide = s;
 		}
 
 		/**
-		 * Get the lower slide position for this twilight calibration.
-		 * @return The lower slide position.
-		 * @see #lowerSlide
+		 * Get the lower dichroic slide position for this twilight calibration.
+		 * @return The lower dichroic slide position.
+		 * @see #lowerDichroicSlide
 		 */
-		public String getLowerSlide()
+		public String getLowerDichroicSlide()
 		{
-			return lowerSlide;
+			return lowerDichroicSlide;
 		}
 
 		/**
-		 * Set the upper slide position.
-		 * @param s The upper slide position.
-		 * @see #upperSlide
+		 * Set the upper dichroic slide position.
+		 * @param s The upper dichroic slide position.
+		 * @see #upperDichroicSlide
 		 */
-		public void setUpperSlide(String s)
+		public void setUpperDichroicSlide(String s)
 		{
-			upperSlide = s;
+			upperDichroicSlide = s;
 		}
 
 		/**
-		 * Get the upper slide position for this twilight calibration.
-		 * @return The upper slide position as an integer.
-		 * @see #upperSlide
+		 * Get the upper dichroic slide position for this twilight calibration.
+		 * @return The upper dichroic slide position.
+		 * @see #upperDichroicSlide
 		 */
-		public String getUpperSlide()
+		public String getUpperDichroicSlide()
 		{
-			return upperSlide;
+			return upperDichroicSlide;
+		}
+
+		/**
+		 * Set the lower filter slide position.
+		 * @param s The lower filter slide position.
+		 * @see #lowerFilterSlide
+		 */
+		public void setLowerFilterSlide(String s)
+		{
+			lowerFilterSlide = s;
+		}
+
+		/**
+		 * Get the lower filter slide position for this twilight calibration.
+		 * @return The lower filter slide position.
+		 * @see #lowerFilterSlide
+		 */
+		public String getLowerFilterSlide()
+		{
+			return lowerFilterSlide;
+		}
+
+		/**
+		 * Set the upper filter slide position.
+		 * @param s The upper filter slide position.
+		 * @see #upperFilterSlide
+		 */
+		public void setUpperFilterSlide(String s)
+		{
+			upperFilterSlide = s;
+		}
+
+		/**
+		 * Get the upper filter slide position for this twilight calibration.
+		 * @return The upper filter slide position.
+		 * @see #upperFilterSlide
+		 */
+		public String getUpperFilterSlide()
+		{
+			return upperFilterSlide;
 		}
 
 		/**
@@ -2243,6 +2458,11 @@ public class TWILIGHT_CALIBRATEImplementation2 extends CALIBRATEImplementation i
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.4  2013/04/29 09:27:18  cjm
+// Fixed fault 2022. It appears doFrame only sets to exposureLength when it needs to be
+// the maximum or minimum length. Now the exposureLength is set to the optimalExposureLength,
+// unless this is outside the maximum or minimum exposure length.
+//
 // Revision 1.3  2013/03/25 15:01:38  cjm
 // Removed deinterlace code.
 // Changed ccd.setupDimensions call removing deinterlace parameter.

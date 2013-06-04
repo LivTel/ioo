@@ -1,5 +1,5 @@
 // CONFIGImplementation.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/CONFIGImplementation.java,v 1.2 2013-03-25 15:01:38 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/CONFIGImplementation.java,v 1.3 2013-06-04 08:26:15 cjm Exp $
 package ngat.o;
 
 import java.lang.*;
@@ -8,6 +8,7 @@ import ngat.message.INST_BSS.*;
 import ngat.message.ISS_INST.*;
 
 import ngat.o.ccd.*;
+import ngat.o.ndfilter.*;
 import ngat.phase2.*;
 import ngat.util.logging.*;
 
@@ -16,14 +17,14 @@ import ngat.util.logging.*;
  * Java Message System. It extends SETUPImplementation.
  * @see SETUPImplementation
  * @author Chris Mottram
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 public class CONFIGImplementation extends SETUPImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: CONFIGImplementation.java,v 1.2 2013-03-25 15:01:38 cjm Exp $");
+	public final static String RCSID = new String("$Id: CONFIGImplementation.java,v 1.3 2013-06-04 08:26:15 cjm Exp $");
 
 	/**
 	 * Constructor. 
@@ -82,14 +83,59 @@ public class CONFIGImplementation extends SETUPImplementation implements JMSComm
 	 * <li>It gets filter wheel filter names from the OConfig object and converts them to positions
 	 * 	using a configuration file.
 	 * <li>It sends the information to the SDSU CCD Controller to configure it.
+	 * <li>It moves the neutral density filter slides to the positions specified, if the
+	 *     filter slides are configured enabled.
 	 * <li>If filter wheels are enabled, we call setFocusOffset to send a focus offset to the ISS.
 	 * <li>It increments the unique configuration ID.
 	 * </ul>
 	 * An object of class CONFIG_DONE is returned. If an error occurs a suitable error message is returned.
 	 * @see #testAbort
-	 * @see ngat.phase2.OConfig
+	 * @see #o
+	 * @see #ccd
+	 * @see #ndFilterArduino
 	 * @see O#getStatus
+	 * @see O#error
+	 * @see O#log
+	 * @see OConstants#O_ERROR_CODE_BASE
+	 * @see OConstants#O_ERROR_CODE_NO_ERROR
+	 * @see OStatus#getNumberColumns
+	 * @see OStatus#getNumberRows
+	 * @see OStatus#getFilterWheelPosition
+	 * @see OStatus#getPropertyBoolean
+	 * @see OStatus#incConfigId
+	 * @see OStatus#setConfigName
+	 * @see FITSImplementation#getAmplifier
 	 * @see FITSImplementation#setFocusOffset
+	 * @see ngat.o.ndfilter.NDFilterArduino
+	 * @see ngat.o.ndfilter.NDFilterArduino#move
+	 * @see ngat.o.ccd.CCDLibrary#setupDimensions
+	 * @see ngat.o.ccd.CCDLibrary#filterWheelMove
+	 * @see ngat.o.ccd.CCDLibrarySetupWindow
+	 * @see ngat.message.ISS_INST.CONFIG
+	 * @see ngat.message.ISS_INST.CONFIG#getId
+	 * @see ngat.message.ISS_INST.CONFIG#getConfig
+	 * @see ngat.message.ISS_INST.CONFIG_DONE#setErrorNum
+	 * @see ngat.message.ISS_INST.CONFIG_DONE#setErrorString
+	 * @see ngat.message.ISS_INST.CONFIG_DONE#setSuccessful
+	 * @see ngat.phase2.OConfig
+	 * @see ngat.phase2.OConfig#O_FILTER_INDEX_FILTER_WHEEL
+	 * @see ngat.phase2.OConfig#O_FILTER_INDEX_FILTER_SLIDE_LOWER
+	 * @see ngat.phase2.OConfig#O_FILTER_INDEX_FILTER_SLIDE_UPPER
+	 * @see ngat.phase2.OConfig#O_FILTER_INDEX_COUNT
+	 * @see ngat.phase2.OConfig#getFilterName
+	 * @see ngat.phase2.OConfig#getDetector
+	 * @see ngat.phase2.ODetector
+	 * @see ngat.phase2.ODetector#getXBin
+	 * @see ngat.phase2.ODetector#getYBin
+	 * @see ngat.phase2.ODetector#getWindowFlags
+	 * @see ngat.phase2.ODetector#getMaxWindowCount
+	 * @see ngat.phase2.ODetector#isActiveWindow
+	 * @see ngat.phase2.ODetector#getWindow
+	 * @see ngat.phase2.Window
+	 * @see ngat.phase2.Window#getXs
+	 * @see ngat.phase2.Window#getYs
+	 * @see ngat.phase2.Window#getXe
+	 * @see ngat.phase2.Window#getYe
 	 */
 	public COMMAND_DONE processCommand(COMMAND command)
 	{
@@ -99,9 +145,12 @@ public class CONFIGImplementation extends SETUPImplementation implements JMSComm
 		CONFIG_DONE configDone = null;
 		CCDLibrarySetupWindow windowList[] = new CCDLibrarySetupWindow[CCDLibrary.SETUP_WINDOW_COUNT];
 		OStatus status = null;
+		String filterWheelFilterName = null;
 		int numberColumns,numberRows,amplifier;
-		int filterWheelPosition;
+		int filterWheelPosition,filterSlidePositionNumber;
 		boolean filterWheelEnable;
+		boolean filterSlideEnable[] = new boolean[OConfig.O_FILTER_INDEX_COUNT];
+		boolean filterSlidePosition[] = new boolean[OConfig.O_FILTER_INDEX_COUNT];
 
 	// test contents of command.
 		configCommand = (CONFIG)command;
@@ -134,11 +183,37 @@ public class CONFIGImplementation extends SETUPImplementation implements JMSComm
 	// load other required config for dimension configuration from O properties file.
 		try
 		{
+			// detector config
 			numberColumns = status.getNumberColumns(detector.getXBin());
 			numberRows = status.getNumberRows(detector.getYBin());
 	                amplifier = getAmplifier(detector.getWindowFlags() > 0);
+			// filter wheel config (filter 1)
 			filterWheelEnable = status.getPropertyBoolean("o.config.filter_wheel.enable");
-			filterWheelPosition = status.getFilterWheelPosition(config.getFilterWheel());
+			filterWheelFilterName = config.getFilterName(OConfig.O_FILTER_INDEX_FILTER_WHEEL);
+			filterWheelPosition = status.getFilterWheelPosition(OConfig.O_FILTER_INDEX_FILTER_WHEEL,
+									    filterWheelFilterName);
+			// neutral density filter slide config (filter 2+3)
+			for(int i = OConfig.O_FILTER_INDEX_FILTER_SLIDE_LOWER;
+			    i <= OConfig.O_FILTER_INDEX_FILTER_SLIDE_UPPER; i++)
+			{
+				filterSlideEnable[i] = status.getPropertyBoolean("o.config.filter_slide.enable."+i);
+				filterSlidePositionNumber = status.getFilterWheelPosition(i,config.getFilterName(i));
+				if(filterSlidePositionNumber == 0) // stow
+					filterSlidePosition[i] = false;
+				else if(filterSlidePositionNumber == 1) // deploy
+					filterSlidePosition[i] = true;
+				else
+				{
+					o.error(this.getClass().getName()+":processCommand:"+command+
+						":Filter slide position number out of range for filter wheel:"+i+
+						" and filter name "+config.getFilterName(i));
+					configDone.setErrorNum(OConstants.O_ERROR_CODE_BASE+810);
+					configDone.setErrorString("Filter slide position number out of range "+
+						"for filter wheel:"+i+" and filter name "+config.getFilterName(i));
+					configDone.setSuccessful(false);
+					return configDone;
+				}
+			}// end for
 		}
 	// CCDLibraryFormatException is caught and re-thrown by this method.
 	// Other exceptions (IllegalArgumentException,NumberFormatException) are not caught here, 
@@ -229,9 +304,36 @@ public class CONFIGImplementation extends SETUPImplementation implements JMSComm
 		catch(CCDLibraryNativeException e)
 		{
 			o.error(this.getClass().getName()+":processCommand:"+
-				command+":",e);
+				command+":Error configuring SDSU controller:",e);
 			configDone.setErrorNum(OConstants.O_ERROR_CODE_BASE+804);
-			configDone.setErrorString(":processCommand:"+command+":"+e);
+			configDone.setErrorString(":processCommand:"+command+":Error configuring SDSU controller:"+e);
+			configDone.setSuccessful(false);
+			return configDone;
+		}
+		// configure filter slides by talking to the arduino
+		try
+		{
+			for(int i = OConfig.O_FILTER_INDEX_FILTER_SLIDE_LOWER;
+			    i <= OConfig.O_FILTER_INDEX_FILTER_SLIDE_UPPER; i++)
+			{
+				if(filterSlideEnable[i])
+				{
+					ndFilterArduino.move(i,filterSlidePosition[i]);
+				}
+				else
+				{
+					o.log(Logging.VERBOSITY_VERY_TERSE,this.getClass().getName()+
+					      ":processCommand:Filter slide "+i+" not enabled:Filter slide "+i+
+					      " NOT moved.");
+				}
+			}// end for
+		}
+		catch(Exception e)
+		{
+			o.error(this.getClass().getName()+":processCommand:"+
+				command+":Error moving filter slides:",e);
+			configDone.setErrorNum(OConstants.O_ERROR_CODE_BASE+809);
+			configDone.setErrorString(":processCommand:"+command+":Error moving filter slides:"+e);
 			configDone.setSuccessful(false);
 			return configDone;
 		}
@@ -239,26 +341,25 @@ public class CONFIGImplementation extends SETUPImplementation implements JMSComm
 		if(testAbort(configCommand,configDone) == true)
 			return configDone;
 	// send focus offset based on filter and other mechanisms
-		if(filterWheelEnable)
+	// Note we do not take into account filterWheelEnable and filterSlideEnable[i] when deciding
+	// whether to call setFocusOffset. It is unclear whether we should do so, all the positions
+	// in the filter wheel are filled, so a focus offset should be made, even if filterWheelEnable
+	// is false.
+		try
 		{
-			try
-			{
-				setFocusOffset(configCommand.getId(),config.getFilterWheel());
-			}
-			catch(Exception e)
-			{
-				o.error(this.getClass().getName()+":processCommand:"+
-					command+":setFocusOffset failed:",e);
-				configDone.setErrorNum(OConstants.O_ERROR_CODE_BASE+805);
-				configDone.setErrorString("setFocusOffset failed:"+e.toString());
-				configDone.setSuccessful(false);
-				return configDone;
-			}
+			setFocusOffset(configCommand.getId(),
+				       config.getFilterName(OConfig.O_FILTER_INDEX_FILTER_WHEEL),
+				       config.getFilterName(OConfig.O_FILTER_INDEX_FILTER_SLIDE_LOWER),
+				       config.getFilterName(OConfig.O_FILTER_INDEX_FILTER_SLIDE_UPPER));
 		}
-		else
+		catch(Exception e)
 		{
-			o.log(Logging.VERBOSITY_VERY_TERSE,this.getClass().getName()+
-				":processCommand:Filter wheels not enabled:Focus offset NOT set.");
+			o.error(this.getClass().getName()+":processCommand:"+
+				command+":setFocusOffset failed:",e);
+			configDone.setErrorNum(OConstants.O_ERROR_CODE_BASE+805);
+			configDone.setErrorString("setFocusOffset failed:"+e.toString());
+			configDone.setSuccessful(false);
+			return configDone;
 		}
 	// Increment unique config ID.
 	// This is queried when saving FITS headers to get the CONFIGID value.
@@ -285,10 +386,13 @@ public class CONFIGImplementation extends SETUPImplementation implements JMSComm
 	// return done object.
 		return configDone;
 	}
-
 }
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.2  2013/03/25 15:01:38  cjm
+// Removed deinterlace code.
+// Changed ccd.setupDimensions call removing deinterlace parameter.
+//
 // Revision 1.1  2011/11/23 10:55:24  cjm
 // Initial revision
 //

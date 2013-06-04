@@ -1,29 +1,31 @@
 // GET_STATUSImplementation.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/GET_STATUSImplementation.java,v 1.3 2013-03-25 15:01:38 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/GET_STATUSImplementation.java,v 1.4 2013-06-04 08:26:15 cjm Exp $
 package ngat.o;
 
 import java.lang.*;
 import java.util.Hashtable;
 
 import ngat.o.ccd.*;
+import ngat.o.ndfilter.*;
 import ngat.message.base.*;
 import ngat.message.ISS_INST.ISS_TO_INST;
 import ngat.message.ISS_INST.GET_STATUS;
 import ngat.message.ISS_INST.GET_STATUS_DONE;
+import ngat.phase2.OConfig;
 import ngat.util.ExecuteCommand;
 
 /**
  * This class provides the implementation for the GET_STATUS command sent to a server using the
  * Java Message System.
  * @author Chris Mottram
- * @version $Revision: 1.3 $
+ * @version $Revision: 1.4 $
  */
 public class GET_STATUSImplementation extends INTERRUPTImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: GET_STATUSImplementation.java,v 1.3 2013-03-25 15:01:38 cjm Exp $");
+	public final static String RCSID = new String("$Id: GET_STATUSImplementation.java,v 1.4 2013-06-04 08:26:15 cjm Exp $");
 	/**
 	 * Local copy of the O status object.
 	 * @see O#getStatus
@@ -169,6 +171,8 @@ public class GET_STATUSImplementation extends INTERRUPTImplementation implements
 		hashTable.put("Exposure Start Time",new Long(ccd.getExposureStartTime()));
 	// filter wheel settings
 		getFilterWheelStatus();
+		// filter slide data
+		getFilterSlideStatus(); 
 		hashTable.put("Exposure Count",new Integer(status.getExposureCount()));
 		hashTable.put("Exposure Number",new Integer(status.getExposureNumber()));
 	// intermediate level information - basic plus controller calls.
@@ -248,6 +252,7 @@ public class GET_STATUSImplementation extends INTERRUPTImplementation implements
 	 * @see CCDLibrary#filterWheelGetStatus
 	 * @see CCDLibrary#filterWheelGetPosition
 	 * @see OStatus#getFilterTypeName
+	 * @see ngat.phase2.OConfig#O_FILTER_INDEX_FILTER_WHEEL
 	 */
 	private void getFilterWheelStatus()
 	{
@@ -266,7 +271,8 @@ public class GET_STATUSImplementation extends INTERRUPTImplementation implements
 			}
 			else
 			{
-				s = status.getFilterTypeName(filterWheelPosition);
+				s = status.getFilterTypeName(OConfig.O_FILTER_INDEX_FILTER_WHEEL,
+							     filterWheelPosition);
 				s1 = status.getFilterIdName(s);
 			}
 		}
@@ -282,12 +288,84 @@ public class GET_STATUSImplementation extends INTERRUPTImplementation implements
 			s = null;
 			s1 = null;
 		}
-		hashTable.put("Filter Wheel:0",s);
-		hashTable.put("Filter Wheel Id:0",s1);
+		hashTable.put("Filter Wheel:1",s);
+		hashTable.put("Filter Wheel Id:1",s1);
 		filterWheelStatus = ccd.filterWheelGetStatus();
 		hashTable.put("Filter Wheel Status",new Integer(filterWheelStatus));
 		hashTable.put("Filter Wheel Status String",
 			      new String(ccd.filterWheelStatusToString(filterWheelStatus)));
+	}
+
+	/**
+	 * Internal method to get some filter slide status. The status is put into the hashTable.
+	 * The following data is put into the hashTable:
+	 * <ul>
+	 * <li><b>Filter Wheel:&lt;wheel number&gt;</b>The name of the filter in this slide currently in use.
+	 * <li><b>Filter Wheel Id:&lt;wheel number&gt;</b>The ID of the filter in this slide currently in use.
+	 * <li><b>Filter Slide:&lt;wheel number&gt;</b>The name of the filter in this slide currently in use.
+	 * <li><b>Filter Slide Id:&lt;wheel number&gt;</b>The ID of the filter in this slide currently in use.
+	 * <li><b>Filter Slide Status String:&lt;wheel number&gt;</b> The status of the filter slide mechanism, 
+	 *      as returned by getPosition (and it's success/failure). One of: UNKNOWN|MOVING|IN POSN|ERROR.
+	 * </ul>
+	 * The "o.config.filter_slide.enable."+i property is quired to ensure the filter slide is enabled, if it is
+	 * not some defaults are put into the hashtable. 
+	 * @see #ndFilterArduino
+	 * @see #status
+	 * @see #hashTable
+	 * @see ngat.o.ndfilter.NDFilterArduino#getPosition
+	 * @see OStatus#getFilterTypeName
+	 * @see OStatus#getFilterIdName
+	 * @see ngat.phase2.OConfig#O_FILTER_INDEX_FILTER_SLIDE_LOWER
+	 * @see ngat.phase2.OConfig#O_FILTER_INDEX_FILTER_SLIDE_UPPER
+	 */
+	private void getFilterSlideStatus()
+	{
+		int filterWheelCount,filterSlidePosition;
+		String filterTypeString = null;
+		String filterIdString = null;
+		String statusString = null;
+		boolean filterSlideEnable;
+
+		for(int i = OConfig.O_FILTER_INDEX_FILTER_SLIDE_LOWER; 
+		    i <= OConfig.O_FILTER_INDEX_FILTER_SLIDE_UPPER; i++)
+		{
+			filterSlidePosition = -1;
+			statusString = "UNKNOWN";
+			filterTypeString = "Unknown";
+			filterIdString = "Unknown";
+			try
+			{
+				filterSlideEnable = status.getPropertyBoolean("o.config.filter_slide.enable."+i);
+				if(filterSlideEnable)
+				{
+					filterSlidePosition = ndFilterArduino.getPosition(i);
+					if(filterSlidePosition == -1) // indeterminate position
+					{
+						filterTypeString = "None";
+						filterIdString = "None";
+						statusString = "MOVING";
+					}
+					else
+					{
+						filterTypeString = status.getFilterTypeName(i,filterSlidePosition);
+						filterIdString = status.getFilterIdName(filterTypeString);
+						statusString = "IN POSN";
+					}
+				}
+			}
+			catch(Exception e)
+			{
+				o.error(this.getClass().getName()+":processCommand:get Filter Slide Position:.",e);
+				filterTypeString = null;
+				filterIdString = null;
+				statusString = "ERROR";
+			}
+			hashTable.put("Filter Wheel:"+i,filterTypeString);
+			hashTable.put("Filter Wheel Id:"+i,filterIdString);
+			hashTable.put("Filter Slide:"+i,filterTypeString);
+			hashTable.put("Filter Slide Id:"+i,filterIdString);
+			hashTable.put("Filter Slide Status String:"+i,statusString);
+		}// end for on filter slides
 	}
 
 	/**
@@ -595,6 +673,9 @@ public class GET_STATUSImplementation extends INTERRUPTImplementation implements
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.3  2013/03/25 15:01:38  cjm
+// Removed "DeInterlace Type" hastable keyword/value.
+//
 // Revision 1.2  2012/07/17 17:17:45  cjm
 // Changed CCDLibrary calls for getting binned rows and column data as per API change.
 //
