@@ -1,5 +1,5 @@
 // O.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/O.java,v 1.4 2013-03-25 15:01:38 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/O.java,v 1.5 2013-06-04 08:26:15 cjm Exp $
 package ngat.o;
 
 import java.lang.*;
@@ -11,9 +11,11 @@ import java.text.*;
 import java.util.*;
 
 import ngat.net.*;
+import ngat.phase2.*;
 import ngat.util.*;
 import ngat.util.logging.*;
 import ngat.o.ccd.*;
+import ngat.o.ndfilter.*;
 import ngat.fits.*;
 import ngat.message.INST_BSS.*;
 import ngat.message.RCS_BSS.*;
@@ -23,14 +25,14 @@ import ngat.message.INST_DP.*;
 /**
  * This class is the start point for the O Control System.
  * @author Chris Mottram
- * @version $Revision: 1.4 $
+ * @version $Revision: 1.5 $
  */
 public class O
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: O.java,v 1.4 2013-03-25 15:01:38 cjm Exp $");
+	public final static String RCSID = new String("$Id: O.java,v 1.5 2013-06-04 08:26:15 cjm Exp $");
 	/**
 	 * Logger channel id.
 	 */
@@ -55,6 +57,11 @@ public class O
 	 * The CCDLibrary class - used to interface with the SDSU CCD Controller.
 	 */
 	private CCDLibrary ccd = null;
+	/**
+	 * The instance of NDFilterArduino used to communicate with the Arduino used to control
+	 * the neutral density filters.
+	 */
+	private NDFilterArduino ndFilterArduino = null;
 	/**
 	 * O status object.
 	 */
@@ -159,7 +166,7 @@ public class O
 
 	/**
 	 * This is the initialisation routine. This creates the status,
-	 * fitsFilename, ccd, libngatfits and fitsHeaderDefaults objects. 
+	 * fitsFilename, ccd, ndFilterArduino, libngatfits and fitsHeaderDefaults objects. 
 	 * The properties for the application are loaded into the status object.
 	 * The error and log files are opened.<br>
 	 * It calls the <a href="#initImplementationList">initImplementationList</a> method, which creates the
@@ -177,6 +184,7 @@ public class O
 	 * @see #status
 	 * @see #fitsFilename
 	 * @see #ccd
+	 * @see #ndFilterArduino
 	 * @see #libngatfits
 	 * @see #fitsHeaderDefaults
 	 * @see #initLoggers
@@ -234,6 +242,7 @@ public class O
 		fitsFilename.initialise();
 	// create hardware control objects
 		ccd = new CCDLibrary();
+		ndFilterArduino = new NDFilterArduino();
 	// initialise sub-system loggers, after creating status, hardware control objects
 		setLogLevel(logLevel);
 	// Create instance of the FITS header JNI library.
@@ -340,6 +349,10 @@ public class O
 	 */
 	protected void initLoggers()
 	{
+		String loggerList[] = {"ngat.o.ccd.CCDLibrary","ngat.net.TitServer",
+				       "ngat.o.ndfilter.test.TestNDFilterArduino","ngat.o.ndfilter.NDFilterArduino",
+				       "ngat.net.TelnetConnection"};
+
 	// errorLogger setup
 		errorLogger = LogManager.getLogger("error");
 		errorLogger.setChannelID(LOGGER_CHANNEL_ID+"-ERROR");
@@ -357,8 +370,10 @@ public class O
 		initLogHandlers(logLogger);
 		logLogger.setLogLevel(status.getLogLevel());
 	// library logging loggers
-		copyLogHandlers(logLogger,LogManager.getLogger("ngat.o.ccd.CCDLibrary"),null,Logging.ALL);
-		copyLogHandlers(logLogger,LogManager.getLogger("ngat.net.TitServer"),null,Logging.ALL);
+		for(int i=0;i < loggerList.length;i++)
+		{
+			copyLogHandlers(logLogger,LogManager.getLogger(loggerList[i]),null,Logging.ALL);
+		}
 	}
 
 	/**
@@ -869,11 +884,13 @@ public class O
 	 * <li>It gets it's configuration from the O config file.
 	 * <li>The CCD library is initialised, the interface opened, and the controller setup.
 	 * <li>It calls configurePixelStream to configure pixel stream entries (de-interlacing)
+	 * <li>The connection information to the neutral density filter slide arduino is configured.
 	 * </ul>
 	 * @exception CCDLibraryFormatException Thrown if the configuration properties cannot be determined.
 	 * @exception CCDLibraryNativeException Thrown if the call to open or setup the CCD controller fails.
 	 * @exception Exception Thrown if an error occurs.
 	 * @see #ccd
+	 * @see #ndFilterArduino
 	 * @see #status
 	 * @see #configurePixelStream
 	 * @see OStatus#getProperty
@@ -890,6 +907,10 @@ public class O
 	 * @see ngat.o.ccd.CCDLibrary#setShutterOpenDelay
 	 * @see ngat.o.ccd.CCDLibrary#setShutterCloseDelay
 	 * @see ngat.o.ccd.CCDLibrary#setReadoutDelay
+	 * @see ngat.o.ndfilter.NDFilterArduino
+	 * @see ngat.o.ndfilter.NDFilterArduino#setAddress
+	 * @see ngat.o.ndfilter.NDFilterArduino#setPortNumber
+	 * @see ngat.phase2.OConfig#O_FILTER_INDEX_FILTER_WHEEL
 	 */
 	public void startupController() throws CCDLibraryFormatException, CCDLibraryNativeException, Exception
 	{
@@ -897,11 +918,11 @@ public class O
 		int pciLoadType,timingLoadType,timingApplicationNumber,utilityLoadType,utilityApplicationNumber,gain;
 		int startExposureClearTime,startExposureOffsetTime,readoutRemainingTime;
 		int shutterTriggerDelay,shutterOpenDelay,shutterCloseDelay,readoutDelay;
-		int filterWheelFilterCount;
+		int filterWheelFilterCount,ndFilterArduinoPortNumber;
 		long memoryMapLength;
 		double targetTemperature;
 		boolean gainSpeed,idle,filterWheelEnable;
-		String devicePathname,pciFilename,timingFilename,utilityFilename;
+		String devicePathname,pciFilename,timingFilename,utilityFilename,ndFilterArduinoAddress;
 
 	// get the relevant configuration information from the O configuration file.
 	// CCDLibraryFormatException is caught and re-thrown by this method.
@@ -932,7 +953,8 @@ public class O
 			gainSpeed = status.getPropertyBoolean("o.ccd.config.gain_speed");
 			idle = status.getPropertyBoolean("o.ccd.config.idle");
 			filterWheelEnable = status.getPropertyBoolean("o.config.filter_wheel.enable");
-			filterWheelFilterCount = status.getPropertyInteger("filterwheel.0.count");
+			filterWheelFilterCount = status.getPropertyInteger("filterwheel."+
+							OConfig.O_FILTER_INDEX_FILTER_WHEEL+".count");
 			startExposureClearTime = status.
 				getPropertyInteger("o.config.start_exposure_clear_time");
 			startExposureOffsetTime = status.
@@ -942,6 +964,9 @@ public class O
 			shutterOpenDelay = status.getPropertyInteger("o.config.shutter.open_delay");
 			shutterCloseDelay = status.getPropertyInteger("o.config.shutter.close_delay");
 			readoutDelay = status.getPropertyInteger("o.config.readout_delay");
+			// NDFilter slide configuration information
+			ndFilterArduinoAddress = status.getProperty("o.config.filter_slide.address");
+			ndFilterArduinoPortNumber = status.getPropertyInteger("o.config.filter_slide.port_number");
 		}
 		catch(CCDLibraryFormatException e)
 		{
@@ -973,6 +998,17 @@ public class O
 			error(this.getClass().getName()+":startupController:CCD:",e);
 			throw e;
 		}
+		// neutral density filter slides
+		try
+		{
+			ndFilterArduino.setAddress(ndFilterArduinoAddress);
+			ndFilterArduino.setPortNumber(ndFilterArduinoPortNumber);
+		}
+		catch (Exception e)
+		{
+			error(this.getClass().getName()+":startupController:ND filter slide Arduino:",e);
+			throw e;
+		}
 		// configure pixel stream entries
 		configurePixelStream();
 	}
@@ -996,7 +1032,7 @@ public class O
 	/**
 	 * Configure the CCD library's pixel stream entries (de-interlacing configuration).
 	 * @exception CCDLibraryNativeException Thrown if pixelStreamEntrySet fails.
-	 * @eception CCDLibraryFormatException Thrown if dspAmplifierFromString fails.
+	 * @exception CCDLibraryFormatException Thrown if dspAmplifierFromString fails.
 	 * @see #ccd
 	 * @see #status
 	 * @see #log
@@ -1146,6 +1182,18 @@ public class O
 	public CCDLibrary getCCD()
 	{
 		return ccd;
+	}
+
+	/**
+	 * Get the NDFilterArduino instance used for communications with the Arduino controlling
+	 * the neutral density filter slides.
+	 * @return The NDFilterArduino instance used for communications with the Arduino controlling
+	 *         the neutral density filter slides.
+	 * @see #ndFilterArduino
+	 */
+	public NDFilterArduino getNDFilterArduino()
+	{
+		return ndFilterArduino;
 	}
 
 	/**
@@ -1983,6 +2031,9 @@ public class O
 }
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.4  2013/03/25 15:01:38  cjm
+// Added configurePixelStream method.
+//
 // Revision 1.3  2012/07/24 08:24:45  cjm
 // Changed ccd.setup so the memory map length is retrieved from config and passed in.
 //
