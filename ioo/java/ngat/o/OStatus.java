@@ -1,5 +1,5 @@
 // OStatus.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/OStatus.java,v 1.1 2011-11-23 10:55:24 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/OStatus.java,v 1.2 2013-06-04 08:26:15 cjm Exp $
 package ngat.o;
 
 import java.lang.*;
@@ -16,14 +16,14 @@ import ngat.util.logging.*;
 /**
  * This class holds status information for the O program.
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class OStatus
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: OStatus.java,v 1.1 2011-11-23 10:55:24 cjm Exp $");
+	public final static String RCSID = new String("$Id: OStatus.java,v 1.2 2013-06-04 08:26:15 cjm Exp $");
 	/**
 	 * Default filename containing network properties for O.
 	 */
@@ -746,9 +746,11 @@ public class OStatus
 	}
 
 	/**
-	 * Method to get the position of a filter in a filter wheel. The type name of the filter are passed in. 
-	 * The number of the filter in this filter
+	 * Method to get the position of a filter in a filter wheel. The wheel index and type name of the 
+	 * filter are passed in. The number of the filter in this filter
 	 * wheel is returned, or an IllegalArgumentException is thrown if the filter type name does not exist.
+	 * @param wheelIndex Which wheel the filter is in. Note the index is 1-based, i.e. 1-3 for IO:O. See
+	 *        O_FILTER_INDEX_FILTER_WHEEL / O_FILTER_INDEX_FILTER_SLIDE_LOWER / O_FILTER_INDEX_FILTER_SLIDE_UPPER.
 	 * @param filterTypeName The type name of the filter.
 	 * @return Returns the number of the filter in the wheel.
 	 * @exception IllegalArgumentException Thrown if a parameter is an illegal value, or the 
@@ -756,23 +758,34 @@ public class OStatus
 	 * @exception NumberFormatException Thrown if some of the properties are not a valid integer when
 	 * 	they should be.
 	 * @see #getPropertyInteger
+	 * @see ngat.phase2.OConfig#O_FILTER_INDEX_FILTER_WHEEL
+	 * @see ngat.phase2.OConfig#O_FILTER_INDEX_FILTER_SLIDE_LOWER
+	 * @see ngat.phase2.OConfig#O_FILTER_INDEX_FILTER_SLIDE_UPPER
 	 */
-	public int getFilterWheelPosition(String filterTypeName) throws IllegalArgumentException,NumberFormatException
+	public int getFilterWheelPosition(int wheelIndex,String filterTypeName) throws IllegalArgumentException,
+										       NumberFormatException
 	{
 		String s = null;
 		int filterWheelFilterCount;
 		int filterWheelFilterIndex;
 		boolean found;
 
+		// check wheel index
+		if((wheelIndex < OConfig.O_FILTER_INDEX_FILTER_WHEEL)||
+		   (wheelIndex > OConfig.O_FILTER_INDEX_FILTER_SLIDE_UPPER))
+		{
+			throw new IllegalArgumentException(this.getClass().getName()+
+				":getFilterWheelPosition:Wheel Index:"+wheelIndex+" out of range.");
+		}
 	// get number of filters in this wheel.
-		filterWheelFilterCount = getPropertyInteger("filterwheel.0.count");
+		filterWheelFilterCount = getPropertyInteger("filterwheel."+wheelIndex+".count");
 	// compare type name against filters in wheel. Stop when we find the first match.
 		filterWheelFilterIndex = 0;
 		found = false;
 		while((!found)&&(filterWheelFilterIndex<filterWheelFilterCount))
 		{
 		// get the filter type name at index filterWheelFilterIndex into s
-			s = getProperty("filterwheel.0."+filterWheelFilterIndex+".type");
+			s = getProperty("filterwheel."+wheelIndex+"."+filterWheelFilterIndex+".type");
 		// is it the right filter?
 			if(s != null)
 				found = s.equals(filterTypeName);
@@ -787,29 +800,42 @@ public class OStatus
 		else
 		{
 			throw new IllegalArgumentException(this.getClass().getName()+
-				":getFilterWheelPosition:Illegal filter:"+filterTypeName);
+				":getFilterWheelPosition(wheelIndex="+wheelIndex+"):Illegal filter:"+filterTypeName);
 		}
 	}
 
 	/**
-	 * Method to get the type name of a filter in a filter wheel. The position of the wheel are passed in. 
-	 * The type name of the filter in that position 
+	 * Method to get the type name of a filter in a filter wheel. The wheel index and position of the wheel 
+	 * are passed in. The type name of the filter in that position 
 	 * in the filter wheel is returned, or an IllegalArgumentException is thrown if the position does not exist.
+	 * @param wheelIndex Which wheel the filter is in. Note the index is 1-based, i.e. 1-3 for IO:O. See
+	 *        O_FILTER_INDEX_FILTER_WHEEL / O_FILTER_INDEX_FILTER_SLIDE_LOWER / O_FILTER_INDEX_FILTER_SLIDE_UPPER.
 	 * @param filterWheelPosition The position of that filter wheel.
-	 * @return Returns the type name of the filter in the specified position.
+	 * @return Returns the type name of the filter in the specified position in the specified wheel.
 	 * @exception IllegalArgumentException Thrown if a parameter is an illegal value, or the 
 	 * 	property file is not setup correctly.
 	 * @exception NumberFormatException Thrown if some of the properties are not a valid integer when
 	 * 	they should be.
 	 * @see #getPropertyInteger
+	 * @see ngat.phase2.OConfig#O_FILTER_INDEX_FILTER_WHEEL
+	 * @see ngat.phase2.OConfig#O_FILTER_INDEX_FILTER_SLIDE_LOWER
+	 * @see ngat.phase2.OConfig#O_FILTER_INDEX_FILTER_SLIDE_UPPER
 	 */
-	public String getFilterTypeName(int filterWheelPosition) throws IllegalArgumentException,NumberFormatException
+	public String getFilterTypeName(int wheelIndex,int filterWheelPosition) throws IllegalArgumentException,
+										       NumberFormatException
 	{
 		String s = null;
 		int filterWheelFilterCount;
 
+		// check wheel index
+		if((wheelIndex < OConfig.O_FILTER_INDEX_FILTER_WHEEL)||
+		   (wheelIndex > OConfig.O_FILTER_INDEX_FILTER_SLIDE_UPPER))
+		{
+			throw new IllegalArgumentException(this.getClass().getName()+
+				":getFilterTypeName:Wheel Index:"+wheelIndex+" out of range.");
+		}
 	// check position is legal
-		filterWheelFilterCount = getPropertyInteger("filterwheel.0.count");
+		filterWheelFilterCount = getPropertyInteger("filterwheel."+wheelIndex+".count");
 		if((filterWheelPosition < 0)||(filterWheelPosition >= filterWheelFilterCount))
 		{
 			throw new IllegalArgumentException(this.getClass().getName()+
@@ -817,7 +843,7 @@ public class OStatus
 				" of "+filterWheelFilterCount);
 		}
 	// get the filter type name  into s
-		s = getProperty("filterwheel.0."+filterWheelPosition+".type");
+		s = getProperty("filterwheel."+wheelIndex+"."+filterWheelPosition+".type");
 		if(s == null)
 		{
 			throw new IllegalArgumentException(this.getClass().getName()+
@@ -1076,4 +1102,7 @@ public class OStatus
 }
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2011/11/23 10:55:24  cjm
+// Initial revision
+//
 //
