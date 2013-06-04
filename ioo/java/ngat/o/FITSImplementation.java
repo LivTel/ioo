@@ -1,5 +1,5 @@
 // FITSImplementation.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/FITSImplementation.java,v 1.12 2013-03-25 15:01:38 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/FITSImplementation.java,v 1.13 2013-06-04 08:26:15 cjm Exp $
 package ngat.o;
 
 import java.lang.*;
@@ -13,6 +13,7 @@ import ngat.message.INST_BSS.*;
 import ngat.message.RCS_BSS.*;
 import ngat.fits.*;
 import ngat.o.ccd.*;
+import ngat.o.ndfilter.*;
 import ngat.phase2.*;
 import ngat.util.*;
 import ngat.util.logging.*;
@@ -22,14 +23,14 @@ import ngat.util.logging.*;
  * use the hardware  libraries as this is needed to generate FITS files.
  * @see HardwareImplementation
  * @author Chris Mottram
- * @version $Revision: 1.12 $
+ * @version $Revision: 1.13 $
  */
 public class FITSImplementation extends HardwareImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: FITSImplementation.java,v 1.12 2013-03-25 15:01:38 cjm Exp $");
+	public final static String RCSID = new String("$Id: FITSImplementation.java,v 1.13 2013-06-04 08:26:15 cjm Exp $");
 	/**
 	 * Internal constant used when the order number offset defined in the property
 	 * 'o.get_fits.order_number_offset' is not found or is not a valid number.
@@ -192,7 +193,7 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 	 * or internal O status.
 	 * These are:
 	 * OBSTYPE, RUNNUM, EXPNUM, EXPTOTAL, DATE, DATE-OBS, UTSTART, MJD, EXPTIME, 
-	 * FILTER1, FILTERI1, FILTER2, FILTERI2, CONFIGID, CONFNAME, 
+	 * FILTER1, FILTERI1, FILTER2, FILTERI2, FILTER3, FILTERI3, CONFIGID, CONFNAME, 
 	 * PRESCAN, POSTSCAN, GAIN, READNOIS, EPERDN, CCDXIMSI, CCDYIMSI, CCDSCALE, CCDRDOUT,
 	 * CCDXBIN, CCDYBIN, CCDSTEMP, CCDATEMP, CCDWMODE, CALBEFOR, CALAFTER, INSTDFOC, FILTDFOC, MYDFOCUS,
 	 * SATWELL, SATADC, SATURATN.
@@ -212,6 +213,7 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 	 *  	successfully.
 	 * @see #status
 	 * @see #ccd
+	 * @see #ndFilterArduino
 	 * @see #oFitsHeader
 	 * @see #oFitsHeaderDefaults
 	 * @see #getCCDRDOUTValue
@@ -229,6 +231,10 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 	 * @see ngat.o.ccd.CCDLibrary#getTemperatureHeaterADU
 	 * @see ngat.o.ccd.CCDLibrary#getTemperatureHeaterPower
 	 * @see ngat.o.ccd.CCDLibrary#getSetupWindowFlags
+	 * @see ngat.phase2.OConfig#O_FILTER_INDEX_COUNT
+	 * @see ngat.phase2.OConfig#O_FILTER_INDEX_FILTER_SLIDE_LOWER
+	 * @see ngat.phase2.OConfig#O_FILTER_INDEX_FILTER_SLIDE_UPPER
+	 * @see ngat.o.ndfilter.NDFilterArduino#getPosition
 	 * @see ngat.fits.FitsHeaderDefaults#getCardImageList
 	 */
 	public boolean setFitsHeaders(COMMAND command,COMMAND_DONE done,String obsTypeString,
@@ -239,11 +245,15 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 		Date date = null;
 		String filterWheelString = null;
 		String filterWheelIdString = null;
+		String filterSlideTypeString[] = new String[OConfig.O_FILTER_INDEX_COUNT];
+		String filterSlideIdString[] = new String[OConfig.O_FILTER_INDEX_COUNT];
 		Vector defaultFitsHeaderList = null;
-		int iValue,filterWheelPosition,xBin,yBin,windowFlags,heaterADU,preScan, postScan;
+		int iValue,filterWheelPosition,filterSlidePosition,xBin,yBin,windowFlags,heaterADU,preScan, postScan;
 		double doubleValue = 0.0;
-		double instDFoc,filtDFoc,myDFoc,bssFoc;
+		double instDFoc,myDFoc,bssFoc,totalFiltDFoc;
+		double filtDFoc[] = new double[OConfig.O_FILTER_INDEX_COUNT];
 		boolean filterWheelEnable;
+		boolean filterSlideEnable[] = new boolean[OConfig.O_FILTER_INDEX_COUNT];
 
 		// filter wheel and dfocus data
 		try
@@ -256,17 +266,41 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 			{
 			// type name
 				filterWheelPosition = ccd.filterWheelGetPosition();
-				filterWheelString = status.getFilterTypeName(filterWheelPosition);
+				filterWheelString = status.getFilterTypeName(OConfig.O_FILTER_INDEX_FILTER_WHEEL,
+									     filterWheelPosition);
 			// filter id
 				filterWheelIdString = status.getFilterIdName(filterWheelString);
 			// filter defocus
-				filtDFoc = status.getFilterIdOpticalThickness(filterWheelIdString);
+				filtDFoc[OConfig.O_FILTER_INDEX_FILTER_WHEEL] = status.getFilterIdOpticalThickness(
+					filterWheelIdString);
 			}
 			else
 			{
 				filterWheelString = new String("UNKNOWN");
 				filterWheelIdString = new String("UNKNOWN");
-				filtDFoc = 0.0;
+				filtDFoc[OConfig.O_FILTER_INDEX_FILTER_WHEEL] = 0.0;
+			}
+			// filter slides
+			for(int i = OConfig.O_FILTER_INDEX_FILTER_SLIDE_LOWER; 
+			    i <= OConfig.O_FILTER_INDEX_FILTER_SLIDE_UPPER; i++)
+			{
+				// filter slide enable
+				filterSlideEnable[i] = status.getPropertyBoolean("o.config.filter_slide.enable."+i);
+				if(filterSlideEnable[i])
+				{
+					filterSlidePosition = ndFilterArduino.getPosition(i);
+					filterSlideTypeString[i] = status.getFilterTypeName(i,filterSlidePosition);
+					// filter id
+					filterSlideIdString[i] = status.getFilterIdName(filterSlideTypeString[i]);
+					// filter defocus
+					filtDFoc[i] = status.getFilterIdOpticalThickness(filterSlideTypeString[i]);
+				}
+				else
+				{
+					filterSlideTypeString[i] = new String("UNKNOWN");
+					filterSlideIdString[i] = new String("UNKNOWN");
+					filtDFoc[i] = 0.0;
+				}
 			}
 			// defocus settings
 			// get cached BSS offset. This is the offset returned from the last BSS GET_FOCUS_OFFSET
@@ -275,7 +309,14 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 			// DFOCUS this instrument (configuration) would have liked, rather than the current
 			// telescope DFOCUS which might be different (if this instrument does not have FOCUS_CONTROL).
 			bssFoc = status.getBSSFocusOffset();
-			myDFoc = instDFoc + filtDFoc + bssFoc;
+			myDFoc = instDFoc + bssFoc;
+			totalFiltDFoc = 0.0;
+			for(int i = OConfig.O_FILTER_INDEX_FILTER_WHEEL; 
+			    i <= OConfig.O_FILTER_INDEX_FILTER_SLIDE_UPPER; i++)
+			{
+				myDFoc += filtDFoc[i];
+				totalFiltDFoc += filtDFoc[i];
+			}
 		}
 		// ngat.o.ccd.CCDNativeException thrown by ccd.filterWheelGetPosition
 		// IllegalArgumentException thrown by OStatus.getFilterWheelName
@@ -354,6 +395,17 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 		// FILTERI1
 			cardImage = oFitsHeader.get("FILTERI1");
 			cardImage.setValue(filterWheelIdString);
+			// filter slide FILTER keywords
+			for(int i = OConfig.O_FILTER_INDEX_FILTER_SLIDE_LOWER; 
+			    i <= OConfig.O_FILTER_INDEX_FILTER_SLIDE_UPPER; i++)
+			{
+				// FILTER 2+3
+				cardImage = oFitsHeader.get("FILTER"+i);
+				cardImage.setValue(filterSlideTypeString[i]);
+				// FILTERI 2+3
+				cardImage = oFitsHeader.get("FILTERI"+i);
+				cardImage.setValue(filterSlideIdString[i]);
+			}
 		// CONFIGID
 			cardImage = oFitsHeader.get("CONFIGID");
 			cardImage.setValue(new Integer(status.getConfigId()));
@@ -450,8 +502,9 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 			cardImage = oFitsHeader.get("INSTDFOC");
 			cardImage.setValue(new Double(instDFoc));
 		// FILTDFOC
+			// Currently total filter dfocus from all three filters
 			cardImage = oFitsHeader.get("FILTDFOC");
-			cardImage.setValue(new Double(filtDFoc));
+			cardImage.setValue(new Double(totalFiltDFoc));
 		// MYDFOCUS
 			cardImage = oFitsHeader.get("MYDFOCUS");
 			cardImage.setValue(new Double(myDFoc));
@@ -1130,7 +1183,7 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 	 * <li>The instrument's offset with respect to the telescope's natural offset (in the configuration
 	 *     property 'o.focus.offset'.
 	 * <li>An offset returned from the Beam Steering System, based on the position of it's mechanisms.
-	 * <li>A filter specific offset, based on the filter's optical thickness.
+	 * <li>A filter specific offset, based on the three filter's optical thicknesses.
 	 * <ul>
 	 * The BSS focus offset is queryed using a GET_FOCUS_OFFSET command to the BSS. The returned offset
 	 * is cached in OStatus, to be used when writing FITS headers.
@@ -1138,7 +1191,9 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 	 * the ISS. OFFSET_FOCUS_CONTROL means thats the offset focus will only be enacted if the BSS thinks this
 	 * instrument is in control of the FOCUS at the time this command is sent.
 	 * @param id The Id is used as the OFFSET_FOCUS_CONTROL and GET_FOCUS_OFFSET command's id.
-	 * @param filterId The type of filter we are using.
+	 * @param filterId1 The type of filter in the filter wheel (filter 1).
+	 * @param filterId2 The type of filter in the lower filter slide (filter 2).
+	 * @param filterId3 The type of filter in the upper filter slide (filter 3).
 	 * @exception Exception Thrown if the return value of the OFFSET_FOCUS_CONTROL ISS command is false.
 	 *            Thrown if the return value of the GET_FOCUS_OFFSET BSS command is false.
 	 * @see #o
@@ -1150,8 +1205,12 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 	 * @see ngat.message.INST_BSS.GET_FOCUS_OFFSET
 	 * @see ngat.message.INST_BSS.GET_FOCUS_OFFSET_DONE
 	 * @see ngat.message.INST_BSS.GET_FOCUS_OFFSET_DONE#getFocusOffset
+	 * @see ngat.phase2.OConfig#O_FILTER_INDEX_FILTER_WHEEL
+	 * @see ngat.phase2.OConfig#O_FILTER_INDEX_FILTER_SLIDE_LOWER
+	 * @see ngat.phase2.OConfig#O_FILTER_INDEX_FILTER_SLIDE_UPPER
+	 * @see ngat.phase2.OConfig#O_FILTER_INDEX_COUNT
 	 */
-	protected void setFocusOffset(String id,String filterId) throws Exception
+	protected void setFocusOffset(String id,String filterId1,String filterId2,String filterId3) throws Exception
 	{
 		GET_FOCUS_OFFSET getFocusOffset = null;
 		INST_TO_BSS_DONE instToBSSDone = null;
@@ -1159,9 +1218,11 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 		OFFSET_FOCUS_CONTROL offsetFocusControlCommand = null;
 		INST_TO_ISS_DONE instToISSDone = null;
 		String instrumentName = null;
+		String filterIdList[] = new String[OConfig.O_FILTER_INDEX_COUNT];
 		String filterIdName = null;
 		String filterTypeString = null;
 		float focusOffset = 0.0f;
+		float filterFocusOffset;
 		boolean bssUse;
 
 		o.log(Logging.VERBOSITY_VERY_TERSE,this.getClass().getName()+":setFocusOffset:Started.");
@@ -1172,9 +1233,21 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 		focusOffset += status.getPropertyDouble("o.focus.offset");
 		o.log(Logging.VERBOSITY_VERY_TERSE,this.getClass().getName()+":setFocusOffset:Master offset is "+
 		      focusOffset+".");
-	// filter wheel
-		filterIdName = status.getFilterIdName(filterId);
-		focusOffset += status.getFilterIdOpticalThickness(filterIdName);
+	// filter offsets
+		filterIdList[OConfig.O_FILTER_INDEX_FILTER_WHEEL] = filterId1;
+		filterIdList[OConfig.O_FILTER_INDEX_FILTER_SLIDE_LOWER] = filterId2;
+		filterIdList[OConfig.O_FILTER_INDEX_FILTER_SLIDE_UPPER] = filterId2;
+		for(int i = OConfig.O_FILTER_INDEX_FILTER_WHEEL; i <= OConfig.O_FILTER_INDEX_FILTER_SLIDE_UPPER; 
+		    i++) 
+		{
+			o.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+":setFocusOffset:Adding filter "+
+			      filterIdList[i]+" focus offset.");
+			filterIdName = status.getFilterIdName(filterIdList[i]);
+			filterFocusOffset = (float)(status.getFilterIdOpticalThickness(filterIdName));
+			focusOffset += filterFocusOffset;
+			o.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+":setFocusOffset:Filter "+
+			      filterIdList[i]+" has focus offset "+filterFocusOffset+", total now "+focusOffset+".");
+		}
 	// get Beam Steering System Offset
 		bssUse = status.getPropertyBoolean("o.net.bss.use");
 		if(bssUse)
@@ -1291,6 +1364,10 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.12  2013/03/25 15:01:38  cjm
+// Removed getDeInterlaceSetting.
+// Added new amplifier settings.
+//
 // Revision 1.11  2012/10/25 14:37:41  cjm
 // Changed getDeInterlaceSetting implementation.
 // The de-interlace ws setup as though we wanted the resultant image to look like a natural TOP_LEFT read-out image.
