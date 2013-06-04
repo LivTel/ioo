@@ -1,21 +1,22 @@
 // HardwareImplementation.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/HardwareImplementation.java,v 1.1 2011-11-23 10:55:24 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/HardwareImplementation.java,v 1.2 2013-06-04 08:26:15 cjm Exp $
 package ngat.o;
 
 import ngat.message.base.*;
 import ngat.o.ccd.*;
+import ngat.o.ndfilter.*;
 
 /**
  * This class provides the generic implementation of commands that use hardware to control a mechanism.
- * This is the SDSU CCD controller.
- * @version $Revision: 1.1 $
+ * This is the SDSU CCD controller, and the neutral density filter slides' Arduino.
+ * @version $Revision: 1.2 $
  */
 public class HardwareImplementation extends CommandImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: HardwareImplementation.java,v 1.1 2011-11-23 10:55:24 cjm Exp $");
+	public final static String RCSID = new String("$Id: HardwareImplementation.java,v 1.2 2013-06-04 08:26:15 cjm Exp $");
 	/**
 	 * Internal constant used when converting temperatures in centigrade (from the CCD controller/O
 	 * configuration file) to Kelvin. Used for FITS headers and GET_STATUS.
@@ -25,6 +26,11 @@ public class HardwareImplementation extends CommandImplementation implements JMS
 	 * A reference to the CCDLibrary class instance used to communicate with the SDSU CCD Controller.
 	 */
 	protected CCDLibrary ccd = null;
+	/**
+	 * A reference to the instance of NDFilterArduino used to communicate with the Arduino used to control
+	 * the neutral density filters.
+	 */
+	protected NDFilterArduino ndFilterArduino = null;
 
 	/**
 	 * This method calls the super-classes method. It then tries to fill in the reference to the hardware
@@ -32,7 +38,9 @@ public class HardwareImplementation extends CommandImplementation implements JMS
 	 * @param command The command to be implemented.
 	 * @see #o
 	 * @see #ccd
+	 * @see #ndFilterArduino
 	 * @see O#getCCD
+	 * @see O#getNDFilterArduino
 	 */
 	public void init(COMMAND command)
 	{
@@ -40,6 +48,7 @@ public class HardwareImplementation extends CommandImplementation implements JMS
 		if(o != null)
 		{
 			ccd = o.getCCD();
+			ndFilterArduino = o.getNDFilterArduino();
 		}
 	}
 
@@ -68,4 +77,7 @@ public class HardwareImplementation extends CommandImplementation implements JMS
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2011/11/23 10:55:24  cjm
+// Initial revision
+//
 //
