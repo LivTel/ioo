@@ -1,5 +1,5 @@
 # Makefile
-# $Header: /space/home/eng/cjm/cvs/ioo/java/Makefile,v 1.1 2011-11-23 10:59:50 cjm Exp $
+# $Header: /space/home/eng/cjm/cvs/ioo/java/Makefile,v 1.2 2013-06-04 08:35:36 cjm Exp $
 include ../Makefile.common
 include ../../Makefile.common
 
@@ -11,9 +11,10 @@ JARLIBDIR	= $(LT_BIN_HOME)/javalib
 
 DOCSDIR 	= $(O_DOC_HOME)/javadocs/
 DOCFLAGS 	= -version -author -private
-JAVASRCS 	= ngat/o/*.java ngat/o/ccd/*.java ngat/o/ccd/test/*.java ngat/o/test/*.java 
+JAVASRCS 	= ngat/o/*.java ngat/o/ccd/*.java ngat/o/ccd/test/*.java ngat/o/test/*.java \
+		  ngat/o/ndfilter/*.java ngat/o/ndfilter/test/*.java 
 
-JAVAPKGS	= ngat.o ngat.o.ccd ngat.o.ccd.test ngat.o.test 
+JAVAPKGS	= ngat.o ngat.o.ccd ngat.o.ccd.test ngat.o.test ngat.o.ndfilter ngat.o.ndfilter.test 
 
 JAVADOCS 	= $(JAVASRCS:%.java=$(DOCSDIR)/%.html)
 
@@ -81,4 +82,7 @@ backup: checkin
 
 #
 # $Log: not supported by cvs2svn $
+# Revision 1.1  2011/11/23 10:59:50  cjm
+# Initial revision
+#
 #
