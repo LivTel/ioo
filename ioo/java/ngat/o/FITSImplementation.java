@@ -1,5 +1,5 @@
 // FITSImplementation.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/FITSImplementation.java,v 1.13 2013-06-04 08:26:15 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/FITSImplementation.java,v 1.14 2013-06-06 13:24:28 cjm Exp $
 package ngat.o;
 
 import java.lang.*;
@@ -23,14 +23,14 @@ import ngat.util.logging.*;
  * use the hardware  libraries as this is needed to generate FITS files.
  * @see HardwareImplementation
  * @author Chris Mottram
- * @version $Revision: 1.13 $
+ * @version $Revision: 1.14 $
  */
 public class FITSImplementation extends HardwareImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: FITSImplementation.java,v 1.13 2013-06-04 08:26:15 cjm Exp $");
+	public final static String RCSID = new String("$Id: FITSImplementation.java,v 1.14 2013-06-06 13:24:28 cjm Exp $");
 	/**
 	 * Internal constant used when the order number offset defined in the property
 	 * 'o.get_fits.order_number_offset' is not found or is not a valid number.
@@ -293,7 +293,7 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 					// filter id
 					filterSlideIdString[i] = status.getFilterIdName(filterSlideTypeString[i]);
 					// filter defocus
-					filtDFoc[i] = status.getFilterIdOpticalThickness(filterSlideTypeString[i]);
+					filtDFoc[i] = status.getFilterIdOpticalThickness(filterSlideIdString[i]);
 				}
 				else
 				{
@@ -1364,6 +1364,9 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.13  2013/06/04 08:26:15  cjm
+// Added support for neutral density slides (focus offset etc).
+//
 // Revision 1.12  2013/03/25 15:01:38  cjm
 // Removed getDeInterlaceSetting.
 // Added new amplifier settings.
