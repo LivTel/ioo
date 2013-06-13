@@ -566,7 +566,8 @@ STP	DC	'STP'	; Message to timing - Stop idling
 CSW	DC	'CSW'	; Message to timing - clear switches
 	ENDIF
 ; Miscellaneous
-CC00	DC	$C00	; Maximum heater voltage so the board doesn't burn up
+;CC00	DC	$C00 Maximum heater voltage so the board doesn't burn up
+CC00	DC	$7D0	; Maximum heater ADUS now 2000 reducing noise on chip? 20130613
 SV_A1	DC	0	; Save register A1 during analog processing
 SV_SR	DC	0	; Save status register during timer processing
 EL_TIM_FRACTION DC 0	; Fraction of a millisecond of elapsed exposure time
