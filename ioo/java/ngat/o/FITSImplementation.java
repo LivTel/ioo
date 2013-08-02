@@ -1,5 +1,5 @@
 // FITSImplementation.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/FITSImplementation.java,v 1.14 2013-06-06 13:24:28 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/FITSImplementation.java,v 1.15 2013-08-02 08:41:15 eng Exp $
 package ngat.o;
 
 import java.lang.*;
@@ -23,14 +23,14 @@ import ngat.util.logging.*;
  * use the hardware  libraries as this is needed to generate FITS files.
  * @see HardwareImplementation
  * @author Chris Mottram
- * @version $Revision: 1.14 $
+ * @version $Revision: 1.15 $
  */
 public class FITSImplementation extends HardwareImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: FITSImplementation.java,v 1.14 2013-06-06 13:24:28 cjm Exp $");
+	public final static String RCSID = new String("$Id: FITSImplementation.java,v 1.15 2013-08-02 08:41:15 eng Exp $");
 	/**
 	 * Internal constant used when the order number offset defined in the property
 	 * 'o.get_fits.order_number_offset' is not found or is not a valid number.
@@ -1236,7 +1236,7 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 	// filter offsets
 		filterIdList[OConfig.O_FILTER_INDEX_FILTER_WHEEL] = filterId1;
 		filterIdList[OConfig.O_FILTER_INDEX_FILTER_SLIDE_LOWER] = filterId2;
-		filterIdList[OConfig.O_FILTER_INDEX_FILTER_SLIDE_UPPER] = filterId2;
+		filterIdList[OConfig.O_FILTER_INDEX_FILTER_SLIDE_UPPER] = filterId3;
 		for(int i = OConfig.O_FILTER_INDEX_FILTER_WHEEL; i <= OConfig.O_FILTER_INDEX_FILTER_SLIDE_UPPER; 
 		    i++) 
 		{
@@ -1364,6 +1364,9 @@ public class FITSImplementation extends HardwareImplementation implements JMSCom
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.14  2013/06/06 13:24:28  cjm
+// Fixed getFilterIdOpticalThickness to use Id name rather than type name.
+//
 // Revision 1.13  2013/06/04 08:26:15  cjm
 // Added support for neutral density slides (focus offset etc).
 //
