@@ -1,0 +1,17 @@
+#!/bin/csh
+# Script for printing out error numbers set in Java source files.
+# Searches for lines such as:
+#     object.setErrorNum(123);
+# and prints:
+#     123
+# Syntax:
+#     o_error_num <java source filenames>
+# $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/o_error_num,v 1.1 2013-08-07 14:25:19 cjm Exp $
+if($#argv < 1) then
+    echo "o_error_num <java source filenames>"
+    exit
+endif
+~dev/bin/scripts/java_error_num.csh $argv |  grep -v Processing | grep -v NO_ERROR | sed "s/OConstants.O_ERROR_CODE_BASE+//g" | sort -n | uniq -c
+#
+# $Log: not supported by cvs2svn $
+#
