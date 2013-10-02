@@ -1,5 +1,5 @@
 // O.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/O.java,v 1.5 2013-06-04 08:26:15 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/O.java,v 1.6 2013-10-02 10:19:58 cjm Exp $
 package ngat.o;
 
 import java.lang.*;
@@ -25,14 +25,14 @@ import ngat.message.INST_DP.*;
 /**
  * This class is the start point for the O Control System.
  * @author Chris Mottram
- * @version $Revision: 1.5 $
+ * @version $Revision: 1.6 $
  */
 public class O
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: O.java,v 1.5 2013-06-04 08:26:15 cjm Exp $");
+	public final static String RCSID = new String("$Id: O.java,v 1.6 2013-10-02 10:19:58 cjm Exp $");
 	/**
 	 * Logger channel id.
 	 */
@@ -779,7 +779,7 @@ public class O
 	/**
 	 * This method creates the implementationList, and fills it with Class objects of sub-classes
 	 * of CommandImplementation. The command implementation namess are retrieved from the O property files,
-	 * using keys of the form <b>o.command.implmentation.&lt;<i>N</i>&gt;</b>, where <i>N</i> is
+	 * using keys of the form <b>o.command.implementation.&lt;<i>N</i>&gt;</b>, where <i>N</i> is
 	 * an integer is incremented. It puts the class object reference in the Hashtable with the 
 	 * results of it's getImplementString static method
 	 * as the key. If an implementation object class fails to be put in the hashtable for some reason
@@ -804,7 +804,7 @@ public class O
 		done = false;
 		while(done == false)
 		{
-			className = status.getProperty("o.command.implmentation."+index);
+			className = status.getProperty("o.command.implementation."+index);
 			if(className != null)
 			{
 				try
@@ -2031,6 +2031,10 @@ public class O
 }
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.5  2013/06/04 08:26:15  cjm
+// Added NDFilterArduino control object. COnfigured during startup
+// (address and port number) but not moved to an initial position at present.
+//
 // Revision 1.4  2013/03/25 15:01:38  cjm
 // Added configurePixelStream method.
 //
