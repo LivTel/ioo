@@ -1,5 +1,5 @@
 // SendConfigCommand.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/test/SendConfigCommand.java,v 1.1 2011-11-23 10:59:38 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/test/SendConfigCommand.java,v 1.2 2013-10-02 10:20:51 cjm Exp $
 package ngat.o.test;
 
 import java.lang.*;
@@ -15,7 +15,7 @@ import ngat.util.*;
 /**
  * This class send an O camera configuration to O. 
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class SendConfigCommand
 {
@@ -150,7 +150,9 @@ public class SendConfigCommand
 		detector.setWindowFlags(0);
 		oConfig.setDetector(0,detector);
 	// filter
-		oConfig.setFilterWheel(filterString);
+		oConfig.setFilterName(OConfig.O_FILTER_INDEX_FILTER_WHEEL,filterString);
+		oConfig.setFilterName(OConfig.O_FILTER_INDEX_FILTER_SLIDE_LOWER,"clear");
+		oConfig.setFilterName(OConfig.O_FILTER_INDEX_FILTER_SLIDE_UPPER,"clear");
 	// InstrumentConfig fields.
 		oConfig.setCalibrateBefore(calibrateBefore);
 		oConfig.setCalibrateAfter(calibrateAfter);
@@ -194,7 +196,9 @@ public class SendConfigCommand
 			CONFIG configCommand = (CONFIG)issCommand;
 			OConfig oConfig = (OConfig)(configCommand.getConfig());
 			System.err.println("CONFIG:"+
-				oConfig.getFilterWheel()+":"+
+				oConfig.getFilterName(OConfig.O_FILTER_INDEX_FILTER_WHEEL)+":"+
+				oConfig.getFilterName(OConfig.O_FILTER_INDEX_FILTER_SLIDE_LOWER)+":"+
+				oConfig.getFilterName(OConfig.O_FILTER_INDEX_FILTER_SLIDE_UPPER)+":"+
 				oConfig.getDetector(0).getXBin()+":"+
 				oConfig.getDetector(0).getYBin()+".");
 		}
@@ -413,4 +417,7 @@ public class SendConfigCommand
 }
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2011/11/23 10:59:38  cjm
+// Initial revision
+//
 //
