@@ -1,0 +1,16 @@
+# $Header: /space/home/eng/cjm/cvs/ioo/Makefile.common,v 1.1 2013-11-06 13:36:23 cjm Exp $
+
+SHELL            =       /bin/sh
+O_HOME           =       o
+O_SRC_HOME       =       $(LT_SRC_HOME)/$(O_HOME)
+O_BIN_HOME       =       $(LT_BIN_HOME)/$(O_HOME)
+O_DOC_HOME       =       $(LT_DOC_HOME)/$(O_HOME)
+
+# log_udp library (log_udp.h is included for verbosity settings)
+LOG_UDP_HOME		= log_udp
+LOG_UDP_SRC_HOME	= $(LT_SRC_HOME)/$(LOG_UDP_HOME)
+LOG_UDP_CFLAGS		= -I$(LOG_UDP_SRC_HOME)/include
+
+#
+# $Log: not supported by cvs2svn $
+#
