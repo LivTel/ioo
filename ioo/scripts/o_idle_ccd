@@ -1,7 +1,13 @@
 #!/bin/csh
-# $Header: /space/home/eng/cjm/cvs/ioo/scripts/o_idle_ccd,v 1.1 2013-11-18 13:58:43 cjm Exp $
+# $Header: /space/home/eng/cjm/cvs/ioo/scripts/o_idle_ccd,v 1.2 2013-11-18 14:01:01 cjm Exp $
+# From an engineering state (no robotic software running)
+# Load the SDSU controller code and start idle clocking.
+# Used for waveform checking
 cd /icc/bin/o/ccd/test/i386-linux/
 ./test_setup_startup -i pci -timing_filename /icc/bin/o/dsp/time2v231-84.lod -utility_filename /icc/bin/o/dsp/util.lod -temperature -100 -gain 1 -gain_speed false
 #
 # $Log: not supported by cvs2svn $
+# Revision 1.1  2013/11/18 13:58:43  cjm
+# Initial revision
+#
 #
