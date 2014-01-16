@@ -1,12 +1,12 @@
 /* ccd_pixel_stream.c
-** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ccd_pixel_stream.c,v 1.1 2013-03-25 15:15:03 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ccd_pixel_stream.c,v 1.2 2014-01-16 15:33:26 cjm Exp $
 */
 /**
  * ccd_pixel_stream.c contains routines to process the buffer of readout pixels returned by a readout call.
  * This can be byte swapped, de-interlaced (taking into account multiple readout amplifiers), and may
  * also contain dummy pixel data from dummy outputs (or real output nodes where no charge has been driven into them).
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 /**
  * This hash define is needed before including source files give us POSIX.4/IEEE1003.1b-1993 prototypes.
@@ -60,21 +60,24 @@
  * for the IO:O CCD.
  * For IO:O, the CCD is wired up to the SDSU controller as follows:
  * <pre>
- * Upper left __A SXMIT number #3 +-----+-----+ Upper right __B SXMIT number #2
- *                                |     |     |
- *                                |     |     |
- *                                |     |     |
- *                                |-----|-----|
- *                                |     |     |
- *                                |     |     |
- *                                |     |     |
- * Lower left __C SXMIT number #0 +-----+-----+ Lower right __D SXMIT number #1
+ * Dummy Upper left not connected      -             - Dummy Upper right SXMIT number #3
+ * Upper left __A/__H not connected    -+-----+-----+- Upper right __B/__G SXMIT number #2
+ *                                      |     |     |
+ *                                      |     |     |
+ *                                      |     |     |
+ *                                      |-----|-----|
+ *                                      |     |     |
+ *                                      |     |     |
+ *                                      |     |     | 
+ * Lower left __C/__E not connected    -+-----+-----+- Lower right __D/__F SXMIT number #0
+ * Dummy Lower left not connected      -             - Dummy Lower right SXMIT number #1
  * </pre>
+ * The corners are defined as follows:
  * <ul>
- * <li><b>CORNER_LOWER_LEFT</b>
- * <li><b>CORNER_LOWER_RIGHT</b>
- * <li><b>CORNER_UPPER_RIGHT</b>
- * <li><b>CORNER_UPPER_LEFT</b>
+ * <li><b>CORNER_LOWER_LEFT</b> 0
+ * <li><b>CORNER_LOWER_RIGHT</b> 1
+ * <li><b>CORNER_UPPER_RIGHT</b> 2
+ * <li><b>CORNER_UPPER_LEFT</b> 3
  * </ul>
  */
 enum CORNER
@@ -112,7 +115,7 @@ struct Pixel_Stream_Entry
 /**
  * Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ccd_pixel_stream.c,v 1.1 2013-03-25 15:15:03 cjm Exp $";
+static char rcsid[] = "$Id: ccd_pixel_stream.c,v 1.2 2014-01-16 15:33:26 cjm Exp $";
 
 /* local variables */
 /**
@@ -127,15 +130,17 @@ static char Pixel_Stream_Error_String[CCD_GLOBAL_ERROR_STRING_LENGTH] = "";
  * List of Pixel_Stream_Entry structs defining how to deal with pixel stream's depending on amplifier setting.
  * For IO:O, the CCD is wired up to the SDSU controller as follows:
  * <pre>
- * Upper left __A SXMIT number #3 +-----+-----+ Upper right __B SXMIT number #2
- *                                |     |     |
- *                                |     |     |
- *                                |     |     |
- *                                |-----|-----|
- *                                |     |     |
- *                                |     |     |
- *                                |     |     |
- * Lower left __C SXMIT number #0 +-----+-----+ Lower right __D SXMIT number #1
+ * Dummy Upper left not connected      -             - Dummy Upper right SXMIT number #3
+ * Upper left __A/__H not connected    -+-----+-----+- Upper right __B/__G SXMIT number #2
+ *                                      |     |     |
+ *                                      |     |     |
+ *                                      |     |     |
+ *                                      |-----|-----|
+ *                                      |     |     |
+ *                                      |     |     |
+ *                                      |     |     | 
+ * Lower left __C/__E not connected    -+-----+-----+- Lower right __D/__F SXMIT number #0
+ * Dummy Lower left not connected      -             - Dummy Lower right SXMIT number #1
  * </pre>
  * @see #Pixel_Stream_Entry
  */
@@ -145,9 +150,7 @@ static struct Pixel_Stream_Entry Pixel_Stream_List[] =
 	** bottom left corner of the image. However this doesn't work for IO:O on sky orientation, we think
 	** we need to put pixels from the bottom right of the CCD into the bottom left corner of the image array. i.e.
 	** implying a flip in X.
-	** Also the dummy pixels are currently put into the same side of the dummy image than the image pixels,
-	** although they really originate from the output amplifier on the opposite side to where they are put in the
-	** dummy image.
+	** The dummy pixels are currently put into the same side of the dummy image as the image pixels.
 	{CCD_DSP_AMPLIFIER_TOP_LEFT,          {{0,3}},1,FALSE},
 	{CCD_DSP_AMPLIFIER_TOP_RIGHT,         {{0,2}},1,FALSE},
 	{CCD_DSP_AMPLIFIER_BOTTOM_LEFT,       {{0,0}},1,FALSE},
@@ -163,21 +166,19 @@ static struct Pixel_Stream_Entry Pixel_Stream_List[] =
 	*/
 	/* This ordered flips the image orientation in X. According to the old de-interlace code, this should put the
 	** image in the correct orientation for IO:O .
-	** Also the dummy pixels are currently put into the same side of the dummy image than the image pixels,
-	** although they really originate from the output amplifier on the opposite side to where they are put in the
-	** dummy image. */
-	{CCD_DSP_AMPLIFIER_TOP_LEFT,          {{0,2}},1,FALSE},
+	** The dummy pixels are currently put into the same side of the dummy image than the image pixels */
+	/*{CCD_DSP_AMPLIFIER_TOP_LEFT,          {{0,2}},1,FALSE},*/
 	{CCD_DSP_AMPLIFIER_TOP_RIGHT,         {{0,3}},1,FALSE},
-	{CCD_DSP_AMPLIFIER_BOTTOM_LEFT,       {{0,1}},1,FALSE},
+	/*{CCD_DSP_AMPLIFIER_BOTTOM_LEFT,       {{0,1}},1,FALSE},*/
 	{CCD_DSP_AMPLIFIER_BOTTOM_RIGHT,      {{0,0}},1,FALSE},
-	{CCD_DSP_AMPLIFIER_BOTH_RIGHT,        {{0,0},{0,3}},2,FALSE},
-	{CCD_DSP_AMPLIFIER_ALL,               {{0,1},{0,0},{0,3},{0,2}},4,TRUE},
-	{CCD_DSP_AMPLIFIER_DUMMY_TOP_LEFT,    {{1,2},{0,2}},2,FALSE}, /* dummy and image pixels reversed due to SXMIT restriction */
+	{CCD_DSP_AMPLIFIER_BOTH_RIGHT,        {{0,0},{-1,-1},{0,3}},3,FALSE},
+	/*{CCD_DSP_AMPLIFIER_ALL,               {{0,1},{0,0},{0,3},{0,2}},4,TRUE},
+	  {CCD_DSP_AMPLIFIER_DUMMY_TOP_LEFT,    {{1,2},{0,2}},2,FALSE},*/ /* dummy and image pixels reversed due to SXMIT restriction */
 	{CCD_DSP_AMPLIFIER_DUMMY_TOP_RIGHT,   {{0,3},{1,3}},2,FALSE},
-	{CCD_DSP_AMPLIFIER_DUMMY_BOTTOM_LEFT, {{0,1},{1,1}},2,FALSE},
+	/*{CCD_DSP_AMPLIFIER_DUMMY_BOTTOM_LEFT, {{0,1},{1,1}},2,FALSE},*/
 	{CCD_DSP_AMPLIFIER_DUMMY_BOTTOM_RIGHT,{{0,0},{1,0}},2,FALSE},
-	{CCD_DSP_AMPLIFIER_DUMMY_BOTH_LEFT,   {{0,1},{1,1},{1,2},{0,2}},4,FALSE},
-	{CCD_DSP_AMPLIFIER_DUMMY_BOTH_RIGHT,  {{1,0},{0,0},{0,3},{1,3}},4,FALSE}
+	/*{CCD_DSP_AMPLIFIER_DUMMY_BOTH_LEFT,   {{0,1},{1,1},{1,2},{0,2}},4,FALSE},*/
+	{CCD_DSP_AMPLIFIER_DUMMY_BOTH_RIGHT,  {{0,0},{1,0},{0,3},{1,3}},4,FALSE}
 };
 /**
  * The number of Pixel_Stream_Entry's in Pixel_Stream_List.
@@ -310,7 +311,7 @@ int CCD_Pixel_Stream_Post_Readout_Full_Frame(CCD_Interface_Handle_T* handle,unsi
 	    pixel_stream_entry_pixel_index++)
 	{
 		/* check image_number is in range */
-		if((pixel_stream_entry.Pixel_List[pixel_stream_entry_pixel_index].Image_Number < 0)||
+		if((pixel_stream_entry.Pixel_List[pixel_stream_entry_pixel_index].Image_Number < -1)||
 		   (pixel_stream_entry.Pixel_List[pixel_stream_entry_pixel_index].Image_Number >= Image_Data_Count))
 		{
 			filename_list[0] = filename;
@@ -325,7 +326,7 @@ int CCD_Pixel_Stream_Post_Readout_Full_Frame(CCD_Interface_Handle_T* handle,unsi
 			return FALSE;
 		}
 		/* check corner is in range */
-		if((pixel_stream_entry.Pixel_List[pixel_stream_entry_pixel_index].Corner_Number < 0)||
+		if((pixel_stream_entry.Pixel_List[pixel_stream_entry_pixel_index].Corner_Number < -1)||
 		   (pixel_stream_entry.Pixel_List[pixel_stream_entry_pixel_index].Corner_Number >= 
 		    PIXEL_STREAM_MAX_CORNER_COUNT))
 		{
@@ -396,45 +397,54 @@ int CCD_Pixel_Stream_Post_Readout_Full_Frame(CCD_Interface_Handle_T* handle,unsi
 				      exposure_data_pixel_index,exposure_data[exposure_data_pixel_index],
 				      image_index,corner_index,corner_pixel_index[image_index][corner_index]);
 #endif
-		/* calculate the pixel offset into the output image data array */
-		switch(corner_index)
+		/* check whether this pixel should be dropped */
+		if((image_index >-1)&&(corner_index> -1))
 		{
-			case CORNER_LOWER_LEFT:
-				image_data_x = corner_pixel_index[image_index][corner_index] % binned_split_ncols;
-				image_data_y = corner_pixel_index[image_index][corner_index] / binned_split_ncols;
-				break;
-			case CORNER_LOWER_RIGHT:
-				image_data_x = (binned_ncols-1)-(corner_pixel_index[image_index][corner_index] % 
-								   binned_split_ncols);
-				image_data_y = corner_pixel_index[image_index][corner_index] / binned_split_ncols;
-				break;
-			case CORNER_UPPER_RIGHT:
-				image_data_x =  (binned_ncols-1)-(corner_pixel_index[image_index][corner_index] % 
-								    binned_split_ncols);
-				image_data_y = (binned_nrows-1) - (corner_pixel_index[image_index][corner_index] / 
-							       binned_split_ncols);
-				break;
-			case CORNER_UPPER_LEFT:
-				image_data_x = corner_pixel_index[image_index][corner_index] % binned_split_ncols;
-				image_data_y = (binned_nrows-1) - (corner_pixel_index[image_index][corner_index] / 
-							       binned_split_ncols);
-				break;
-		}
+			/* calculate the pixel offset into the output image data array */
+			switch(corner_index)
+			{
+				case CORNER_LOWER_LEFT:
+					image_data_x = corner_pixel_index[image_index][corner_index] % 
+						binned_split_ncols;
+					image_data_y = corner_pixel_index[image_index][corner_index] / 
+						binned_split_ncols;
+					break;
+				case CORNER_LOWER_RIGHT:
+					image_data_x = (binned_ncols-1)-(corner_pixel_index[image_index][corner_index] 
+									 % binned_split_ncols);
+					image_data_y = corner_pixel_index[image_index][corner_index] / 
+						binned_split_ncols;
+					break;
+				case CORNER_UPPER_RIGHT:
+					image_data_x =  (binned_ncols-1)-(corner_pixel_index[image_index][corner_index]
+									  % binned_split_ncols);
+					image_data_y = (binned_nrows-1)-(corner_pixel_index[image_index][corner_index]
+									 / binned_split_ncols);
+					break;
+				case CORNER_UPPER_LEFT:
+					image_data_x = corner_pixel_index[image_index][corner_index] %
+						binned_split_ncols;
+					image_data_y = (binned_nrows-1)-(corner_pixel_index[image_index][corner_index]
+									 / binned_split_ncols);
+					break;
+			}
 #if LOGGING > 11
-		CCD_Global_Log_Format(LOG_VERBOSITY_VERY_VERBOSE,
-				      "CCD_Pixel_Stream_Post_Readout_Full_Frame:stream index %d has position (%d,%d).",
-				      exposure_data_pixel_index,image_data_x,image_data_y);
+			CCD_Global_Log_Format(LOG_VERBOSITY_VERY_VERBOSE,"CCD_Pixel_Stream_Post_Readout_Full_Frame:"
+					      "stream index %d has position (%d,%d).",
+					      exposure_data_pixel_index,image_data_x,image_data_y);
 #endif
-		image_data_pixel_offset = image_data_x+(image_data_y*binned_ncols);
+			image_data_pixel_offset = image_data_x+(image_data_y*binned_ncols);
 #if LOGGING > 11
-		CCD_Global_Log_Format(LOG_VERBOSITY_VERY_VERBOSE,"CCD_Pixel_Stream_Post_Readout_Full_Frame:"
-				      "stream index %d has image data pixel offset %d.",
-				      exposure_data_pixel_index,image_data_pixel_offset);
+			CCD_Global_Log_Format(LOG_VERBOSITY_VERY_VERBOSE,"CCD_Pixel_Stream_Post_Readout_Full_Frame:"
+					      "stream index %d has image data pixel offset %d.",
+					      exposure_data_pixel_index,image_data_pixel_offset);
 #endif
-		/* copy pixel data from input stream to output image */
-		(*((Image_Data_List[image_index])+image_data_pixel_offset)) = exposure_data[exposure_data_pixel_index];
-		/* move to next pixel for specified image/corner */
-		(corner_pixel_index[image_index][corner_index])++;
+			/* copy pixel data from input stream to output image */
+			(*((Image_Data_List[image_index])+image_data_pixel_offset)) = 
+				exposure_data[exposure_data_pixel_index];
+			/* move to next pixel for specified image/corner */
+			(corner_pixel_index[image_index][corner_index])++;
+		}/* end if pixel is NOT dropped */
 		/* prepare to decode the next pixel's image and corner data */
 		pixel_stream_entry_pixel_index++;
 		/* if we have reached the end of the pixel_stream_entry Pixel List reset the index */
@@ -1359,4 +1369,7 @@ static int fexist(char *filename)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.1  2013/03/25 15:15:03  cjm
+** Initial revision
+**
 */
