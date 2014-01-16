@@ -1,4 +1,4 @@
-; $Header: /space/home/eng/cjm/cvs/ioo/sdsu/e2v231-84/timCCDmisc.asm,v 1.4 2013-11-06 13:11:00 cjm Exp $
+; $Header: /space/home/eng/cjm/cvs/ioo/sdsu/e2v231-84/timCCDmisc.asm,v 1.5 2014-01-16 15:20:19 cjm Exp $
 ; Copied from e2v230 version.
 ; Various changed imported from fif486 version
 ; Miscellaneous CCD control routines
@@ -672,21 +672,23 @@ L_CHARGE_DUMP
 ; Select the amplifier and readout mode
 ;   'SOS'  Amplifier_name = '__C', '__D', '__B', '__A' or 'ALL'
 ;   			 or '__E', '__F', '__G', '__H'
-; __C = Lower Left Amplifier  = readout #0
-; __D = Lower Right Amplifier = readout #1
-; __B = Upper Right Amplifier = readout #2
-; __A = Upper Left Amplifier  = readout #3
-; Upper and Lower left hand amplifiers :- THIS DOES NOT WORK due to SXMIT restriction.
-; '_BD': Upper and Lower right hand amplifiers.
-; And now add support for dummy amplifiers as follows:
-; Single amp with dummy:
-; 'D_C' = Lower Left Amplifier + Dummy  = image readout #0 + dummy readout #1
-; 'D_D' = Lower Right Amplifier + Dummy = image readout #1 + dummy readout #2
-; 'D_B' = Upper Right Amplifier + Dummy = image readout #2 + dummy readout #3
-; 'D_A' = Upper Left Amplifier + Dummy  = dummy readout #2 + image readout #3 +  (N.B. signal and 
-; dummy pixels arrive in the opposite order from the other D_ settings)
-; 'DBL' Dummy Upper and Lower left hand amplifiers. (signal,dummy,dummy,signal)
-; 'DBR' Dummy Upper and Lower right hand amplifiers. (dummy,signal,signal,dummy)
+; Layout of the E2V231 chip:	
+; A H -+----+- G B
+;      |    |
+;      |    |
+;      |    |
+;      |    |
+; C E -+----+- F D
+; The dewar is currenly wired so only outputs F and G are connected, along with their associated dummy outputs.	
+; So the following subset of outputs are supported:		
+; __D / __F = Lower Right Amplifier         = readout #0                          = ARC-45 #0 Channel A
+; D_D       = Lower Right Amplifier + Dummy = image readout #0 + dummy readout #1 = ARC-45 #0 Channels A+B	
+; __B / __G = Upper Right Amplifier         = readout #2                          = ARC-45 #1 Channel A
+; D_B       = Upper Right Amplifier + Dummy = image readout #2 + dummy readout #3 = ARC-45 #1 Channels A+B
+; _BD       = Both Right Amplifier (plus 1 dummy) = image readout #0 + dummy readout #1 + image readout #2 
+;     = ARC-45 #0 Channels A+B + ARC-45 #1 Channel A. This requires throwing away the dummy readout in the C layer.
+; DBR       = Both Right Amplifier + Dummies = readout #0 - #3 (signal,dummy,signal,dummy) 
+;	    = ARC-45 #0 Channels A+B + ARC-45 #1 Channels A+B 
 ; We set/clear the ST_DUMMY bit in X:STATUS dependant on whether dummy outputs are to be used.
 ; BSET	#ST_DUMMY,X:STATUS	BCLR	#ST_DUMMY,X:STATUS
 SELECT_OUTPUT_SOURCE
@@ -696,61 +698,7 @@ SELECT_OUTPUT_SOURCE
 	JMP	<FINISH
 	
 SEL_OS	MOVE	Y:<OS,X0		; Get amplifier(s) name
-	MOVE	#'ALL',A		; All Amplifiers = readout #0 to #3
-	CMP	X0,A
-	JNE	<CMP_LL
-	MOVE	#PARALLEL_SPLIT_START,X0
-	MOVE	X0,Y:PARALLEL_START
-	MOVE	#PARALLEL_SPLIT_BIN,X0
-	MOVE	X0,Y:PARALLEL_BIN
-	MOVE	#PARALLEL_SPLIT_END,X0
-	MOVE	X0,Y:PARALLEL_END
-	MOVE	#PARALLEL_CLEAR_SPLIT,X0
-	MOVE	X0,Y:PARALLEL_CLEAR
-	MOVE	#SERIAL_SKIP_SPLIT,X0
-	MOVE	X0,Y:SERIAL_SKIP
-	MOVE	#FIRST_CLOCKS_SPLIT,X0
-	MOVE	X0,Y:FIRST_CLOCKS
-	MOVE	#CLOCK_LINE_SPLIT,X0
-	MOVE	X0,Y:CLOCK_LINE
-	MOVE	#$00F0C0,X0
-	MOVE	X0,Y:SXMIT
-	MOVE	#CHARGE_DUMP_SPLIT,X0
-	MOVE	X0,Y:CHARGE_DUMP
-	BSET	#SPLIT_S,X:STATUS
-	BSET	#SPLIT_P,X:STATUS
-	BCLR	#ST_DUMMY,X:STATUS
-	RTS
-CMP_LL	MOVE	#'__C',A		; Lower Left Amplifier = readout #0
-	CMP	X0,A
-	JEQ	<EQ_LL
-	MOVE	#'__E',A
-	CMP	X0,A
-	JNE	<CMP_LR
-EQ_LL	MOVE	#PARALLEL_DOWN_START,X0
-	MOVE	X0,Y:PARALLEL_START
-	MOVE	#PARALLEL_DOWN_BIN,X0
-	MOVE	X0,Y:PARALLEL_BIN
-	MOVE	#PARALLEL_DOWN_END,X0
-	MOVE	X0,Y:PARALLEL_END
-	MOVE	#PARALLEL_CLEAR_DOWN,X0
-	MOVE	X0,Y:PARALLEL_CLEAR
-	MOVE	#SERIAL_SKIP_LEFT,X0
-	MOVE	X0,Y:SERIAL_SKIP
-
-	MOVE	#FIRST_CLOCKS_LEFT,X0
-	MOVE	X0,Y:FIRST_CLOCKS
-	MOVE	#CLOCK_LINE_LEFT,X0
-	MOVE	X0,Y:CLOCK_LINE
-	MOVE	#$00F000,X0
-	MOVE	X0,Y:SXMIT
-	MOVE	#CHARGE_DUMP_LEFT,X0
-	MOVE	X0,Y:CHARGE_DUMP
-	BCLR	#SPLIT_S,X:STATUS
-	BCLR	#SPLIT_P,X:STATUS
-	BCLR	#ST_DUMMY,X:STATUS
-	RTS
-CMP_LR	MOVE	#'__D',A		; Lower Right Amplifier = readout #1
+	MOVE	#'__D',A		; Lower Right Amplifier = readout #0
 	CMP	X0,A
 	JEQ	<EQ_LR
 	MOVE	#'__F',A
@@ -770,7 +718,7 @@ EQ_LR	MOVE	#PARALLEL_DOWN_START,X0
 	MOVE	X0,Y:FIRST_CLOCKS
 	MOVE	#CLOCK_LINE_RIGHT,X0
 	MOVE	X0,Y:CLOCK_LINE
-	MOVE	#$00F041,X0
+	MOVE	#$00F000,X0
 	MOVE	X0,Y:SXMIT
 	MOVE	#CHARGE_DUMP_RIGHT,X0
 	MOVE	X0,Y:CHARGE_DUMP
@@ -783,7 +731,7 @@ CMP_UR	MOVE	#'__B',A		; Upper Right Amplifier = readout #2
 	JEQ	<EQ_UR
 	MOVE	#'__G',A
 	CMP	X0,A
-	JNE	<CMP_UL
+	JNE	<CMP_BR
 EQ_UR	MOVE	#PARALLEL_UP_START,X0
 	MOVE	X0,Y:PARALLEL_START
 	MOVE	#PARALLEL_UP_BIN,X0
@@ -798,7 +746,7 @@ EQ_UR	MOVE	#PARALLEL_UP_START,X0
 	MOVE	X0,Y:FIRST_CLOCKS
 	MOVE	#CLOCK_LINE_RIGHT,X0
 	MOVE	X0,Y:CLOCK_LINE
-	MOVE	#$00F082,X0
+	MOVE	#$00F082,X0	;  readout #2
 	MOVE	X0,Y:SXMIT
 	MOVE	#CHARGE_DUMP_RIGHT,X0
 	MOVE	X0,Y:CHARGE_DUMP
@@ -806,37 +754,9 @@ EQ_UR	MOVE	#PARALLEL_UP_START,X0
 	BCLR	#SPLIT_P,X:STATUS
 	BCLR	#ST_DUMMY,X:STATUS
 	RTS
-CMP_UL	MOVE	#'__A',A		; Upper Left Amplifier = readout #3
+CMP_BR	MOVE	#'_BD',A		; Upper and Lower Right Amplifiers = readout #0 and #2, #1 also but dumped
 	CMP	X0,A
-	JEQ	<EQ_UL
-	MOVE	#'__H',A
-	CMP	X0,A
-	JNE	<CMP_BR
-EQ_UL	MOVE	#PARALLEL_UP_START,X0
-	MOVE	X0,Y:PARALLEL_START
-	MOVE	#PARALLEL_UP_BIN,X0
-	MOVE	X0,Y:PARALLEL_BIN
-	MOVE	#PARALLEL_UP_END,X0
-	MOVE	X0,Y:PARALLEL_END
-	MOVE	#PARALLEL_CLEAR_UP,X0
-	MOVE	X0,Y:PARALLEL_CLEAR
-	MOVE	#SERIAL_SKIP_LEFT,X0
-	MOVE	X0,Y:SERIAL_SKIP
-	MOVE	#FIRST_CLOCKS_LEFT,X0
-	MOVE	X0,Y:FIRST_CLOCKS
-	MOVE	#CLOCK_LINE_LEFT,X0
-	MOVE	X0,Y:CLOCK_LINE
-	MOVE	#$00F0C3,X0
-	MOVE	X0,Y:SXMIT
-	MOVE	#CHARGE_DUMP_LEFT,X0
-	MOVE	X0,Y:CHARGE_DUMP
-	BCLR	#SPLIT_S,X:STATUS
-	BCLR	#SPLIT_P,X:STATUS
-	BCLR	#ST_DUMMY,X:STATUS
-	RTS
-CMP_BR	MOVE	#'_BD',A		; Upper and Lower Right Amplifiers = readout #1 and #2
-	CMP	X0,A
-	JNE	<CMP_DLL
+	JNE	<CMP_DLR
 EQ_BR	MOVE	#PARALLEL_SPLIT_START,X0
 	MOVE	X0,Y:PARALLEL_START
 	MOVE	#PARALLEL_SPLIT_BIN,X0
@@ -851,7 +771,7 @@ EQ_BR	MOVE	#PARALLEL_SPLIT_START,X0
 	MOVE	X0,Y:FIRST_CLOCKS
 	MOVE	#CLOCK_LINE_RIGHT,X0
 	MOVE	X0,Y:CLOCK_LINE
-	MOVE	#$00F081,X0
+	MOVE	#$00F080,X0	        ;  readout #1, readout #1 (to be dumped), readout #2
 	MOVE	X0,Y:SXMIT
 	MOVE	#CHARGE_DUMP_RIGHT,X0
 	MOVE	X0,Y:CHARGE_DUMP
@@ -859,32 +779,7 @@ EQ_BR	MOVE	#PARALLEL_SPLIT_START,X0
 	BSET	#SPLIT_P,X:STATUS
 	BCLR	#ST_DUMMY,X:STATUS
 	RTS
-CMP_DLL	MOVE	#'D_C',A		; Lower Left Amplifier = readout #0 + Dummy readout #1
-	CMP	X0,A
-	JNE	<CMP_DLR
-	MOVE	#PARALLEL_DOWN_START,X0
-	MOVE	X0,Y:PARALLEL_START
-	MOVE	#PARALLEL_DOWN_BIN,X0
-	MOVE	X0,Y:PARALLEL_BIN
-	MOVE	#PARALLEL_DOWN_END,X0
-	MOVE	X0,Y:PARALLEL_END
-	MOVE	#PARALLEL_CLEAR_DOWN,X0
-	MOVE	X0,Y:PARALLEL_CLEAR
-	MOVE	#SERIAL_SKIP_LEFT,X0
-	MOVE	X0,Y:SERIAL_SKIP
-	MOVE	#FIRST_CLOCKS_LEFT,X0
-	MOVE	X0,Y:FIRST_CLOCKS
-	MOVE	#CLOCK_LINE_LEFT,X0
-	MOVE	X0,Y:CLOCK_LINE
-	MOVE	#$00F040,X0		; A/D #0 signal / A/D #1 dummy
-	MOVE	X0,Y:SXMIT
-	MOVE	#CHARGE_DUMP_LEFT,X0
-	MOVE	X0,Y:CHARGE_DUMP
-	BCLR	#SPLIT_S,X:STATUS
-	BCLR	#SPLIT_P,X:STATUS
-	BSET	#ST_DUMMY,X:STATUS
-	RTS
-CMP_DLR	MOVE	#'D_D',A		; Lower Right Amplifier = readout #1 + Dummy readout #2
+CMP_DLR	MOVE	#'D_D',A		; Lower Right Amplifier = readout #0 + Dummy readout #1
 	CMP	X0,A
 	JNE	<CMP_DUR
 	MOVE	#PARALLEL_DOWN_START,X0
@@ -901,7 +796,7 @@ CMP_DLR	MOVE	#'D_D',A		; Lower Right Amplifier = readout #1 + Dummy readout #2
 	MOVE	X0,Y:FIRST_CLOCKS
 	MOVE	#CLOCK_LINE_RIGHT,X0
 	MOVE	X0,Y:CLOCK_LINE
-	MOVE	#$00F081,X0		; A/D #1 signal / A/D #2 dummy
+	MOVE	#$00F040,X0		; A/D #0 signal / A/D #1 dummy
 	MOVE	X0,Y:SXMIT
 	MOVE	#CHARGE_DUMP_RIGHT,X0
 	MOVE	X0,Y:CHARGE_DUMP
@@ -911,7 +806,7 @@ CMP_DLR	MOVE	#'D_D',A		; Lower Right Amplifier = readout #1 + Dummy readout #2
 	RTS
 CMP_DUR	MOVE	#'D_B',A		; Upper Right Amplifier = readout #2 + Dummy readout #3
 	CMP	X0,A
-	JNE	<CMP_DUL
+	JNE	<CMP_DBR
 	MOVE	#PARALLEL_UP_START,X0
 	MOVE	X0,Y:PARALLEL_START
 	MOVE	#PARALLEL_UP_BIN,X0
@@ -934,57 +829,6 @@ CMP_DUR	MOVE	#'D_B',A		; Upper Right Amplifier = readout #2 + Dummy readout #3
 	BCLR	#SPLIT_P,X:STATUS
 	BSET	#ST_DUMMY,X:STATUS
 	RTS
-CMP_DUL	MOVE	#'D_A',A		; Upper Left Amplifier = readout #3 + Dummy readout #2 (N.B. signal and 
-					; dummy pixels arrive in the opposite order from the other D_ settings)
-	CMP	X0,A
-	JNE	<CMP_DBL
-	MOVE	#PARALLEL_UP_START,X0
-	MOVE	X0,Y:PARALLEL_START
-	MOVE	#PARALLEL_UP_BIN,X0
-	MOVE	X0,Y:PARALLEL_BIN
-	MOVE	#PARALLEL_UP_END,X0
-	MOVE	X0,Y:PARALLEL_END
-	MOVE	#PARALLEL_CLEAR_UP,X0
-	MOVE	X0,Y:PARALLEL_CLEAR
-	MOVE	#SERIAL_SKIP_LEFT,X0
-	MOVE	X0,Y:SERIAL_SKIP
-	MOVE	#FIRST_CLOCKS_LEFT,X0
-	MOVE	X0,Y:FIRST_CLOCKS
-	MOVE	#CLOCK_LINE_LEFT,X0
-	MOVE	X0,Y:CLOCK_LINE
-	MOVE	#$00F0C2,X0		; A/D #3 signal / A/D #2 dummy
-	MOVE	X0,Y:SXMIT
-	MOVE	#CHARGE_DUMP_LEFT,X0
-	MOVE	X0,Y:CHARGE_DUMP
-	BCLR	#SPLIT_S,X:STATUS
-	BCLR	#SPLIT_P,X:STATUS
-	BSET	#ST_DUMMY,X:STATUS
-	RTS
-CMP_DBL	MOVE	#'DBL',A		; Dummy both left.
-	CMP	X0,A
-	JNE	<CMP_DBR
-	MOVE	#PARALLEL_SPLIT_START,X0
-	MOVE	X0,Y:PARALLEL_START
-	MOVE	#PARALLEL_SPLIT_BIN,X0
-	MOVE	X0,Y:PARALLEL_BIN
-	MOVE	#PARALLEL_SPLIT_END,X0
-	MOVE	X0,Y:PARALLEL_END
-	MOVE	#PARALLEL_CLEAR_SPLIT,X0
-	MOVE	X0,Y:PARALLEL_CLEAR
-	MOVE	#SERIAL_SKIP_LEFT,X0
-	MOVE	X0,Y:SERIAL_SKIP
-	MOVE	#FIRST_CLOCKS_LEFT,X0
-	MOVE	X0,Y:FIRST_CLOCKS
-	MOVE	#CLOCK_LINE_LEFT,X0
-	MOVE	X0,Y:CLOCK_LINE
-	MOVE	#$00F0C0,X0		; A/D #0 signal / A/D #1 dummy /  A/D #2 dummy / A/D #3 signal 
-	MOVE	X0,Y:SXMIT
-	MOVE	#CHARGE_DUMP_LEFT,X0
-	MOVE	X0,Y:CHARGE_DUMP
-	BCLR	#SPLIT_S,X:STATUS
-	BSET	#SPLIT_P,X:STATUS
-	BSET	#ST_DUMMY,X:STATUS
-	RTS
 CMP_DBR	MOVE	#'DBR',A		; Dummy both right.
 	CMP	X0,A
 	JNE	<ERROR
@@ -1002,7 +846,7 @@ CMP_DBR	MOVE	#'DBR',A		; Dummy both right.
 	MOVE	X0,Y:FIRST_CLOCKS
 	MOVE	#CLOCK_LINE_RIGHT,X0
 	MOVE	X0,Y:CLOCK_LINE
-	MOVE	#$00F0C0,X0		; A/D #0 dummy / A/D #1 signal /  A/D #2 signal / A/D #3 dummy
+	MOVE	#$00F0C0,X0		; A/D #0 signal / A/D #1 dummy /  A/D #2 signal / A/D #3 dummy
 	MOVE	X0,Y:SXMIT
 	MOVE	#CHARGE_DUMP_RIGHT,X0
 	MOVE	X0,Y:CHARGE_DUMP
@@ -1048,6 +892,10 @@ SET_PIXEL_TIME
 
 ;
 ; $Log: not supported by cvs2svn $
+; Revision 1.4  2013/11/06 13:11:00  cjm
+; Select Output Source(SOS): removed both left as this doesn't work due to SXMIT restriction,
+; added dummy both left and dummy both right.
+;
 ; Revision 1.3  2013/01/18 09:33:21  cjm
 ; Changed SOS command to support dummy amplifiers.
 ;
