@@ -1,7 +1,7 @@
        COMMENT *
-	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/e2v231-84/e2v231-84.waveforms,v 1.12 2013-04-18 16:23:24 cjm Exp $
-	Id: 	 $Id: e2v231-84.waveforms,v 1.12 2013-04-18 16:23:24 cjm Exp $
-	Version: $Revision: 1.12 $
+	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/e2v231-84/e2v231-84.waveforms,v 1.13 2014-01-16 15:14:02 cjm Exp $
+	Id: 	 $Id: e2v231-84.waveforms,v 1.13 2014-01-16 15:14:02 cjm Exp $
+	Version: $Revision: 1.13 $
 Waveform tables for CCD231-84. Waveforms based on E2V spec sheet A1A-765136 V1, October 2008.
 Waveforms are Mode 1 (low read noise, lower pixel charge capacity).
 Assumes usage with an SDSU ARC-22 timing board, ARC-32 clock driver board, and 2 x ARC-45 video boards.
@@ -750,11 +750,12 @@ DACS	DC	END_DACS-DACS-1
 	DC	DC0+$0c3fbb		; x2 fast
 	DC	DC1+$0c3fbb
 
+
 ; Output offset voltages
-	DC	DC0+$0c8000+OFFSET0 	; Output video offset, ch. E
-	DC	DC0+$0cc000+OFFSET1	; Output video offset, ch. F
-	DC	DC1+$0c8000+OFFSET2 	; Output video offset, ch. G	
-	DC	DC1+$0cc000+OFFSET3	; Output video offset, ch. H
+	DC	DC0+$0c8000+OFFSET0 	; Output video offset, ch. OS-F
+	DC	DC0+$0cc000+OFFSET1	; Output video offset, ch. DOS-F
+	DC	DC1+$0c8000+OFFSET2 	; Output video offset, ch. OS-G	
+	DC	DC1+$0cc000+OFFSET3	; Output video offset, ch. DOS-G
 
 ; Output and reset drain DC bias voltages
 	DC	DC0+$0d0000+@CVI((VOD-7.50)/22.5*4095)	; VOD-LL pin #1 board #0, ARC-45 #0, DB25 pin #1
@@ -779,6 +780,9 @@ END_DACS
 
 ;
 ; $Log: not supported by cvs2svn $
+; Revision 1.12  2013/04/18 16:23:24  cjm
+; Changes to OFFSET voltages.
+;
 ; Revision 1.10  2013/01/31 11:34:43  cjm
 ; IAS reduced signal integration time INT_TIM from $140000 to $0A0000.
 ;
