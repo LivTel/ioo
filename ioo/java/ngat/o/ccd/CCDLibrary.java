@@ -1,5 +1,5 @@
 // CCDLibrary.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/ccd/CCDLibrary.java,v 1.5 2013-03-25 15:07:13 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/ccd/CCDLibrary.java,v 1.6 2014-01-16 15:56:51 cjm Exp $
 package ngat.o.ccd;
 
 import java.lang.*;
@@ -10,14 +10,14 @@ import ngat.util.logging.*;
 /**
  * This class supports an interface to the SDSU CCD Controller library, for controlling the FrodoSpec CCD.
  * @author Chris Mottram
- * @version $Revision: 1.5 $
+ * @version $Revision: 1.6 $
  */
 public class CCDLibrary
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class
 	 */
-	public final static String RCSID = new String("$Id: CCDLibrary.java,v 1.5 2013-03-25 15:07:13 cjm Exp $");
+	public final static String RCSID = new String("$Id: CCDLibrary.java,v 1.6 2014-01-16 15:56:51 cjm Exp $");
 	// ccd_dsp.h
 	/* These constants should be the same as those in ccd_dsp.h */
 	/**
@@ -48,6 +48,8 @@ public class CCDLibrary
 	/* These constants should be the same as those in ccd_dsp.h */
 	/**
 	 * Set Output Source parameter, to make the controller read out images from the top left amplifier (__A).
+	 * The current IO:O wiring loom does not support this option 
+	 * (the DSP code has been changed to match the wiring loom).
 	 * @see #setupDimensions
 	 * @link http://ltdevsrv.livjm.ac.uk/~dev/o/ccd/cdocs/ccd_dsp.html#CCD_DSP_AMPLIFIER
 	 */
@@ -60,6 +62,8 @@ public class CCDLibrary
 	public final static int DSP_AMPLIFIER_TOP_RIGHT    =            0x5f5f42;
 	/**
 	 * Set Output Source parameter, to make the controller read out images from the bottom left amplifier (__C).
+	 * The current IO:O wiring loom does not support this option 
+	 * (the DSP code has been changed to match the wiring loom).
 	 * @see #setupDimensions
 	 * @link http://ltdevsrv.livjm.ac.uk/~dev/o/ccd/cdocs/ccd_dsp.html#CCD_DSP_AMPLIFIER
 	 */
@@ -72,6 +76,8 @@ public class CCDLibrary
 	public final static int DSP_AMPLIFIER_BOTTOM_RIGHT =            0x5f5f44;
 	/**
 	 * Set Output Source parameter, to make the controller read out images from both left amplifiers (_AC).
+	 * The current IO:O wiring loom does not support this option 
+	 * (the DSP code has been changed to match the wiring loom).
 	 * @see #setupDimensions
 	 * @link http://ltdevsrv.livjm.ac.uk/~dev/o/ccd/cdocs/ccd_dsp.html#CCD_DSP_AMPLIFIER
 	 */
@@ -85,6 +91,8 @@ public class CCDLibrary
 	public final static int DSP_AMPLIFIER_BOTH_RIGHT   =            0x5f4244;	
 	/**
 	 * Set Output Source parameter, to make the controller read out images from the all four amplifiers (ALL).
+	 * The current IO:O wiring loom does not support this option 
+	 * (the DSP code has been changed to match the wiring loom).
 	 * @see #setupDimensions
 	 * @link http://ltdevsrv.livjm.ac.uk/~dev/o/ccd/cdocs/ccd_dsp.html#CCD_DSP_AMPLIFIER
 	 */
@@ -94,6 +102,8 @@ public class CCDLibrary
 	 * the top left amplifier (D_A). A second amplifier is also A/D converted and it's values returned
 	 * to create a 'dummy' image, which will hopefully contain clock signals that can be subtracted from the
 	 * real image to improve noise.
+	 * The current IO:O wiring loom does not support this option 
+	 * (the DSP code has been changed to match the wiring loom).
 	 * @see #setupDimensions
 	 * @link http://ltdevsrv.livjm.ac.uk/~dev/o/ccd/cdocs/ccd_dsp.html#CCD_DSP_AMPLIFIER
 	 */
@@ -112,6 +122,8 @@ public class CCDLibrary
 	 * the bottom left amplifier (D_C). A second amplifier is also A/D converted and it's values returned
 	 * to create a 'dummy' image, which will hopefully contain clock signals that can be subtracted from the
 	 * real image to improve noise.
+	 * The current IO:O wiring loom does not support this option 
+	 * (the DSP code has been changed to match the wiring loom).
 	 * @see #setupDimensions
 	 * @link http://ltdevsrv.livjm.ac.uk/~dev/o/ccd/cdocs/ccd_dsp.html#CCD_DSP_AMPLIFIER
 	 */
@@ -130,6 +142,8 @@ public class CCDLibrary
 	 * the both left amplifiers (DBL). The other two amplifiers are also A/D converted and their values returned
 	 * to create a 'dummy' image, which will hopefully contain clock signals that can be subtracted from the
 	 * real image to improve noise.
+	 * The current IO:O wiring loom does not support this option 
+	 * (the DSP code has been changed to match the wiring loom).
 	 * @see #setupDimensions
 	 * @link http://ltdevsrv.livjm.ac.uk/~dev/o/ccd/cdocs/ccd_dsp.html#CCD_DSP_AMPLIFIER
 	 */
@@ -1270,7 +1284,7 @@ public class CCDLibrary
 	 *        [I|i]&lt;image number&gt;[C|c]&lt;corner number&gt;
 	 *        [[I|i]&lt;image number&gt;[C|c]&lt;corner number&gt;...]
 	 * @param isSplitSerial A boolean. If TRUE, the pixel stream is split in a serial direction, 
-	 *        and hence a differentcalculation is needed for determine the pixel's position 
+	 *        and hence a different calculation is needed for determine the pixel's position 
 	 *        in the de-interlaced image.
 	 * @see #CCD_Pixel_Stream_Set_Pixel_Stream_Entry
 	 */
@@ -1763,6 +1777,21 @@ public class CCDLibrary
  
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.5  2013/03/25 15:07:13  cjm
+// Removed DSP_AMPLIFIER_BOTH_LEFT as it is no longer supported by the DSP code.
+// Removed DSP_DEINTERLACE_ constants as these are no longer used, due to the
+// new ccd_pixel_stream module.
+// Added new DSP_AMPLIFIER constants for DUMMY amplifiers.
+// Added CCD_Pixel_Stream_Get_Error_Number native method, used by CCDLibraryNativeException.java.
+// Removed CCD_Setup_Get_DeInterlace_Type native method.
+// Modified amplifier parsing method to cope with new amplifier settings.
+// Removed deinterlace parsing methods.
+// Added dspAmplifierToString method.
+// Added pixelStreamEntrySet / CCD_Pixel_Stream_Set_Pixel_Stream_Entry to
+// configure pixel stream entries from the robotic software.
+// Changed setupDimensions parameters to remove deinterlace settings.
+// Removed getDeInterlaceType.
+//
 // Revision 1.4  2012/07/24 08:26:13  cjm
 // CHanged CCD_Setup_Startup and CCD_Interface_Memory_Map to supply
 // the length parameter to make length changes easier.
