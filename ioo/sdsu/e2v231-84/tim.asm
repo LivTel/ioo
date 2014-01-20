@@ -368,7 +368,7 @@ NP_READ	DC	0		; Number of parallels to read
 NR_BIAS	DC	0		; Number of bias pixels to read
 NROWS	DC	40		; Number of rows in the storage region
 SBIN	DC	1		; Current serial binning number
-OS	DC	'ALL'		; Name of the output source(s)
+OS	DC	'__D'		; Name of the output source(s)
 LAST_CLK 	DC	0	; Last clock before SXMIT
 SXMIT_ADR 	DC	0	; Address of SXMIT value
 LAST_SXMIT 	DC	0	; Last value of SXMIT
