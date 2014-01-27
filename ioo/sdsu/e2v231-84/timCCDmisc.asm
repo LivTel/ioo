@@ -1,4 +1,4 @@
-; $Header: /space/home/eng/cjm/cvs/ioo/sdsu/e2v231-84/timCCDmisc.asm,v 1.5 2014-01-16 15:20:19 cjm Exp $
+; $Header: /space/home/eng/cjm/cvs/ioo/sdsu/e2v231-84/timCCDmisc.asm,v 1.6 2014-01-27 16:20:22 cjm Exp $
 ; Copied from e2v230 version.
 ; Various changed imported from fif486 version
 ; Miscellaneous CCD control routines
@@ -679,7 +679,7 @@ L_CHARGE_DUMP
 ;      |    |
 ;      |    |
 ; C E -+----+- F D
-; The dewar is currenly wired so only outputs F and G are connected, along with their associated dummy outputs.	
+; The dewar is currently wired so only outputs F and G are connected, along with their associated dummy outputs.	
 ; So the following subset of outputs are supported:		
 ; __D / __F = Lower Right Amplifier         = readout #0                          = ARC-45 #0 Channel A
 ; D_D       = Lower Right Amplifier + Dummy = image readout #0 + dummy readout #1 = ARC-45 #0 Channels A+B	
@@ -771,7 +771,7 @@ EQ_BR	MOVE	#PARALLEL_SPLIT_START,X0
 	MOVE	X0,Y:FIRST_CLOCKS
 	MOVE	#CLOCK_LINE_RIGHT,X0
 	MOVE	X0,Y:CLOCK_LINE
-	MOVE	#$00F080,X0	        ;  readout #1, readout #1 (to be dumped), readout #2
+	MOVE	#$00F080,X0	        ;  readout #0, readout #1 (to be dumped), readout #2
 	MOVE	X0,Y:SXMIT
 	MOVE	#CHARGE_DUMP_RIGHT,X0
 	MOVE	X0,Y:CHARGE_DUMP
@@ -892,6 +892,16 @@ SET_PIXEL_TIME
 
 ;
 ; $Log: not supported by cvs2svn $
+; Revision 1.6  2014/01/19 16:01:25  cjm
+; Fixed comments.
+;
+; Revision 1.5  2014/01/16 15:20:19  cjm
+; Rewrote SELECT_OUTPUT_SOURCE routine to match the new wiring loom.
+; Only F+G outputs are connected along with their associated dummy outputs.
+; Therefore LEFT and ALL amplifier options have been removed.
+; SXMIT codes on the RIGHT options have changed as the ARC-45 video input each RIGHT output
+; is connected to has changed.
+;
 ; Revision 1.4  2013/11/06 13:11:00  cjm
 ; Select Output Source(SOS): removed both left as this doesn't work due to SXMIT restriction,
 ; added dummy both left and dummy both right.
