@@ -1,7 +1,7 @@
        COMMENT *
-	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/e2v231-84/e2v231-84.waveforms,v 1.14 2014-01-20 11:08:26 cjm Exp $
-	Id: 	 $Id: e2v231-84.waveforms,v 1.14 2014-01-20 11:08:26 cjm Exp $
-	Version: $Revision: 1.14 $
+	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/e2v231-84/e2v231-84.waveforms,v 1.15 2014-01-27 16:26:49 cjm Exp $
+	Id: 	 $Id: e2v231-84.waveforms,v 1.15 2014-01-27 16:26:49 cjm Exp $
+	Version: $Revision: 1.15 $
 Waveform tables for CCD231-84. Waveforms based on E2V spec sheet A1A-765136 V1, October 2008.
 Waveforms are Mode 1 (low read noise, lower pixel charge capacity).
 Assumes usage with an SDSU ARC-22 timing board, ARC-32 clock driver board, and 2 x ARC-45 video boards.
@@ -38,31 +38,31 @@ NPAR	EQU	1		; Repeat number for SLOW_CLOCKS
 
 ;INT_TIM	EQU	$060000		; Signal integration time for ~1 microsec/pixel (300ns delay)
 INT_TIM	EQU	$0A0000		; Signal integration time for several microsec/pixel (longer delay)
-;INT_TIM	EQU	$180000		; Signal integration time for several microsec/pixel (longer delay)
+;INT_TIM	EQU	$090000		; Signal integration time for several microsec/pixel (longer delay)
 
 ; CCD clock voltages
-RG_HI	EQU	 5.0		; Reset Gate High
+RG_HI	EQU	 6.0		; Reset Gate High
 RG_LO	EQU 	-7.0		; Reset Gate Low
-R_HI	EQU	 3.0		; Readout Register Clock High
+R_HI	EQU	 4.0		; Readout Register Clock High
 R_LO	EQU	-6.0		; Readout Register Clock Low 
 
-SW_HI	EQU	 3.0		; Summing Well High
+SW_HI	EQU	 4.0		; Summing Well High
 SW_LO	EQU	-6.0		; Summing Well Low
-DG_HI	EQU      3.0		; Dump Gate High (See P11, Note 11)
+DG_HI	EQU      4.0		; Dump Gate High (See P11, Note 11)
 DG_LO	EQU     -7.0		; Dump Gate Low
-I_HI	EQU      3.0		; Imaging Area Clocks High
+I_HI	EQU      4.0		; Imaging Area Clocks High
 I_LO	EQU     -7.0		; Imaging Area Clocks Low
-TG_HI	EQU	 3.0		; Transfer Gate High
+TG_HI	EQU	 4.0		; Transfer Gate High
 TG_LO	EQU     -7.0		; Transfer Gate Low
 Vmax	EQU    +13.0		; Maximum clock driver voltage (see ARC-32 clock driver board docs)
 ZERO	EQU	 0.0		; Unused pins
 
 ; Output video offset parameters
 OFFSET	EQU	$800		; 0 TO $FFF -> 12 bits
-OFFSET0	EQU	$71F   ;   BOTTOM_LEFT
-OFFSET1	EQU	$750   ;   BOTTOM_RIGHT
-OFFSET2	EQU	$78A   ;   TOP_RIGHT 
-OFFSET3	EQU	$73F   ;   TOP_LEFT
+OFFSET0	EQU	$780   ;   BOTTOM_RIGHT
+OFFSET1	EQU	$760   ;   BOTTOM_RIGHT_DUMMY
+OFFSET2	EQU	$79C   ;   TOP_RIGHT 
+OFFSET3	EQU	$798   ;   TOP_RIGHT_DUMMY
 
 ; DC Bias voltages
 VOD	EQU	24.0		; Output Drain (from chip operating conditions, spec sheet says 29v)
