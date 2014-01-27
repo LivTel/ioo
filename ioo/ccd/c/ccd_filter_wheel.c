@@ -1,12 +1,12 @@
 /* ccd_filter_wheel.c
 ** filter wheel control module.
-** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ccd_filter_wheel.c,v 1.3 2013-01-25 14:16:09 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ccd_filter_wheel.c,v 1.4 2014-01-27 16:45:47 cjm Exp $
 */
 /**
  * ccd_filter_wheel holds the routines for moving and controlling the filter wheel.
  * It hold state on the current position of the wheel.
  * @author Chris Mottram
- * @version $Revision: 1.3 $
+ * @version $Revision: 1.4 $
  */
 /**
  * This hash define is needed before including source files give us POSIX.4/IEEE1003.1b-1993 prototypes.
@@ -31,7 +31,7 @@
 /**
  * Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ccd_filter_wheel.c,v 1.3 2013-01-25 14:16:09 cjm Exp $";
+static char rcsid[] = "$Id: ccd_filter_wheel.c,v 1.4 2014-01-27 16:45:47 cjm Exp $";
 /**
  * The default number of positions in each filter wheel.
  * @see #Filter_Wheel_Struct
@@ -211,8 +211,10 @@ static char rcsid[] = "$Id: ccd_filter_wheel.c,v 1.3 2013-01-25 14:16:09 cjm Exp
 /**
  * The bit on the utility board, Y:DIG_IN, CLEAR when proximity sensor 3 is triggered.
  * This bit definition should be kept up to date with DIG_IN_BIT_PROXIMITY_3_ON, defined in filter_wheel_equ.asm.
+ * Note this was DIN10 (1<<10). However, in the 01/2014 site trip DIN10 blew/shorted, so we moved this to
+ * DIN14
  */
-#define FW_INPUT_PROXIMITY_3_ON			(1<<10)
+#define FW_INPUT_PROXIMITY_3_ON			(1<<14)
 /**
  * The bit on the utility board, Y:DIG_IN, CLEAR when proximity sensor 4 is triggered.
  * This bit definition should be kept up to date with DIG_IN_BIT_PROXIMITY_4_ON, defined in filter_wheel_equ.asm.
@@ -231,8 +233,10 @@ static char rcsid[] = "$Id: ccd_filter_wheel.c,v 1.3 2013-01-25 14:16:09 cjm Exp
 /**
  * Mask to apply to Y:DIG_IN to extract proximity bits: bits 8-13. Should match DIG_IN_PROXIMITY_MASK in 
  * filter_wheel_equ.asm.
+ * This changed on  the 01/2014 site trip when DIN10 blew. So it used to be bits 8-13, 0x3f00.
+ * Now we use bits 8-9,11-14.
  */
-#define FW_INPUT_PROXIMITY_MASK                 (0x3f00)
+#define FW_INPUT_PROXIMITY_MASK                 (0x7b00)
 /**
  * The bit on the utility board, Y:DIG_OUT, is set to move the three locators in, 
  * and cleared to move the three locators  out.
@@ -1270,6 +1274,10 @@ static void Filter_Wheel_Print_Digital_Outputs(int fw_dig_out)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.3  2013/01/25 14:16:09  cjm
+** Reverted code following temporary changes for fault 1949 (proximity sensor 5 failure).
+** Also improved logging slightly.
+**
 ** Revision 1.2  2013/01/02 11:20:31  cjm
 ** *** empty log message ***
 **
