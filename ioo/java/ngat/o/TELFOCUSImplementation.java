@@ -1,5 +1,5 @@
 // TELFOCUSImplementation.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/TELFOCUSImplementation.java,v 1.1 2011-11-23 10:55:24 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/TELFOCUSImplementation.java,v 1.2 2014-02-04 10:46:42 eng Exp $
 package ngat.o;
 
 import java.lang.*;
@@ -31,14 +31,14 @@ import ngat.util.logging.*;
  * focus the telescope. An exposure is taken at each focus position, and then reduced.
  * @see SETUPImplementation
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class TELFOCUSImplementation extends SETUPImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: TELFOCUSImplementation.java,v 1.1 2011-11-23 10:55:24 cjm Exp $");
+	public final static String RCSID = new String("$Id: TELFOCUSImplementation.java,v 1.2 2014-02-04 10:46:42 eng Exp $");
 	/**
 	 * A small number. Used in getFocus to prevent a division by zero.
 	 * @see #getFocus
@@ -341,10 +341,24 @@ public class TELFOCUSImplementation extends SETUPImplementation implements JMSCo
 		float focusOffset;
 
 		focusOffsetCommand = new OFFSET_FOCUS(telFocusCommand.getId());
-		focusOffset = 0.0f;
-	// do not apply default focus offset
-	// do not apply focus offset?
-	// set the commands focus offset
+		//focusOffset = 0.0f;
+		// do not apply default focus offset
+		// do not apply focus offset?
+		// set the commands focus offset
+		// set this to re-center the telfocus plot 
+
+		try {
+		    focusOffset = (float)status.getPropertyDouble("o.focus.offset");
+		} catch (Exception e) {
+		    e.printStackTrace();
+		    o.error(this.getClass().getName()+":resetFocusOffset failed: Unable to read focus offset from config OStatus: "+e.getMessage());
+		    telFocusDone.setErrorNum(OConstants.O_ERROR_CODE_BASE+2009); 
+		    telFocusDone.setErrorString("Unable to read focus offset key: o.focus.offset from OStatus: "+e.getMessage());
+		    telFocusDone.setSuccessful(false);
+		    return false;
+		    
+		}
+
 		focusOffsetCommand.setFocusOffset(focusOffset);
 		o.log(Logging.VERBOSITY_VERY_TERSE,this.getClass().getName()+":resetFocusOffset:To "+
 		      focusOffset+".");
@@ -1120,4 +1134,7 @@ public class TELFOCUSImplementation extends SETUPImplementation implements JMSCo
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2011/11/23 10:55:24  cjm
+// Initial revision
+//
 //
