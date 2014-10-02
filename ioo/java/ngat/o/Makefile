@@ -1,5 +1,5 @@
 # Makefile
-# $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/Makefile,v 1.3 2013-05-21 09:21:29 cjm Exp $
+# $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/Makefile,v 1.4 2014-10-02 13:31:50 cjm Exp $
 include ../../../Makefile.common
 include ../../../../Makefile.common
 
@@ -14,7 +14,8 @@ MAIN_SRCS 	= OConstants.java OStatus.java OTCPServer.java OTCPServerConnectionTh
 		OTCPClientConnectionThread.java O.java OREBOOTQuitThread.java
 IMPL_SRCS = $(BASE_IMPL_SRCS) $(CALIBRATE_IMPL_SRCS) $(EXPOSE_IMPL_SRCS) $(INTERRUPT_IMPL_SRCS) $(SETUP_IMPL_SRCS)
 BASE_IMPL_SRCS	= JMSCommandImplementation.java CommandImplementation.java UnknownCommandImplementation.java \
-		HardwareImplementation.java FITSImplementation.java ACQUIREImplementation.java \
+		HardwareImplementation.java FITSImplementation.java \
+		ACQUIREImplementation.java ACQUIREImplementationTweak.java  \
 		CALIBRATEImplementation.java EXPOSEImplementation.java INTERRUPTImplementation.java \
 		SETUPImplementation.java
 CALIBRATE_IMPL_SRCS = BIASImplementation.java DARKImplementation.java DAY_CALIBRATEImplementation.java \
@@ -85,6 +86,9 @@ backup: tidy checkin
 
 #
 # $Log: not supported by cvs2svn $
+# Revision 1.3  2013/05/21 09:21:29  cjm
+# Added ndfilter.
+#
 # Revision 1.2  2012/10/12 14:30:19  cjm
 # Added TWILIGHT_CALIBRATEImplementation2.java .
 #
