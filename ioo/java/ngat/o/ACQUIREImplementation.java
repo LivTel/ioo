@@ -1,5 +1,5 @@
 // ACQUIREImplementation.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/ACQUIREImplementation.java,v 1.6 2014-10-02 13:24:39 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/ACQUIREImplementation.java,v 1.7 2014-10-08 13:32:10 cjm Exp $
 package ngat.o;
 
 import java.io.*;
@@ -18,14 +18,14 @@ import ngat.util.logging.*;
  * This class provides the implementation for the ACQUIRE command sent to a server using the
  * Java Message System.
  * @author Chris Mottram
- * @version $Revision: 1.6 $
+ * @version $Revision: 1.7 $
  */
 public class ACQUIREImplementation extends FITSImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: ACQUIREImplementation.java,v 1.6 2014-10-02 13:24:39 cjm Exp $");
+	public final static String RCSID = new String("$Id: ACQUIREImplementation.java,v 1.7 2014-10-08 13:32:10 cjm Exp $");
 	/**
 	 * How many arc-seconds in 1 second of RA. A double, of value 15.
 	 */
@@ -249,6 +249,16 @@ public class ACQUIREImplementation extends FITSImplementation implements JMSComm
 		// get parameters
 		acquisitionMode = acquireCommand.getAcquisitionMode();
 		acquireThreshold = acquireCommand.getThreshold();
+		if(acquireThreshold < 0.1)
+		{
+			o.error(this.getClass().getName()+":processCommand:"+
+				command+":Acquire threshold is too small:"+acquireThreshold);
+			acquireDone.setErrorNum(OConstants.O_ERROR_CODE_BASE+2505);
+			acquireDone.setErrorString("processCommand:"+
+				command+":Acquire threshold is too small:"+acquireThreshold);
+			acquireDone.setSuccessful(false);
+			return acquireDone;
+		}
 		acquireRARads = acquireCommand.getRA();
 		acquireDecRads = acquireCommand.getDec();
 		acquireRAString = Position.formatHMSString(acquireRARads,":");
@@ -1329,6 +1339,9 @@ public class ACQUIREImplementation extends FITSImplementation implements JMSComm
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.6  2014/10/02 13:24:39  cjm
+// Changed threshold to be passed in as a command parameter rather than retrieved from the config file.
+//
 // Revision 1.5  2014/04/08 08:50:31  eng
 // Fixed problem with times and rates for moving acquire.
 //
