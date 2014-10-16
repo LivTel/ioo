@@ -1,5 +1,5 @@
 // ACQUIREImplementationTweak.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/ACQUIREImplementationTweak.java,v 1.2 2014-10-08 13:32:09 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/ACQUIREImplementationTweak.java,v 1.3 2014-10-16 13:28:01 cjm Exp $
 package ngat.o;
 
 import java.io.*;
@@ -20,14 +20,14 @@ import ngat.util.logging.*;
  * so it can use TWEAK (OFFSET_X_Y) rather than OFFBY ARC (OFFSET_RA_DEC).  TWEAKs can be done whilst
  * the autoguider is locked, making for a more accurate acquisition. 
  * @author Chris Mottram
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 public class ACQUIREImplementationTweak extends FITSImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: ACQUIREImplementationTweak.java,v 1.2 2014-10-08 13:32:09 cjm Exp $");
+	public final static String RCSID = new String("$Id: ACQUIREImplementationTweak.java,v 1.3 2014-10-16 13:28:01 cjm Exp $");
 	/**
 	 * How many arc-seconds in 1 second of RA. A double, of value 15.
 	 */
@@ -569,8 +569,8 @@ public class ACQUIREImplementationTweak extends FITSImplementation implements JM
 	 * These are converted to arcseconds and sent to the RCS using the OFFSET_X_Y command.
 	 * The plate scale is retrieved from the CCDSCALE FITS header stored in oFitsHeaderDefaults.
 	 * @param id The string id of the command instance we are implementing. Used for generating ISS command id's.
-	 * @param xPixelOffset The offset in X binned pixels in the focal plane of the acquisition instrument.
-	 * @param yPixelOffset The offset in Y binned pixels in the focal plane of the acquisition instrument.
+	 * @param xPixelOffset The offset in X decimal binned pixels in the focal plane of the acquisition instrument.
+	 * @param yPixelOffset The offset in Y decimal binned pixels in the focal plane of the acquisition instrument.
 	 * @exception Exception Thrown if the ISS command OFFSET_RA_DEC fails.
 	 * @see #o
 	 * @see #serverConnectionThread
@@ -580,7 +580,7 @@ public class ACQUIREImplementationTweak extends FITSImplementation implements JM
 	 * @see ngat.message.ISS_INST.OFFSET_X_Y
 	 * @see FITSImplementation#oFitsHeaderDefaults
 	 */
-	protected void doXYPixelOffset(String id,int xPixelOffset,int yPixelOffset) throws Exception
+	protected void doXYPixelOffset(String id,double xPixelOffset,double yPixelOffset) throws Exception
 	{
 		OFFSET_X_Y offsetXYCommand = null;
 		INST_TO_ISS_DONE instToISSDone = null;
@@ -624,9 +624,11 @@ public class ACQUIREImplementationTweak extends FITSImplementation implements JM
 	 * <li><b>testAbort</b> is called to see if this command implementation has been aborted.
 	 * <li>We call <b>computeRADecOffset</b> to check whether we are in the correct position, 
 	 *     and calculate a new offset to apply if necessary.
-diddly
-	 * <li>If a new offset is required <b>doRADecOffset</b> is called.
-	 * <li>We check to see if the loop should be terminated.
+	 * <li>If a new offset is required we call <b>doXYPixelOffset</b>, with the 
+	 *     <b>xPixelOffset</b> and <b>yPixelOffset</b> computed by <b>computeRADecOffset</b>. 
+	 *     The <b>offsetCount</b> is incremented.
+	 * <li>We check to see if the loop should be terminated. If the <b>offsetCount</b> is greater than 
+	 *     <b>maximumOffsetCount</b> we throw an exception.
 	 * </ul>
 	 * @param acquireCommand The instance of ACQUIRE we are currently running.
 	 * @param acquireDone The instance of ACQUIRE_DONE to fill in with errors we receive.
@@ -689,7 +691,7 @@ diddly
 			if(done == false)
 			{
 				// issue new XY Pixel offset
-				doXYPixelOffset(acquireCommand.getId(),(int)xPixelOffset,(int)yPixelOffset);
+				doXYPixelOffset(acquireCommand.getId(),xPixelOffset,yPixelOffset);
 				offsetCount++;
 			}
 			// Have we taken too many goes to acquire?
@@ -784,7 +786,7 @@ diddly
 			if(done == false)
 			{
 				// issue new XY Pixel offset
-				doXYPixelOffset(acquireCommand.getId(),(int)xPixelOffset,(int)yPixelOffset);
+				doXYPixelOffset(acquireCommand.getId(),xPixelOffset,yPixelOffset);
 				offsetCount++;
 			}
 			// Have we taken too many goes to acquire?
@@ -1211,6 +1213,9 @@ diddly
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.2  2014/10/08 13:32:09  cjm
+// Added range check to acquireThreshold.
+//
 // Revision 1.1  2014/10/02 13:31:57  cjm
 // Initial revision
 //

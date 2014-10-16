@@ -1,5 +1,5 @@
 // ACQUIREImplementation.java
-// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/ACQUIREImplementation.java,v 1.7 2014-10-08 13:32:10 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/ioo/java/ngat/o/ACQUIREImplementation.java,v 1.8 2014-10-16 13:28:00 cjm Exp $
 package ngat.o;
 
 import java.io.*;
@@ -18,14 +18,14 @@ import ngat.util.logging.*;
  * This class provides the implementation for the ACQUIRE command sent to a server using the
  * Java Message System.
  * @author Chris Mottram
- * @version $Revision: 1.7 $
+ * @version $Revision: 1.8 $
  */
 public class ACQUIREImplementation extends FITSImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: ACQUIREImplementation.java,v 1.7 2014-10-08 13:32:10 cjm Exp $");
+	public final static String RCSID = new String("$Id: ACQUIREImplementation.java,v 1.8 2014-10-16 13:28:00 cjm Exp $");
 	/**
 	 * How many arc-seconds in 1 second of RA. A double, of value 15.
 	 */
@@ -611,8 +611,8 @@ public class ACQUIREImplementation extends FITSImplementation implements JMSComm
 	 * These are converted to arcseconds and sent to the RCS using the OFFSET_X_Y command.
 	 * The plate scale is retrieved from the CCDSCALE FITS header stored in oFitsHeaderDefaults.
 	 * @param id The string id of the command instance we are implementing. Used for generating ISS command id's.
-	 * @param xPixelOffset The offset in X binned pixels in the focal plane of the acquisition instrument.
-	 * @param yPixelOffset The offset in Y binned pixels in the focal plane of the acquisition instrument.
+	 * @param xPixelOffset The offset in X decimal binned pixels in the focal plane of the acquisition instrument.
+	 * @param yPixelOffset The offset in Y decimal binned pixels in the focal plane of the acquisition instrument.
 	 * @exception Exception Thrown if the ISS command OFFSET_RA_DEC fails.
 	 * @see #o
 	 * @see #serverConnectionThread
@@ -622,7 +622,7 @@ public class ACQUIREImplementation extends FITSImplementation implements JMSComm
 	 * @see ngat.message.ISS_INST.OFFSET_X_Y
 	 * @see FITSImplementation#oFitsHeaderDefaults
 	 */
-	protected void doXYPixelOffset(String id,int xPixelOffset,int yPixelOffset) throws Exception
+	protected void doXYPixelOffset(String id,double xPixelOffset,double yPixelOffset) throws Exception
 	{
 		OFFSET_X_Y offsetXYCommand = null;
 		INST_TO_ISS_DONE instToISSDone = null;
@@ -824,7 +824,7 @@ public class ACQUIREImplementation extends FITSImplementation implements JMSComm
 			if(done == false)
 			{
 				// issue new XY Pixel offset
-				doXYPixelOffset(acquireCommand.getId(),(int)xPixelOffset,(int)yPixelOffset);
+				doXYPixelOffset(acquireCommand.getId(),xPixelOffset,yPixelOffset);
 				offsetCount++;
 			}
 			// Have we taken too many goes to acquire?
@@ -1339,6 +1339,9 @@ public class ACQUIREImplementation extends FITSImplementation implements JMSComm
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.7  2014/10/08 13:32:10  cjm
+// Added range check to acquireThreshold.
+//
 // Revision 1.6  2014/10/02 13:24:39  cjm
 // Changed threshold to be passed in as a command parameter rather than retrieved from the config file.
 //
