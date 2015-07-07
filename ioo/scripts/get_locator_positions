@@ -1,0 +1,33 @@
+#!/bin/csh
+ /icc/bin/o/ccd/test/i386-linux/ccd_read_memory -interface_device pci -board utility -space y -address 0x0 > /tmp/dig_in_output.txt
+set dig_in = `cat /tmp/dig_in_output.txt | grep 'Result (hexadecimal) = ' | awk ' { print $4 }'`
+echo "DIG IN  = ${dig_in}"
+/home/eng/bin/inttobits ${dig_in} > /tmp/inttobits.txt 
+set bit_0_set = `cat /tmp/inttobits.txt | grep -c "Bit 0 set"`
+set bit_1_set = `cat /tmp/inttobits.txt | grep -c "Bit 1 set"`
+set bit_2_set = `cat /tmp/inttobits.txt | grep -c "Bit 2 set"`
+set bit_3_set = `cat /tmp/inttobits.txt | grep -c "Bit 3 set"`
+set bit_4_set = `cat /tmp/inttobits.txt | grep -c "Bit 4 set"`
+set bit_5_set = `cat /tmp/inttobits.txt | grep -c "Bit 5 set"`
+if ( ${bit_0_set} == 0 ) then
+	echo "Locator 1 in."
+else if ( ${bit_1_set} == 0 ) then
+	echo "Locator 1 out."
+else
+	echo "Locator 1 neither in nor out."
+endif
+if ( ${bit_2_set} == 0 ) then
+	echo "Locator 2 in."
+else if ( ${bit_3_set} == 0 ) then
+	echo "Locator 2 out."
+else
+	echo "Locator 2 neither in nor out."
+endif
+if ( ${bit_4_set} == 0 ) then
+	echo "Locator 3 in."
+else if ( ${bit_5_set} == 0 ) then
+	echo "Locator 3 out."
+else
+	echo "Locator 3 neither in nor out."
+endif
+

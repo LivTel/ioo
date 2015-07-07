@@ -1,0 +1,58 @@
+#!/bin/csh
+# $Header: /space/home/eng/cjm/cvs/ioo/scripts/soak_test_filter_slides,v 1.1 2015-07-07 12:55:49 cjm Exp $
+set address = ioondfilterarduino
+set port = 23
+set slide_list = "2 3"
+set overall_test_count = 0
+set move_test_count = 0
+set get_position_test_count = 0
+set done = 0
+while(${done} == 0 )
+	foreach slide ( ${slide_list} )
+		# stow the slide
+		(java ngat.o.ndfilter.test.TestNDFilterArduino -address ${address} -port_number ${port} -move ${slide} stow > /tmp/soak_test_filter_slides_output.txt) >& /tmp/soak_test_filter_slides_error.txt 
+		set success = `grep -c "move returned:0" /tmp/soak_test_filter_slides_error.txt`
+		if( ${success} == 0 ) then
+			echo "Move stow on slide ${slide} failed."
+			cat /tmp/soak_test_filter_slides_error.txt
+			exit 1
+		endif
+		@ move_test_count ++
+		# get position
+		(java ngat.o.ndfilter.test.TestNDFilterArduino -address ${address} -port_number ${port} -get_position ${slide} > /tmp/soak_test_filter_slides_output.txt) >& /tmp/soak_test_filter_slides_error.txt 
+		set position = `cat /tmp/soak_test_filter_slides_output.txt | grep "position is:" | sed "s/ngat.o.ndfilter.test.TestNDFilterArduino:run:filter slide .* position is:\(.*\)/\1/"`
+		if( ${position} != 0 ) then
+			echo "Stow position on slide ${slide} returned wrong position ${position}."
+			cat /tmp/soak_test_filter_slides_output.txt
+			exit 2
+		endif
+		@ get_position_test_count ++
+		# deploy the slide
+		(java ngat.o.ndfilter.test.TestNDFilterArduino -address ${address} -port_number ${port} -move ${slide} deploy > /tmp/soak_test_filter_slides_output.txt) >& /tmp/soak_test_filter_slides_error.txt 
+		set success = `grep -c "move returned:0" /tmp/soak_test_filter_slides_error.txt`
+		if( ${success} == 0 ) then
+			echo "Move deploy on slide ${slide} failed."
+			cat /tmp/soak_test_filter_slides_error.txt
+			exit 3
+		endif
+		@ move_test_count ++
+		# get position
+		(java ngat.o.ndfilter.test.TestNDFilterArduino -address ${address} -port_number ${port} -get_position ${slide} > /tmp/soak_test_filter_slides_output.txt) >& /tmp/soak_test_filter_slides_error.txt 
+		set position = `cat /tmp/soak_test_filter_slides_output.txt | grep "position is:" | sed "s/ngat.o.ndfilter.test.TestNDFilterArduino:run:filter slide .* position is:\(.*\)/\1/"`
+		if( ${position} != 1 ) then
+			echo "Deploy position on slide ${slide} returned wrong position ${position}."
+			cat /tmp/soak_test_filter_slides_output.txt
+			exit 4
+		endif
+		@ get_position_test_count ++
+	end
+	@ overall_test_count++
+	echo "Move test count: ${move_test_count}"
+	echo "Get position test count: ${get_position_test_count}"
+	echo "Overall test count: ${overall_test_count}"
+end
+
+
+#
+# $Log: not supported by cvs2svn $
+#

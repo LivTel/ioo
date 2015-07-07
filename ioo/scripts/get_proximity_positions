@@ -1,0 +1,42 @@
+#!/bin/csh
+ /icc/bin/o/ccd/test/i386-linux/ccd_read_memory -interface_device pci -board utility -space y -address 0x0 > /tmp/dig_in_output.txt
+set dig_in = `cat /tmp/dig_in_output.txt | grep 'Result (hexadecimal) = ' | awk ' { print $4 }'`
+echo "DIG IN  = ${dig_in}"
+/home/eng/bin/inttobits ${dig_in} > /tmp/inttobits.txt 
+set bit_8_set = `cat /tmp/inttobits.txt | grep -c "Bit 8 set"`
+set bit_9_set = `cat /tmp/inttobits.txt | grep -c "Bit 9 set"`
+set bit_14_set = `cat /tmp/inttobits.txt | grep -c "Bit 14 set"`
+set bit_11_set = `cat /tmp/inttobits.txt | grep -c "Bit 11 set"`
+set bit_12_set = `cat /tmp/inttobits.txt | grep -c "Bit 12 set"`
+set bit_13_set = `cat /tmp/inttobits.txt | grep -c "Bit 13 set"`
+if ( ${bit_8_set} == 0 ) then
+	echo "Proximity 1 on."
+else
+	echo "Proximity 1 off."
+endif
+if ( ${bit_9_set} == 0 ) then
+	echo "Proximity 2 on."
+else
+	echo "Proximity 2 off."
+endif
+if ( ${bit_14_set} == 0 ) then
+	echo "Proximity 3 on."
+else
+	echo "Proximity 3 off."
+endif
+if ( ${bit_11_set} == 0 ) then
+	echo "Proximity 4 on."
+else
+	echo "Proximity 4 off."
+endif
+if ( ${bit_12_set} == 0 ) then
+	echo "Proximity 5 on."
+else
+	echo "Proximity 5 off."
+endif
+if ( ${bit_13_set} == 0 ) then
+	echo "Proximity 6 on."
+else
+	echo "Proximity 6 off."
+endif
+

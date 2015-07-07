@@ -1,0 +1,19 @@
+#!/bin/csh
+if ( $#argv != 1 ) then
+	echo "move_locators in|out"
+	exit 1
+endif
+set locators_in_out = $1
+/icc/bin/o/ccd/test/i386-linux/ccd_read_memory -interface_device pci -board utility -space y -address 0x1 > /tmp/dig_out_output.txt
+set dig_out = `cat /tmp/dig_out_output.txt | grep 'Result (hexadecimal) = ' | awk ' { print $4 }'`
+echo "DIG OUT  = ${dig_out}"
+if( "${locators_in_out}" == "in" ) then
+	# set bit 1 locators in
+	set value = 1
+else if( "${locators_in_out}" == "out" ) then
+	# set bit 1 locators out
+	set value = 0
+else
+	echo "Illegal in out value ${set locators_in_out}."
+endif
+/icc/bin/o/ccd/test/i386-linux/ccd_write_memory -interface_device pci -board utility -space y -address 0x1 -value ${value}
