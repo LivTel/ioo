@@ -1,6 +1,6 @@
 #!/bin/csh
-# $Header: /space/home/eng/cjm/cvs/ioo/scripts/o_make_deployment,v 1.9 2013-11-18 13:59:47 cjm Exp $
-# Version: $Revision: 1.9 $
+# $Header: /space/home/eng/cjm/cvs/ioo/scripts/o_make_deployment,v 1.10 2015-07-07 12:55:01 cjm Exp $
+# Version: $Revision: 1.10 $
 # By $Author: cjm $
 # Make a deployment tar file.
 # This contains:
@@ -297,7 +297,7 @@ echo "${dir_count} C test program directories copied, containg ${file_count} C t
 # Scripts
 #
 echo "Copying scripts..."
-set file_list = "o/scripts/o_engineering_mode o/scripts/soak_test_filter_wheel o/scripts/soak_test_data_link o/scripts/filter_change o/scripts/o_get_status_cron o/scripts/o_park_filter_wheel o/scripts/o_twilight_calibrate_analysis o/scripts/o_get_heater_adus o/scripts/o_idle_ccd scripts/killhup.csh scripts/fuser_check ccs_gui/java/icsgui o/ccd/test/test_temperature_control_cron"
+set file_list = "o/scripts/o_engineering_mode o/scripts/soak_test_filter_wheel o/scripts/soak_test_data_link o/scripts/filter_change o/scripts/o_get_status_cron o/scripts/o_park_filter_wheel o/scripts/o_twilight_calibrate_analysis o/scripts/o_get_heater_adus o/scripts/o_idle_ccd scripts/killhup.csh scripts/fuser_check ccs_gui/java/icsgui o/ccd/test/test_temperature_control_cron o/scripts/move_locators o/scripts/get_proximity_positions o/scripts/get_locator_positions o/scripts/motor_set"
 set file_count = 0
 cd ${dev_dir}
 foreach file ( ${file_list} )
@@ -446,6 +446,9 @@ echo "Download ${deployment_tar}.gz o_tar_install icc_cshrc icc_cshrc_edit.awk R
 echo "Deployment ready."
 #
 # $Log: not supported by cvs2svn $
+# Revision 1.9  2013/11/18 13:59:47  cjm
+# Added o_idle_ccd.
+#
 # Revision 1.8  2012/10/24 09:53:37  cjm
 # Added o_get_heater_adus.
 #
