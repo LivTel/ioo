@@ -1,0 +1,58 @@
+#!/bin/csh
+# $Header: /space/home/eng/cjm/cvs/ioo/sdsu/scripts/decode_delay,v 1.1 2015-08-03 13:21:41 cjm Exp $
+# Decode a SDSU timing board delay word, as used when clocking waveforms
+# From the ARC-22 250 MHz Fiber Optic Timing Board, GenIII documentation
+# Each waveform takes 40ns (NOT microsecs) to execute 
+# The first 8 bits #23-16 are delay bits:
+# If bit #23 = 1 then bits 22-16 specify the number of 640ns cycles that bits #15-0 are held at
+# If bit #23 = 0 then bits 22-16 specify the number of 40ns cycles that bits #15-0 are held at
+alias inttobits "/home/cjm/cjm/c/misc/inttobits"
+alias inttohex "/home/cjm/cjm/c/misc/inttohex"
+alias inttoint "/home/cjm/cjm/c/misc/inttoint"
+alias bitstoint "/home/cjm/cjm/c/misc/bitstoint"
+if ( $#argv != 1 ) then
+	echo "decode_delay <delay>"
+	exit 1
+endif
+set delay = $1
+set delay_i = `inttoint ${delay}`
+echo "Delay (decimal): ${delay_i}"
+# get list of bits
+set bit_list = `inttobits ${delay_i} | sed "s/Bit \(.*\) set.*/\1/"`
+# is bit 23 set?
+set bit_23_set = `echo ${bit_list} | grep -c 23`
+echo "Bit 23 set: ${bit_23_set}"
+# Remove bit 23 from bit_list
+set bit_list = `echo ${bit_list} | sed "s/23//"`
+echo "Delay bits: ${bit_list}"
+# check bit_list for valid bits
+# subtract 16 from each bit for delay bit list
+set delay_bit_list = ""
+foreach bit ( ${bit_list} )
+	if ( "${bit}" < 16 ) then
+		echo "Out of range bit ${bit} in bit_list ${bit_list}"
+		exit 1
+	endif
+	if ( "${bit}" > 22 ) then
+		echo "Out of range bit ${bit} in bit_list ${bit_list}"
+		exit 1
+	endif
+	set delay_bit = `bash -c 'echo "$(('${bit}' - 16))"'`
+	set delay_bit_list = "${delay_bit_list} ${delay_bit}"
+end
+echo "Delay bits: ${delay_bit_list}"
+# convert bit_list into delay cycles
+set delay_cycles = `bitstoint  ${delay_bit_list} | head -1 | sed "s/value = \(.*\)\..*/\1/"`
+echo "Delay cycles: ${delay_cycles}"
+if( "${bit_23_set}" == "1" ) then
+	set theoritical_delay = `bash -c 'echo "$(('${delay_cycles}' * 640))"'`
+else
+	set theoritical_delay = `bash -c 'echo "$(('${delay_cycles}' * 40))"'`
+endif
+echo "Theoretical delay: ${theoritical_delay} ns."
+set theoritical_delay_us = `bash -c 'echo "$(('${theoritical_delay}' / 1000))"'`
+echo "Theoretical delay: ${theoritical_delay_us} us."
+set actual_delay = `bash -c 'echo "$(('${theoritical_delay}' / 2))"'`
+echo "Actual delay: ${actual_delay} ns."
+set actual_delay_us = `bash -c 'echo "$(('${actual_delay}' / 1000))"'`
+echo "Actual delay: ${actual_delay_us} us."
