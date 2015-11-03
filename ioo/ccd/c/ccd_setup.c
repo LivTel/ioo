@@ -1,12 +1,12 @@
 /* ccd_setup.c
 ** low level ccd library
-** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ccd_setup.c,v 1.4 2013-03-25 15:15:03 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ccd_setup.c,v 1.5 2015-11-03 11:31:12 cjm Exp $
 */
 /**
  * ccd_setup.c contains routines to perform the setting of the SDSU CCD Controller, prior to performing
  * exposures.
  * @author SDSU, Chris Mottram
- * @version $Revision: 1.4 $
+ * @version $Revision: 1.5 $
  */
 /**
  * This hash define is needed before including source files give us POSIX.4/IEEE1003.1b-1993 prototypes.
@@ -40,7 +40,7 @@
 /**
  * Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ccd_setup.c,v 1.4 2013-03-25 15:15:03 cjm Exp $";
+static char rcsid[] = "$Id: ccd_setup.c,v 1.5 2015-11-03 11:31:12 cjm Exp $";
 
 /* #defines */
 /**
@@ -1965,9 +1965,9 @@ static int Setup_Controller_Windows(CCD_Interface_Handle_T* handle)
 		else
 			y_offset = window_list[i].Y_Start-window_list[i-1].Y_End;
 		x_offset = window_list[i].X_Start;
-		/* diddly 2048 + a bit
-	        ** Full Width(2154)-bias strip width (53) = 2101 : correct calculation for this value. */
-		bias_x_offset = 2101-window_list[i].X_End;
+		/* Use full width 4196 (4096 imaging pixels + 2 x 50 bias strips)
+	        ** Full Width(4196)-bias strip width (50) = 4146 : correct calculation for this value. */
+		bias_x_offset = 4146-window_list[i].X_End;
 		if(CCD_DSP_Command_SSP(handle,y_offset,x_offset,bias_x_offset) != CCD_DSP_DON)
 		{
 			Setup_Error_Number = 60;
@@ -2007,6 +2007,18 @@ static int Setup_Controller_Windows(CCD_Interface_Handle_T* handle)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.4  2013/03/25 15:15:03  cjm
+** Removed deinterlace software.
+** CCD_Setup_Dimensions parameters changed, deinterlace removed.
+** CCD_Setup_Dimensions now has booleans to control whether the timing board
+** sofware is loaded, whether the utility board software is loaded, and whether the temperature set point is set. These are used by command line utilities.
+** CCD_Setup_Dimensions rewritten, so all image dimensions are processed in the
+** main routine. Extra internal variables Final_NCols and Final_NRows added, which are the Binned_NCols and Binned_NRows modified for any dummy pixels
+** expected to be received.
+** CCD_Setup_Hardware_Test now has boolean parameters to test whether to test
+** the timing board and utility board, for command line routines used when
+** no utility board is present.
+**
 ** Revision 1.3  2012/10/25 14:38:30  cjm
 ** Added memory map parameter size.
 **
