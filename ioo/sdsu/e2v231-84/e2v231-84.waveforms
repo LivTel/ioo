@@ -1,7 +1,7 @@
        COMMENT *
-	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/e2v231-84/e2v231-84.waveforms,v 1.15 2014-01-27 16:26:49 cjm Exp $
-	Id: 	 $Id: e2v231-84.waveforms,v 1.15 2014-01-27 16:26:49 cjm Exp $
-	Version: $Revision: 1.15 $
+	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/e2v231-84/e2v231-84.waveforms,v 1.16 2016-09-27 11:40:59 cjm Exp $
+	Id: 	 $Id: e2v231-84.waveforms,v 1.16 2016-09-27 11:40:59 cjm Exp $
+	Version: $Revision: 1.16 $
 Waveform tables for CCD231-84. Waveforms based on E2V spec sheet A1A-765136 V1, October 2008.
 Waveforms are Mode 1 (low read noise, lower pixel charge capacity).
 Assumes usage with an SDSU ARC-22 timing board, ARC-32 clock driver board, and 2 x ARC-45 video boards.
@@ -36,9 +36,7 @@ PRESCAN EQU	3		; PRESCAN - Needs to be at least 3 due to pixel pipelining, to re
 PRESKIP EQU	0		; 
 NPAR	EQU	1		; Repeat number for SLOW_CLOCKS
 
-;INT_TIM	EQU	$060000		; Signal integration time for ~1 microsec/pixel (300ns delay)
-INT_TIM	EQU	$0A0000		; Signal integration time for several microsec/pixel (longer delay)
-;INT_TIM	EQU	$090000		; Signal integration time for several microsec/pixel (longer delay)
+INT_TIM	EQU	$0A0000		; Signal integration time for 1 microsec/pixel (440ns delay)
 
 ; CCD clock voltages
 RG_HI	EQU	 6.0		; Reset Gate High
@@ -787,6 +785,11 @@ END_DACS
 
 ;
 ; $Log: not supported by cvs2svn $
+; Revision 1.15  2014/01/27 16:26:49  cjm
+; Added alternate delays so they match the spec sheet (i.e. 10us). Although parallel delays are configured to be 10us, on the oscilloscope they are only 5us. Sticking with the wrong 5us ones for now, the 10us are commented out.
+; IAS retuned the offsets to the right hand amps and dummies have similar bias levels.
+; IAS raised the following clock voltages by 1v: RG_HI, R_HI, SW_HI, DG_HI, I_HI, TG_HI. This to reduce/stop smearing from the TOP_RIGHT amplifier.
+;
 ; Revision 1.13  2014/01/16 15:14:02  cjm
 ; Changed comments to reflect wiring loom changes.
 ; Only outputs F+G connected plus their associated dummy outputs.
