@@ -1,0 +1,10 @@
+# $Header: /space/home/eng/cjm/cvs/ioo/ccd/Makefile.common,v 1.1 2022-03-21 13:16:14 cjm Exp $
+
+O_CCD_HOME		=	ccd
+O_CCD_SRC_HOME		= 	$(O_SRC_HOME)/$(O_CCD_HOME)
+O_CCD_BIN_HOME		= 	$(O_BIN_HOME)/$(O_CCD_HOME)
+O_CCD_DOC_HOME		= 	$(O_DOC_HOME)/$(O_CCD_HOME)
+
+#
+# $Log: not supported by cvs2svn $
+#
