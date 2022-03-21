@@ -1,12 +1,12 @@
 /* ccd_setup.c
 ** low level ccd library
-** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ccd_setup.c,v 1.5 2015-11-03 11:31:12 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/ccd_setup.c,v 1.6 2022-03-21 13:21:02 cjm Exp $
 */
 /**
  * ccd_setup.c contains routines to perform the setting of the SDSU CCD Controller, prior to performing
  * exposures.
  * @author SDSU, Chris Mottram
- * @version $Revision: 1.5 $
+ * @version $Revision: 1.6 $
  */
 /**
  * This hash define is needed before including source files give us POSIX.4/IEEE1003.1b-1993 prototypes.
@@ -40,7 +40,7 @@
 /**
  * Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ccd_setup.c,v 1.5 2015-11-03 11:31:12 cjm Exp $";
+static char rcsid[] = "$Id: ccd_setup.c,v 1.6 2022-03-21 13:21:02 cjm Exp $";
 
 /* #defines */
 /**
@@ -100,6 +100,22 @@ static char rcsid[] = "$Id: ccd_setup.c,v 1.5 2015-11-03 11:31:12 cjm Exp $";
  * where the digitized ADU counts for the negative low voltage (-15v) supply voltage are stored.
  */
 #define SETUP_MINUS_LOW_VOLTAGE_ADDRESS	(0xa)
+/**
+ * The SDSU controller address, on the Utility board, Y memory space, 
+ * where the digitized ADU counts for the high voltage (+36v) supply voltage from Power ON are stored.
+ */
+#define SETUP_HIGH_VOLTAGE_POWER_ON_ADDRESS	 (0x25)
+/**
+ * The SDSU controller address, on the Utility board, Y memory space, 
+ * where the digitized ADU counts for the low voltage (+15v) supply voltage from Power ON are stored.
+ */
+#define SETUP_LOW_VOLTAGE_POWER_ON_ADDRESS	 (0x26)
+/**
+ * The SDSU controller address, on the Utility board, Y memory space, 
+ * where the digitized ADU counts for the negative low voltage (-15v) supply voltage from Power ON are stored.
+ */
+#define SETUP_MINUS_LOW_VOLTAGE_POWER_ON_ADDRESS (0x27)
+
 /**
  * The SDSU controller address, on the Utility board, Y memory space, 
  * where the digitized ADU counts for the vacuum gauge (if present) are stored.
@@ -2007,6 +2023,9 @@ static int Setup_Controller_Windows(CCD_Interface_Handle_T* handle)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.5  2015/11/03 11:31:12  cjm
+** Modified bias_x_offset windowing calulation in Setup_Controller_Windows for 4k chip.
+**
 ** Revision 1.4  2013/03/25 15:15:03  cjm
 ** Removed deinterlace software.
 ** CCD_Setup_Dimensions parameters changed, deinterlace removed.
