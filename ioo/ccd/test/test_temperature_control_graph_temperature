@@ -1,6 +1,6 @@
 #!/bin/csh
-# $Header: /space/home/eng/cjm/cvs/ioo/ccd/test/test_temperature_control_graph_temperature,v 1.2 2011-09-22 17:08:06 cjm Exp $
-# $Id: test_temperature_control_graph_temperature,v 1.2 2011-09-22 17:08:06 cjm Exp $
+# $Header: /space/home/eng/cjm/cvs/ioo/ccd/test/test_temperature_control_graph_temperature,v 1.3 2022-03-21 16:31:15 cjm Exp $
+# $Id: test_temperature_control_graph_temperature,v 1.3 2022-03-21 16:31:15 cjm Exp $
 if ( $#argv != 1 ) then
 	echo "test_temperature_control_graph_temperature <csv filename>"
 	exit 1
@@ -17,14 +17,22 @@ set temp_filename = "${csv_filename:r}_temp.dat"
 # $5 is the CCD temperature in degrees C
 cat ${csv_filename} | awk  -F',' ' { if (NR== 2) { first_time = $1; print "0 "$5 } if (NR > 2) { print ($1 - first_time)" "$5 } }' >  ${temp_filename}
 set temp_coeff = `cat ${csv_filename} | awk  -F',' ' { if (NR== 2) { first_coeff = $3 ; } if (NR > 2) { if ( $3 != first_coeff ) { first_coeff = "Multiple" } } }; END { print first_coeff}' `
+# variable y axes
 # Find sensible x ranges, by ignoring zero values
 set xmin = `cat ${temp_filename} | awk ' BEGIN { ymin=9990000000 } { if ( $1 < ymin ) ymin = $1 ; } END { print ymin }'`
 set xmin = `echo "( ${xmin} - 1 )" | bc`
 set xmax = `cat ${temp_filename} | awk ' BEGIN { ymax=0; } { if ( $1 > ymax ) ymax = $1 } END { print ymax }'`
+# fixed y axes
+#set xmin = 0
+#set xmax = 5000
+# variable y axes
 set ymin = `cat ${temp_filename} | awk ' BEGIN { ymin=100 } { if ( $2 < ymin ) ymin = $2 ; } END { print ymin }'`
 set ymin = `echo "( ${ymin} - 1 )" | bc`
 set ymax = `cat ${temp_filename} | awk ' BEGIN { ymax=-273; } { if ( $2 > ymax ) ymax = $2 } END { print ymax }'`
 set ymax = `echo "( ${ymax} + 1 )" | bc`
+# fixed y axes
+#set ymin = -70
+#set ymax = -55
 rm -f ${gnuplot_script_filename}
 touch ${gnuplot_script_filename}
 echo "set xrange [${xmin}:${xmax}]" >> ${gnuplot_script_filename}
@@ -40,6 +48,9 @@ echo "replot" >> ${gnuplot_script_filename}
 gnuplot ${gnuplot_script_filename}
 #
 # $Log: not supported by cvs2svn $
+# Revision 1.2  2011/09/22 17:08:06  cjm
+# Better graphing using gnuplot directly.
+#
 # Revision 1.1  2011/09/20 09:20:16  cjm
 # Initial revision
 #
