@@ -1,4 +1,4 @@
-# $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/Makefile,v 1.1 2012-07-19 14:06:23 cjm Exp $
+# $Header: /space/home/eng/cjm/cvs/ioo/ccd/c/Makefile,v 1.2 2022-03-21 13:17:22 cjm Exp $
 
 include			../../../Makefile.common
 include			../../Makefile.common
@@ -93,7 +93,7 @@ CFLAGS = -g $(CCHECKFLAG) -I$(INCDIR) -I$(JNIINCDIR) -I$(JNIMDINCDIR) -L$(LT_LIB
 LINTFLAGS = -I$(INCDIR) -I$(JNIINCDIR) -I$(JNIMDINCDIR)
 DOCFLAGS = -static
 SRCS 		= 	ccd_interface.c ccd_pci.c ccd_text.c ccd_global.c ccd_dsp.c ccd_dsp_download.c \
-			ccd_temperature.c ccd_setup.c ccd_exposure.c ccd_filter_wheel.c
+			ccd_temperature.c ccd_setup.c ccd_exposure.c ccd_filter_wheel.c ccd_pixel_stream.c
 HEADERS		=	$(SRCS:%.c=%.h) ccd_interface_private.h ccd_exposure_private.h ccd_setup_private.h
 OBJS		=	$(SRCS:%.c=%.o)
 DOCS 		= 	$(SRCS:%.c=$(DOCSDIR)/%.html)
@@ -158,6 +158,9 @@ backup: tidy
 
 #
 # $Log: not supported by cvs2svn $
+# Revision 1.1  2012/07/19 14:06:23  cjm
+# Initial revision
+#
 # Revision 1.21  2008/12/11 14:40:59  cjm
 # Added private headers.
 #
@@ -301,16 +304,17 @@ ccd_global.o: /usr/include/bits/pthreadtypes.h /usr/include/string.h
 ccd_global.o: /usr/include/unistd.h /usr/include/bits/posix_opt.h
 ccd_global.o: /usr/include/bits/confname.h /usr/include/getopt.h
 ccd_global.o: /home/dev/src/log_udp/include/log_udp.h
-ccd_global.o: /home/dev/src/o/ccd/include/ccd_filter_wheel.h
-ccd_global.o: /home/dev/src/o/ccd/include/ccd_interface.h
-ccd_global.o: /home/dev/src/o/ccd/include/ccd_global.h
-ccd_global.o: /home/dev/src/o/ccd/include/ccd_pci.h
-ccd_global.o: /home/dev/src/o/ccd/include/ccd_text.h
 ccd_global.o: /home/dev/src/o/ccd/include/ccd_dsp.h
+ccd_global.o: /home/dev/src/o/ccd/include/ccd_interface.h
 ccd_global.o: /home/dev/src/o/ccd/include/ccd_dsp_download.h
+ccd_global.o: /home/dev/src/o/ccd/include/ccd_global.h
 ccd_global.o: /home/dev/src/o/ccd/include/ccd_exposure.h
-ccd_global.o: /home/dev/src/o/ccd/include/ccd_temperature.h
+ccd_global.o: /home/dev/src/o/ccd/include/ccd_filter_wheel.h
+ccd_global.o: /home/dev/src/o/ccd/include/ccd_pci.h
+ccd_global.o: /home/dev/src/o/ccd/include/ccd_pixel_stream.h
 ccd_global.o: /home/dev/src/o/ccd/include/ccd_setup.h
+ccd_global.o: /home/dev/src/o/ccd/include/ccd_text.h
+ccd_global.o: /home/dev/src/o/ccd/include/ccd_temperature.h
 ccd_dsp.o: /usr/include/errno.h /usr/include/features.h
 ccd_dsp.o: /usr/include/sys/cdefs.h /usr/include/bits/wordsize.h
 ccd_dsp.o: /usr/include/gnu/stubs.h /usr/include/gnu/stubs-32.h
@@ -477,15 +481,7 @@ ccd_exposure.o: /home/dev/src/o/ccd/include/ccd_pci.h
 ccd_exposure.o: /home/dev/src/o/ccd/include/ccd_text.h
 ccd_exposure.o: /home/dev/src/o/ccd/include/ccd_setup_private.h
 ccd_exposure.o: /home/dev/src/o/ccd/include/ccd_setup.h
-ccd_exposure.o: /home/dev/src/cfitsio3200/include/fitsio.h
-ccd_exposure.o: /usr/lib/gcc/i386-redhat-linux/4.1.2/include/limits.h
-ccd_exposure.o: /usr/lib/gcc/i386-redhat-linux/4.1.2/include/syslimits.h
-ccd_exposure.o: /usr/include/limits.h /usr/include/bits/posix1_lim.h
-ccd_exposure.o: /usr/include/bits/local_lim.h /usr/include/linux/limits.h
-ccd_exposure.o: /usr/include/bits/posix2_lim.h
-ccd_exposure.o: /home/dev/src/cfitsio3200/include/longnam.h
-ccd_exposure.o: /home/dev/src/ngatastro/include/ngat_astro.h
-ccd_exposure.o: /home/dev/src/ngatastro/include/ngat_astro_mjd.h
+ccd_exposure.o: /home/dev/src/o/ccd/include/ccd_pixel_stream.h
 ccd_filter_wheel.o: /usr/include/stdio.h /usr/include/features.h
 ccd_filter_wheel.o: /usr/include/sys/cdefs.h /usr/include/bits/wordsize.h
 ccd_filter_wheel.o: /usr/include/gnu/stubs.h /usr/include/gnu/stubs-32.h
@@ -507,6 +503,48 @@ ccd_filter_wheel.o: /home/dev/src/o/ccd/include/ccd_global.h
 ccd_filter_wheel.o: /home/dev/src/o/ccd/include/ccd_interface.h
 ccd_filter_wheel.o: /home/dev/src/o/ccd/include/ccd_dsp.h
 ccd_filter_wheel.o: /home/dev/src/o/ccd/include/ccd_filter_wheel.h
+ccd_pixel_stream.o: /usr/include/stdio.h /usr/include/features.h
+ccd_pixel_stream.o: /usr/include/sys/cdefs.h /usr/include/bits/wordsize.h
+ccd_pixel_stream.o: /usr/include/gnu/stubs.h /usr/include/gnu/stubs-32.h
+ccd_pixel_stream.o: /usr/lib/gcc/i386-redhat-linux/4.1.2/include/stddef.h
+ccd_pixel_stream.o: /usr/include/bits/types.h /usr/include/bits/typesizes.h
+ccd_pixel_stream.o: /usr/include/libio.h /usr/include/_G_config.h
+ccd_pixel_stream.o: /usr/include/wchar.h /usr/include/bits/wchar.h
+ccd_pixel_stream.o: /usr/include/gconv.h
+ccd_pixel_stream.o: /usr/lib/gcc/i386-redhat-linux/4.1.2/include/stdarg.h
+ccd_pixel_stream.o: /usr/include/bits/stdio_lim.h
+ccd_pixel_stream.o: /usr/include/bits/sys_errlist.h /usr/include/string.h
+ccd_pixel_stream.o: /usr/include/errno.h /usr/include/bits/errno.h
+ccd_pixel_stream.o: /usr/include/linux/errno.h /usr/include/asm/errno.h
+ccd_pixel_stream.o: /usr/include/asm-generic/errno.h
+ccd_pixel_stream.o: /usr/include/asm-generic/errno-base.h /usr/include/math.h
+ccd_pixel_stream.o: /usr/include/bits/huge_val.h /usr/include/bits/mathdef.h
+ccd_pixel_stream.o: /usr/include/bits/mathcalls.h /usr/include/time.h
+ccd_pixel_stream.o: /usr/include/unistd.h /usr/include/bits/posix_opt.h
+ccd_pixel_stream.o: /usr/include/bits/confname.h /usr/include/getopt.h
+ccd_pixel_stream.o: /home/dev/src/log_udp/include/log_udp.h
+ccd_pixel_stream.o: /home/dev/src/o/ccd/include/ccd_dsp.h
+ccd_pixel_stream.o: /home/dev/src/o/ccd/include/ccd_interface.h
+ccd_pixel_stream.o: /home/dev/src/o/ccd/include/ccd_exposure.h
+ccd_pixel_stream.o: /home/dev/src/o/ccd/include/ccd_global.h
+ccd_pixel_stream.o: /home/dev/src/o/ccd/include/ccd_pixel_stream.h
+ccd_pixel_stream.o: /home/dev/src/o/ccd/include/ccd_setup.h
+ccd_pixel_stream.o: /home/dev/src/o/ccd/include/ccd_setup_private.h
+ccd_pixel_stream.o: /home/dev/src/cfitsio3310/include/fitsio.h
+ccd_pixel_stream.o: /usr/include/stdlib.h /usr/include/sys/types.h
+ccd_pixel_stream.o: /usr/include/endian.h /usr/include/bits/endian.h
+ccd_pixel_stream.o: /usr/include/sys/select.h /usr/include/bits/select.h
+ccd_pixel_stream.o: /usr/include/bits/sigset.h /usr/include/bits/time.h
+ccd_pixel_stream.o: /usr/include/sys/sysmacros.h
+ccd_pixel_stream.o: /usr/include/bits/pthreadtypes.h /usr/include/alloca.h
+ccd_pixel_stream.o: /usr/lib/gcc/i386-redhat-linux/4.1.2/include/limits.h
+ccd_pixel_stream.o: /usr/lib/gcc/i386-redhat-linux/4.1.2/include/syslimits.h
+ccd_pixel_stream.o: /usr/include/limits.h /usr/include/bits/posix1_lim.h
+ccd_pixel_stream.o: /usr/include/bits/local_lim.h /usr/include/linux/limits.h
+ccd_pixel_stream.o: /usr/include/bits/posix2_lim.h
+ccd_pixel_stream.o: /home/dev/src/cfitsio3310/include/longnam.h
+ccd_pixel_stream.o: /home/dev/src/ngatastro/include/ngat_astro.h
+ccd_pixel_stream.o: /home/dev/src/ngatastro/include/ngat_astro_mjd.h
 ngat_o_ccd_CCDLibrary.o: /usr/include/stdio.h /usr/include/features.h
 ngat_o_ccd_CCDLibrary.o: /usr/include/sys/cdefs.h
 ngat_o_ccd_CCDLibrary.o: /usr/include/bits/wordsize.h
@@ -527,15 +565,16 @@ ngat_o_ccd_CCDLibrary.o: /usr/include/bits/sigset.h /usr/include/bits/time.h
 ngat_o_ccd_CCDLibrary.o: /usr/include/sys/sysmacros.h
 ngat_o_ccd_CCDLibrary.o: /usr/include/bits/pthreadtypes.h
 ngat_o_ccd_CCDLibrary.o: /usr/include/alloca.h /usr/include/string.h
-ngat_o_ccd_CCDLibrary.o: /usr/lib/gcc/i386-redhat-linux/4.1.2/include/jni.h
-ngat_o_ccd_CCDLibrary.o: /usr/lib/gcc/i386-redhat-linux/4.1.2/include/jni_md.h
-ngat_o_ccd_CCDLibrary.o: /usr/lib/gcc/i386-redhat-linux/4.1.2/include/gcj/libgcj-config.h
+ngat_o_ccd_CCDLibrary.o: /usr/java/jdk1.5.0_22/include/jni.h
+ngat_o_ccd_CCDLibrary.o: /usr/java/jdk1.5.0_22/include/linux/jni_md.h
 ngat_o_ccd_CCDLibrary.o: /home/dev/src/o/ccd/include/ccd_global.h
 ngat_o_ccd_CCDLibrary.o: /home/dev/src/o/ccd/include/ccd_interface.h
 ngat_o_ccd_CCDLibrary.o: /home/dev/src/o/ccd/include/ccd_dsp.h
 ngat_o_ccd_CCDLibrary.o: /home/dev/src/o/ccd/include/ccd_exposure.h
 ngat_o_ccd_CCDLibrary.o: /home/dev/src/o/ccd/include/ccd_filter_wheel.h
 ngat_o_ccd_CCDLibrary.o: /home/dev/src/o/ccd/include/ccd_pci.h
+ngat_o_ccd_CCDLibrary.o: /home/dev/src/o/ccd/include/ccd_pixel_stream.h
 ngat_o_ccd_CCDLibrary.o: /home/dev/src/o/ccd/include/ccd_setup.h
 ngat_o_ccd_CCDLibrary.o: /home/dev/src/o/ccd/include/ccd_temperature.h
 ngat_o_ccd_CCDLibrary.o: /home/dev/src/o/ccd/include/ccd_text.h
+ngat_o_ccd_CCDLibrary.o: /home/dev/src/o/ccd/include/ngat_o_ccd_CCDLibrary.h
