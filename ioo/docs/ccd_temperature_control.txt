@@ -1,0 +1,66 @@
+CCD Temperature Control
+-----------------------
+
+Temperature measured using:
+STMicroelectronics STTH5L06FP Turbo2 ultra fast high voltage rectifier 5A 600V (part RS 486-6163).
+
+V = (-0.0019 x Tc) + 0.4358
+The inverse equation is therefore:
+Tc = (V - 0.4358) / -0.0019
+
+Old equation:
+V = (-0.0017 x Tc) + 0.4955
+ The inverse equation is therefore:
+Tc = (V - 0.4955) / -0.0017 
+These equations derived by IAS at temperatures between 7C and 72C.
+
+The voltage measured across the diode when the diode is at zero degrees Centigrade:
+0.4955
+Calibrated by IAS.
+
+Utility Board
+-------------
+
+see utilappl.asm:
+
+X0 = Y:<T_CCDT		(get target CCD temperature limit)
+A = Y:<A_CCDT		(get actual CCD temperare)
+A = A - X0		= Y:<A_CCDT-Y:<T_CCDT = actual CCD temp - target CCD temp
+X0 = A1			= Y:<A_CCDT-Y:<T_CCDT = actual CCD temp - target CCD temp
+X1 = Y:<T_COEFF
+A = X0 x X1		= (actual CCD temp - target CCD temp) x Y:<T_COEFF
+; A positive -> actual > target -> too cold -> add more heat
+; This is because the ADUs are inversley proportional to temperature:
+; Voltage decreases as the temperature increases, as it is easier to excite electrons at warmer temperatures.
+; ADU is directly proportional to voltage.
+X1 = Y:<DAC0
+X0 = Y:<DAC0_LS
+A += X			= A = A + X = ((actual CCD temp - target CCD temp) x Y:<T_COEFF) + current DAC0
+X0 = Y:<CC00
+if(A >= X0)
+     A = X0		; If A is too large, A equals largest value
+else if ( A < 0)
+     A = 0		; If A is too small, A equals largest value
+Y:WR_DAC0 = A1		; write A to DAC = ((actual CCD temp - target CCD temp) x Y:<T_COEFF) + current DAC0
+Y:<DAC0 = A1		; 
+Y:<DAC0_LS = A0
+
+Note:
+CC00	DC	$C00	; Maximum heater voltage so the board doesn't burn up
+
+WR_DAC0 EQU     $FFF4   ; Write to DAC#0 D00-D11
+DAC0    DC      0       ; Table of four DAC values to be output
+DAC0_LS	DC	0	; Least significant part of heater voltage
+A_CCDT  EQU     AD_IN+5 ; Address of CCD temperature in A/D table
+T_CCDT	DC	$0FFF	; Target CCD T for small increment algorithmn
+T_COEFF	DC	$010000	; Coefficient for difference in temperatures
+
+NB these are not used:
+U_CCDT  DC      $C20    ; Upper range of CCD temperature control loop
+L_CCDT  DC      $C50    ; Lower range of CCD temperature control loop
+K_CCDT  DC      85      ; Constant of proportionality for CCDT control
+
+Addresses:
+T_COEFF Y 0x1D
+T_CCDT  Y 0x1C
+A_CCDT  Y 0xC

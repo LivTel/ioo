@@ -1,0 +1,7 @@
+back illuminated f486
+
+./test_generate_waveform -i pci -setup -timing_filename /icc/bin/o/dsp/timbif486.lod -utility_filename /icc/bin/o/dsp/util.lod -dimensions -xsize 4096 -ysize 4096 -xbin 1 -ybin 1 -amplifier topleft -pixel_table_address 0xfb -clock_config /icc/bin/o/ccd/test/i386-linux/bif486.config
+
+hamamatsu s9970
+
+./test_generate_waveform -i pci -setup -timing_filename /icc/bin/o/dsp/timhamamatsu-s9970.lod -utility_filename /icc/bin/o/dsp/util.lod -dimensions -xsize 532 -ysize 64 -xbin 1 -ybin 1 -amplifier topleft -pixel_table_address 0x92 -clock_config /icc/bin/o/ccd/test/i386-linux/hamamatsu-s9970.config

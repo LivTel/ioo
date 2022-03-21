@@ -1,0 +1,123 @@
+CCD_Setup_Startup
+-----------------
+
+Setup_PCI_Board
+CCD_Interface_Memory_Map
+Setup_Reset_Controller
+CCD_Setup_Hardware_Test
+Setup_Timing_Board
+Setup_Utility_Board
+Setup_Power_On
+Setup_Gain
+CCD_Temperature_Set
+Setup_Idle
+
+CCD_Setup_Dimensions
+--------------------
+Setup_Binning
+Setup_DeInterlace
+Setup_Dimensions
+Setup_Window_List
+
+CCD_Setup_Hardware_Test
+-----------------------
+CCD_DSP_Command_TDL
+
+Setup_Reset_Controller
+----------------------
+CCD_DSP_Command_Reset
+
+Setup_PCI_Board
+---------------
+CCD_DSP_Download
+
+Setup_Timing_Board
+------------------
+CCD_DSP_Command_RDM(handle,CCD_DSP_TIM_BOARD_ID,CCD_DSP_MEM_SPACE_X,0);
+CCD_DSP_Command_STP
+CCD_DSP_Download
+CCD_DSP_Command_IDL
+
+Setup_Utility_Board
+-------------------
+CCD_DSP_Download
+
+Setup_Power_On
+--------------
+CCD_DSP_Command_PON
+
+Setup_Gain
+----------
+CCD_DSP_Command_SGN
+
+Setup_Idle
+----------
+CCD_DSP_Command_IDL
+or
+CCD_DSP_Command_STP
+
+Setup_Binning
+-------------
+CCD_DSP_Command_WRM(handle,CCD_DSP_TIM_BOARD_ID,CCD_DSP_MEM_SPACE_Y,SETUP_ADDRESS_BIN_X,
+		handle->Setup_Data.NSBin)
+CCD_DSP_Command_WRM(handle,CCD_DSP_TIM_BOARD_ID,CCD_DSP_MEM_SPACE_Y,SETUP_ADDRESS_BIN_Y,
+		handle->Setup_Data.NPBin)
+
+Setup_DeInterlace
+-----------------
+CCD_DSP_Command_SOS
+
+Setup_Dimensions
+----------------
+CCD_DSP_Command_WRM(handle,CCD_DSP_TIM_BOARD_ID,CCD_DSP_MEM_SPACE_Y,SETUP_ADDRESS_DIMENSION_COLS,
+		ncols)
+CCD_DSP_Command_WRM(handle,CCD_DSP_TIM_BOARD_ID,CCD_DSP_MEM_SPACE_Y,SETUP_ADDRESS_DIMENSION_ROWS,
+		nrows)
+
+Setup_Window_List
+-----------------
+Setup_Controller_Windows
+
+Setup_Controller_Windows
+------------------------
+CCD_DSP_Command_SSS(handle,0,0,0) (no windows)
+Setup_Dimensions
+
+
+
+CCD_Setup_Startup
+-----------------
+./test_reset_controller -i pci 
+./test_data_link -i pci -b timing -v 0x1
+./test_idle_clocking -i pci -stop_idle 
+./test_dsp_download -i pci -b timing -f /icc/bin/o/dsp/timhamamatsu-s9970.lod
+./test_idle_clocking -i pci -idle
+./test_analogue_power -i pci -on
+./test_manual_command -i pci -b timing -c SGN -a 0x1 -a 0x1
+
+
+(CCD_Temperature_Set)
+CCD_Temperature_Set(temperature=-110.00) started.
+CCD_DSP_Command_WRM(handle=0x9373008,board_id=3,mem_space=4194304,address=0x1c,data=0xc78) started.
+./ccd_write_memory -i pci -b utility -s ? -a 0x1c -v 0xc78
+
+./test_idle_clocking -i pci -idle
+
+Where is SOS? This is part of CCD_Setup_Dimensions
+./test_manual_command -i pci -b timing -c SOS -a 0x5f5f41
+./test_manual_command -i pci -b timing -c SOS -a __A
+CCD_DSP_AMPLIFIER_TOP_LEFT = 0x5f5f41 = __A
+
+CCD_DSP_Command_SSS(handle=0x9373008,bias_width=0,box_width=0,box_height=0) started.
+./test_manual_command -i pci -b timing -c SSS -a 0 -a 0 -a 0
+
+CCD_Exposure_Expose
+-------------------
+
+Exposure_Shutter_Control
+CCD_DSP_Command_SET(handle,exposure_time)
+CCD_DSP_Command_SEX(handle,start_time,exposure_time)
+CCD_DSP_Command_Get_HSTR(handle,&status)
+CCD_DSP_Command_RET(handle)
+CCD_DSP_Command_Get_Readout_Progress(handle,&current_pixel_count)
+#CCD_DSP_Command_AEX(handle)

@@ -1,0 +1,55 @@
+#!/bin/csh
+# test temperature control algorithm
+# monitor temperature, heater adu's etc.
+# designed to be used from a cron job
+# output in output_file
+if ( ${?LT_HOME} == 0 ) then
+    setenv LT_HOME /icc
+endif
+if ( ${?LT_BIN_HOME} == 0 ) then
+    setenv LT_BIN_HOME ${LT_HOME}/bin
+endif
+if ( ${?LT_LIB_HOME} == 0 ) then
+    setenv HOSTTYPE i386-linux
+    setenv LT_LIB_HOME ${LT_BIN_HOME}/lib/${HOSTTYPE}
+endif
+if ( ${?LD_LIBRARY_PATH} ) then
+   setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}":"$LT_LIB_HOME
+else
+   setenv LD_LIBRARY_PATH $LT_LIB_HOME
+endif
+set interface = pci
+set tmp_file = /tmp/test_temperature_control_tmp.txt
+set doy = `/bin/date +"%j"`
+set output_file = ${LT_HOME}/log/test_temperature_control_${doy}.txt
+alias test_temperature /icc/bin/o/ccd/test/${HOSTTYPE}/test_temperature
+alias ccd_read_memory /icc/bin/o/ccd/test/${HOSTTYPE}/ccd_read_memory
+alias inttoint /home/eng/bin/inttoint
+if ( ! -e ${output_file} ) then
+	echo "Date (secs since 1970),Date,Proportionality constant,Target temperature(ADU),CCD temp(centigrade),CCD temp(V),CCD temp (ADU),heater ADUs" >>! ${output_file}
+endif
+set start_date = `date +"%s"`
+@ end_date = ${start_date} + 50
+set done = 0
+while ( ${done} == 0 )
+	set date_seconds = `date +"%s"`
+	set date_string = `date +"%Y-%m-%dT%H:%M:%S"`
+	set prop_constant = `ccd_read_memory -i ${interface} -b utility -s y -a 0x1D | grep "Result (integer) = " | sed "s/Result (integer) = \(.*\)/\1/"`
+#	set prop_constant = `inttoint ${prop_constant_hex}`
+	set target_temperature = `ccd_read_memory -i ${interface} -b utility -s y -a 0x1C | grep "Result (integer) = " | sed "s/Result (integer) = \(.*\)/\1/"`
+#	set target_temperature = `inttoint ${target_temperature_hex}`
+	/bin/rm -f ${tmp_file}
+	test_temperature -i ${interface} -get > ${tmp_file}
+	set ccd_temperature = `cat ${tmp_file} | grep "The current temperature is" | sed "s/The current temperature is \(.*\) degrees centigrade./\1/g"`
+	set ccd_temperature_adu = `cat ${tmp_file} | grep "Average adu" | sed "s/.*Average adu:\(.*\)./\1/g"`
+	set ccd_temperature_v = `cat ${tmp_file} | grep "Voltage" | sed "s/.*Voltage:\(.*\) v./\1/g"`
+	set heater_adus = `test_temperature -i ${interface} -heater | grep "The current heater ADUS are" | sed "s/The current heater ADUS are:\(.*\)./\1/g"`
+	echo "${date_seconds},${date_string},${prop_constant},${target_temperature},${ccd_temperature},${ccd_temperature_v},${ccd_temperature_adu},${heater_adus}" >> ${output_file}
+	#if( ${date_seconds} > ${end_date} ) then
+		set done = 1
+	#endif
+	#/bin/sleep 5
+end
+#
+# $Log: not supported by cvs2svn $
+#

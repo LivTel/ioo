@@ -1,0 +1,213 @@
+IO:O Dummy output software
+==========================
+
+On-sky testing
+--------------
+- test_exposure tests exposure with dummy outputs
+- test_filter_wheel (non-dummy test programs) can move reset filter wheel to a numeric posn
+- focus TCS
+- move_fold TCS
+- FITS headers will not be compatible
+
+DSP Code API changes
+--------------------
+
+X:STATUS ST_DUMMY bit 17
+- EXPOSURE_ADDRESS_CONTROLLER_STATUS used to mod CCD_DSP_CONTROLLER_STATUS_OPEN_SHUTTER_BIT (bit 11) in X:STATUS
+- bit 17 never looked at by C layer code.
+SOS - new amp options
+ - but old ones still valid?
+
+C Layer
+-------
+- new de-interlace code
+- orientation issues
+
+Include files
+-------------
+
+- ccd_dsp_download.h
+  - no changes
+- ccd_dsp.h DONE
+  - CCD_DSP_DEINTERLACE_TYPE removed
+  - CCD_DSP_IS_DEINTERLACE_TYPE macro removed
+  - CCD_DSP_AMPLIFIER_ has new values added for dummy amplifiers
+  - CCD_DSP_Print_DeInterlace removed - DeInterlace type no longer exists
+- ccd_exposure.h DONE
+  - Removed CCD_Exposure_Flip_X, CCD_Exposure_Flip_Y
+- ccd_exposure_private.h
+  - no changes
+- ccd_filter_wheel.h
+  - no changes
+- ccd_global.h
+  - no changes
+- ccd_interface.h
+  - no changes
+- ccd_interface_private.h
+  - no changes
+- ccd_pci.h
+  - no changes
+- ccd_pixel_stream.h
+  - new software
+- ccd_setup.h DONE
+  - CCD_SETUP_DEFAULT_MEMORY_BUFFER_SIZE mmap size doubled for dummy pixels
+    N.B. /etc/grub.conf will need to be modified during release of software 
+  - CCD_Setup_Startup has new parameters: load_timing_software, load_utility_software, set_temperature
+  - CCD_Setup_Hardware_Test has new parameters: test_timing_board, test_utility_board
+  - New utility routines: CCD_Setup_Get_Final_NCols, CCD_Setup_Get_Final_NRows (after dummy pixels)
+  - CCD_Setup_Get_DeInterlace_Type removed
+- ccd_setup_private.h DONE
+  - DeInterlace_Type internal structure member removed.
+  - Final_NCols, Final_NRows, Is_Dummy internal structure members added.
+- ccd_temperature.h
+  - no changes
+- ccd_text.h
+  - no changes
+- ngat_o_ccd_CCDLibrary.h
+  - dummy software does not have this
+  - Most Java layer API can be the same, CCD_Setup will need new parameters adding in the implementation
+  - We might need new API for configuring the pixel stream software.
+  - We might need new API for retrieving Pixel Stream logging and error codes etc.
+
+C Source code
+-------------
+
+- ccd_dsp.c DONE
+  - CCD_DSP_Command_FWA command removed (leave this in).
+  - CCD_DSP_Command_FWM command removed (leave this in).
+  - CCD_DSP_Command_FWR command removed (leave this in).
+  - CCD_DSP_Print_DeInterlace removed (CCD_DSP_DEINTERLACE_TYPE no longer exists).
+- ccd_dsp_download.c
+  - no changes
+- ccd_exposure.c DONE
+  - Removed Exposure_Expose_Post_Readout_Full_Frame (now done in ccd_pixel_stream.c)
+  - Removed Exposure_Expose_Post_Readout_Window (now done in ccd_pixel_stream.c)
+  - Removed Exposure_Byte_Swap
+  - Removed Exposure_DeInterlace (now replaced by code in ccd_pixel_stream.c)
+  - Removed Exposure_Save, Exposure_TimeSpec_To_Date_String, Exposure_TimeSpec_To_Date_Obs_String, 
+    Exposure_TimeSpec_To_UtStart_String, Exposure_TimeSpec_To_Mjd, Exposure_Expose_Delete_Fits_Images, fexist
+    All used for writing FITS images to disk, which is now done in ccd_pixel_stream.c.
+    What happens with windows?
+  - Exposure_Expose_Delete_Fits_Images replaced with CCD_Pixel_Stream_Delete_Fits_Images.
+  - Exposure_Byte_Swap reamoved.
+  - Exposure_Expose_Post_Readout_Full_Frame replaced with CCD_Pixel_Stream_Post_Readout_Full_Frame
+  - CCD_Exposure_Flip_X, CCD_Exposure_Flip_Y, Exposure_Byte_Swap removed.
+  - Exposure_Expose_Post_Readout_Full_Frame, Exposure_Expose_Post_Readout_Window, Exposure_DeInterlace, Exposure_Save
+    Exposure_TimeSpec_To_Date_String, Exposure_TimeSpec_To_Date_Obs_String, Exposure_TimeSpec_To_UtStart_String, 
+    Exposure_TimeSpec_To_Mjd, Exposure_Expose_Delete_Fits_Images, fexist removed.
+- ccd_filter_wheel.c Dummy output code reverted as the actual code DONE
+  - Dummy output code still has proximity sensor 5 patch installed. This MUST be removed.
+- ccd_global.c DONE
+  - Calls to CCD_Pixel_Stream_Initialise/CCD_Pixel_Stream_Get_Error_Number / CCD_Pixel_Stream_Error_String added.
+  - Calls to CCD_Filter_Wheel_Initialise removed - this MUST be reinstated.
+- ccd_interface.c
+  - no changes
+- ccd_pci.c
+  - no changes
+- ccd_pixel_stream.c DONE
+  - All new software to be added.
+- ccd_setup.c DONE
+  - Setup_Binning removed
+  - Setup_DeInterlace removed
+  - Setup_Dimensions removed
+  - DeInterlace_Type initialisation removed.
+  - Is_Dummy initialisation added.
+  - New CCD_Setup_Startup parameters added: load_timing_software, load_utility_software, set_temperature.
+  - CCD_Setup_Hardware_Test call now uses load_timing_software,load_utility_software to only test enabled boards.
+  - CCD_Setup_Dimensions: removed deinterlace_type parameter.
+  - CCD_Setup_Dimensions no longer calls Setup_Binning, Setup_DeInterlace, Setup_Dimensions. The calculations
+    are now too complex to do in sub-functions, CCD_Setup_Dimensions does all the calculations (including Final_NCols
+    Final_NRows) and writes the dimensions/binning to the controller. 
+    N.B. Does this routine still work with windowing?
+  - CCD_Setup_Hardware_Test has new parameters test_timing_board, test_utility_board.
+  - CCD_Setup_Get_Final_NCols Added.
+  - CCD_Setup_Get_Final_NRows added.
+  - Calculating the number of pixels in an image, now uses Final_NCols/Final_NRows rather than 
+    Binned_NCols/Binned_NRows, to take account of dummy pixels.
+  - CCD_Setup_Get_DeInterlace_Type deleted.
+  - Setup_Binning, Setup_DeInterlace, Setup_Dimensions deleted.
+  - Setup_Controller_Windows rewritten not to use Setup_Dimensions, but writes to controller directly.
+- ccd_temperature.c
+  - no changes
+- ccd_text.c
+  - no changes
+- ngat_o_ccd_CCDLibrary.c
+  - recent changes not checked in on one version
+  - consider adding CCD_Pixel_Stream calls for configurable de-interlacing to make comissioning easier.
+
+C Test Programs
+---------------
+
+- ccd_read_memory.c
+  - no changes
+- ccd_write_memory.c
+  - no changes
+- test_analogue_power.c
+  - no changes
+- test_data_link.c
+  - no changes
+- test_data_link_multi.c
+  - no changes
+- test_dsp_download.c
+  - no changes
+- test_exposure.c DONE
+  - Changed CCD_Setup_Startup call.
+  - Changed CCD_Setup_Dimensions call (no de-interlace).
+  - Added dummy amplifier arguments.
+  - Added pixel_stream_entry configuration arguments.
+- test_filter_wheel.c
+  - no changes
+- test_gain.c
+  - no changes
+- test_generate_waveform.c DONE
+  - Changed CCD_Setup_Startup call.
+  - Changed CCD_Setup_Dimensions call (no de-interlace).
+  - Added dummy amplifier arguments.
+- test_idle_clocking.c
+  - no changes
+- test_manual_command.c
+  - no changes
+- test_reset_controller.c
+  - no changes
+- test_setup_shutdown.c
+  - no changes
+- test_setup_startup.c DONE
+  - Changed CCD_Setup_Startup call (new parameters).
+- test_shutter.c
+  - no changes
+- test_temperature.c
+  - no changes
+
+
+Java layer
+----------
+- consider adding CCD_Pixel_Stream calls for configurable de-interlacing to make comissioning easier. DONE
+
+
+TODO
+====
+N.B. /etc/grub.conf will need to be modified during release of software 
+
+- Do we still require windowing support, and does the dummy_output code cope with this?
+  Nothing in the Phase2 supports this.
+- We can test new de-interlacing during the day using the bad column, before on-sky tests.
+- The dummy pixels are currently put into the same side of the dummy image than the image pixels,
+  although they really originate from the output amplifier on the opposite side to where they are put in the
+  dummy image. Is this what we want?
+- Get timing data for de-interlacing with old s/w. (Binning 1 and 2). Compare after deploying new code to
+  see overhead changes.
+
+DONE TODOs
+----------
+- Makefile will have to be changed, add ccd_pixel_stream.c to list of sources to be built. DONE
+- Don't use dummy_outputs Makefile, as source/dest dirs have been changed. DONE
+- MAKE DEPLOYMENT WITH OLD C LAYER and UP TO DATE CONFIGS before STARTING MERGE OPERATION - DONE
+- up to date configs - DONE
+- Also check DSP software against master copy - cmp DONE
+- Also check DSP assembler files (INT_TIME and GAIN) - o1:/home/dev/src/o/sdsu/e2v231-84 vs. ltdevsrv:/home/dev/src/o/sdsu/e2v231-84 - DONE
+- Consider adding DUMMY_BOTH_LEFT and DUMMY_BOTH RIGHT to DSP code now, so we only have to
+  retest bias voltages and waveforms once. - DONE
+- Also change Pixel_Stream default de-interlacing to match current amp de-interlacing. - DONE
+  Currently old s/w uses amplifier BOTTOM_RIGHT with de-interlace SINGLE (which does nothing), I believe
+  this implies a flip in X (BOTTOM_LEFT being amp 0 and therefore the natural position).
+  
