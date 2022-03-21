@@ -1,0 +1,57 @@
+#!/bin/csh
+# Script to get the current analogue power settings froom the controller.
+# See the utility board documentation P4-7
+# From utilappl.asm:
+#; Define power supply turn-on variables
+#T_HV	DC      $500    ; Target HV supply voltage for Rev 6+ boards
+#K_HV	DC      $080    ; Tolerance of HV supply voltage
+#T_P15   DC      $5C0    ; Target +15 volts supply voltage
+#K_P15   DC      $080     ; Tolerance of +15 volts supply voltage
+#T_M15   DC      $A40    ; Target -15 volts supply voltage
+#K_M15   DC      $080     ; Tolerance of -15 volts supply voltage
+#I_HV	DC      0       ; Initial value of HV
+#I_P15   DC      0       ; Initial value of +15 volts
+#I_M15   DC      0       ; Initial value of -15 volts
+if ( -x /icc/bin/o/ccd/test/i386-linux/ccd_read_memory ) then
+	alias ccd_read_memory '/icc/bin/o/ccd/test/i386-linux/ccd_read_memory'
+else
+	echo "No ccd_read_memory found."
+	exit 1
+endif
+set hv_power_on_address = 0x25
+set plus_lv_power_on_address = 0x26
+set minus_lv_power_on_address = 0x27
+set hv_current_address = 0x8
+set plus_lv_current_address = 0x9
+set minus_lv_current_address = 0xA
+set device_pathname = "/dev/astropci0"
+
+# HV power on
+ccd_read_memory -i pci -device_pathname ${device_pathname} -board utility -space y -address ${hv_power_on_address} > /tmp/read_memory_output.txt
+set hv_power_on = `cat /tmp/read_memory_output.txt | grep 'Result (integer) = ' | awk ' { print $4 }'`
+echo "High voltage (power on)(0x500 +/- 0x080) = ${hv_power_on}"
+
+# Plus LV power on
+ccd_read_memory -i pci -device_pathname ${device_pathname} -board utility -space y -address ${plus_lv_power_on_address} > /tmp/read_memory_output.txt
+set plus_lv_power_on = `cat /tmp/read_memory_output.txt | grep 'Result (integer) = ' | awk ' { print $4 }'`
+echo "+Low voltage (power on)(0x5C0 +/- 0x080) = ${plus_lv_power_on}"
+
+# Minus LV power on
+ccd_read_memory -i pci -device_pathname ${device_pathname} -board utility -space y -address ${minus_lv_power_on_address} > /tmp/read_memory_output.txt
+set minus_lv_power_on = `cat /tmp/read_memory_output.txt | grep 'Result (integer) = ' | awk ' { print $4 }'`
+echo "-Low voltage (power on)(0xA40 +/- 0x080) = ${minus_lv_power_on}"
+
+# HV current
+ccd_read_memory -i pci -device_pathname ${device_pathname} -board utility -space y -address ${hv_current_address} > /tmp/read_memory_output.txt
+set hv_current = `cat /tmp/read_memory_output.txt | grep 'Result (integer) = ' | awk ' { print $4 }'`
+echo "High voltage (current)(0x500 +/- 0x080) = ${hv_current}"
+
+# Plus LV current
+ccd_read_memory -i pci -device_pathname ${device_pathname} -board utility -space y -address ${plus_lv_current_address} > /tmp/read_memory_output.txt
+set plus_lv_current = `cat /tmp/read_memory_output.txt | grep 'Result (integer) = ' | awk ' { print $4 }'`
+echo "+Low voltage (current)(0x5C0 +/- 0x080) = ${plus_lv_current}"
+
+# Minus LV current
+ccd_read_memory -i pci -device_pathname ${device_pathname} -board utility -space y -address ${minus_lv_current_address} > /tmp/read_memory_output.txt
+set minus_lv_current = `cat /tmp/read_memory_output.txt | grep 'Result (integer) = ' | awk ' { print $4 }'`
+echo "-Low voltage (current)(0xA40 +/- 0x080) = ${minus_lv_current}"
