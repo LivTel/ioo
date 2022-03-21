@@ -1,5 +1,5 @@
 /* ccd_setup.h
-** $Header: /space/home/eng/cjm/cvs/ioo/ccd/include/ccd_setup.h,v 1.5 2013-03-25 15:26:42 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/ioo/ccd/include/ccd_setup.h,v 1.6 2022-03-21 13:22:50 cjm Exp $
 */
 #ifndef CCD_SETUP_H
 #define CCD_SETUP_H
@@ -132,6 +132,9 @@ extern int CCD_Setup_Get_Setup_In_Progress(CCD_Interface_Handle_T* handle);
 extern int CCD_Setup_Get_High_Voltage_Analogue_ADU(CCD_Interface_Handle_T* handle,int *hv_adu);
 extern int CCD_Setup_Get_Low_Voltage_Analogue_ADU(CCD_Interface_Handle_T* handle,int *lv_adu);
 extern int CCD_Setup_Get_Minus_Low_Voltage_Analogue_ADU(CCD_Interface_Handle_T* handle,int *minus_lv_adu);
+extern int CCD_Setup_Get_High_Voltage_Power_On_Analogue_ADU(CCD_Interface_Handle_T* handle,int *hv_adu);
+extern int CCD_Setup_Get_Low_Voltage_Power_On_Analogue_ADU(CCD_Interface_Handle_T* handle,int *lv_adu);
+extern int CCD_Setup_Get_Minus_Low_Voltage_Power_On_Analogue_ADU(CCD_Interface_Handle_T* handle,int *minus_lv_adu);
 extern int CCD_Setup_Get_Error_Number(void);
 extern void CCD_Setup_Error(void);
 extern void CCD_Setup_Error_String(char *error_string);
