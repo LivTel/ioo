@@ -1,0 +1,118 @@
+Called from command handler:
+TWILIGHT_CALIBRATEImplementation constructor.
+
+init()
+
+
+calculateAcknowledgeTime()
+(result sent back to the RCS as a keepalive)
+
+
+processCommand:
+--------------
+Actually does twilight calibrate algorithm.
+
+- setTimeOfNight
+- loadProperties
+- addSavedStateToCalibration
+- FITS/MULTRUN number setup
+- moveFold
+- loop over calibrations
+       doCalibration
+- makeMasterFlat
+
+
+doCalibration
+-------------
+- exposureLength = (int)((((double)exposureLength)*lastFilterSensitivity)/filterSensitivity);
+- exposureLength = (exposureLength*(lastBin*lastBin))/(bin*bin);
+lastFilterSensitivity = filterSensitivity;
+lastBin = bin;
+if(exposureLength < minExposureLength)
+	exposureLength = minExposureLength;
+if(exposureLength > maxExposureLength)
+	exposureLength = maxExposureLength;
+sendBasicAck
+doConfig
+sendBasicAck
+calibrationFrameCount = 0;
+doOffsetList
+if(calibrationFrameCount == offsetList.size())
+	set last time completed
+
+
+
+doOffsetList
+------------
+- while doneOffset == false loop over offsets
+       doFrame
+
+doFrame
+-------
+- while doneFrame == false
+	setup FITS headers
+	expose	   
+	sendTwilightCalibrateAck
+	reduceCalibrate
+	if(meanCounts < 0)
+	     meanCounts = 65000; // doddgy saturation
+	if(meanCounts > maxMeanCounts[bin])
+	     frameState = FRAME_STATE_OVEREXPOSED;
+	else if(meanCounts < minMeanCounts[bin])
+	     frameState = FRAME_STATE_UNDEREXPOSED;
+	else
+	     frameState = FRAME_STATE_OK;
+	if(frameState == FRAME_STATE_OK)
+	      save frame
+	exposureLength = (int)(((float) exposureLength) * (((float)(bestMeanCounts[bin]))/meanCounts));
+	if((exposureLength > maxExposureLength)&&((lastExposureLength != maxExposureLength)||
+	   (frameState == FRAME_STATE_OK)))
+	{
+	    exposureLength = maxExposureLength;
+	}
+	if((exposureLength < minExposureLength)&&((lastExposureLength != minExposureLength)||
+	(frameState == FRAME_STATE_OK)))
+	{
+	    exposureLength = minExposureLength;
+	}
+	if(frameState == FRAME_STATE_OK)
+	{
+		doneFrame = true;
+		calibrationFrameCount++;
+	}
+	if(exposureLength > maxExposureLength)
+	{
+		if(timeOfNight == TIME_OF_NIGHT_SUNSET)
+		{
+			// try next calibration
+			doneFrame = true;
+			doneOffset = true;
+		}
+		else // retry this calibration - it has got lighter
+		{
+			exposureLength = maxExposureLength;
+		}
+	}
+	if(exposureLength < minExposureLength)
+	{
+		if(timeOfNight == TIME_OF_NIGHT_SUNRISE)
+		{
+			// try next calibration
+			doneFrame = true;
+			doneOffset = true;
+		}
+		else // retry this calibration - it has got darker
+		{
+			exposureLength = minExposureLength;
+		}
+	}
+	// have we run out of twilight calibrate time?
+	// NB test at end to use recalculated exposure length
+	if((now+exposureLength+frameOverhead) > (implementationStartTime+twilightCalibrateCommand.getTimeToComplete()))
+	{
+	// try next calibration
+	   doneFrame = true;
+	   doneOffset = true;
+	}
+}// end while !doneFrame
+return true;

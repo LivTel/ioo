@@ -1,0 +1,130 @@
+TWILIGHT_CALIBRATEImplementation2
+=================================
+
+processCommand
+--------------
+setup oFilename exposure code.
+moveFold
+if(timeOfNight == TIME_OF_NIGHT_SUNRISE)
+	exposureLength = maxExposureLength;
+else if(timeOfNight == TIME_OF_NIGHT_SUNSET)
+	exposureLength = minExposureLength;
+Setup lastFilterSensitivity/lastBin to first calibration
+meanCounts = bestMeanCounts[lastBin];
+while ((doneCalibration == false) loop over calibrations
+      doCalibration
+
+doCalibration
+-------------
+
+optimalExposureLength = (int)((((double)lastExposureLength)*lastFilterSensitivity)/filterSensitivity);
+optimalExposureLength = (optimalExposureLength*(lastBin*lastBin))/(bin*bin);
+exposureLength = optimalExposureLength;
+if(optimalExposureLength < minExposureLength)
+	exposureLength = minExposureLength;
+if(optimalExposureLength > maxExposureLength)
+	exposureLength = maxExposureLength;
+predictedMeanCounts = meanCounts * (float)((filterSensitivity/lastFilterSensitivity) * 
+		     ((bin*bin)/(lastBin*lastBin))*(exposureLength/lastExposureLength));
+if((timeOfNight == TIME_OF_NIGHT_SUNSET)&&(optimalExposureLength > maxExposureLength)&&
+		(predictedMeanCounts < minMeanCounts[bin]))
+{
+	predicted counts too small : try next calcibration
+	return true;
+}
+if((timeOfNight == TIME_OF_NIGHT_SUNRISE)&&(optimalExposureLength < minExposureLength)&&
+   (predictedMeanCounts > maxMeanCounts[bin]))
+{
+	predicted counts too high : try next calcibration
+	return true;
+}
+lastFilterSensitivity = filterSensitivity;
+lastBin = bin;
+if((now+exposureLength+frameOverhead) > 
+	(implementationStartTime+twilightCalibrateCommand.getTimeToComplete()))
+{
+	ran out of time to complete
+	return true;
+}
+sendBasicAck
+doConfig
+sendBasicAck
+calibrationFrameCount = 0;
+doOffsetList
+if(calibrationFrameCount == offsetList.size())
+	set calibration complete
+
+doOffsetList
+------------
+while (doneOffset == false) loop over offsets
+{
+      OFFSET_RA_DEC
+      doFrame
+}
+
+doFrame
+-------
+doneFrame = false;
+while(doneFrame == false)
+{
+	setup fits headers
+	expose
+	lastExposureLength = exposureLength;
+	sendTwilightCalibrateAck
+	reduceCalibrate
+	Update meanCounts from last reduced frame
+	if(meanCounts < 0) // dodgy saturation test
+	        meanCounts = 65000;
+	if(meanCounts > maxMeanCounts[bin])
+		frameState = FRAME_STATE_OVEREXPOSED;
+	else if(meanCounts < minMeanCounts[bin])
+		frameState = FRAME_STATE_UNDEREXPOSED;
+	else
+		frameState = FRAME_STATE_OK;
+	if(frameState == FRAME_STATE_OK)
+		save raw and reduced flat
+	// Find optimal exposure length to get the best number of mean counts
+	optimalExposureLength = (int)(((float) exposureLength) * 
+				      (((float)(bestMeanCounts[bin]))/meanCounts));
+	// Bracket the optimal exposure length to an allowed exposure length
+	if(optimalExposureLength < minExposureLength)
+		exposureLength = minExposureLength;
+	else if(optimalExposureLength > maxExposureLength)
+		exposureLength = maxExposureLength;
+	// calculate the predicted mean counts for the bracketed exposure length
+	predictedMeanCounts = meanCounts * (exposureLength/lastExposureLength);
+	// check the predicted mean counts for the bracketed exposure length
+	// are within the mean counts limits, otherwise assume the next exposure
+	// will return out of range mean counts and move onto the next calibration.
+	if((timeOfNight == TIME_OF_NIGHT_SUNSET)&&(optimalExposureLength > maxExposureLength)&&
+	   (predictedMeanCounts < minMeanCounts[bin]))
+	{
+		// try next calibration
+		doneFrame = true;
+		doneOffset = true;
+		return true; 
+	}
+	if((timeOfNight == TIME_OF_NIGHT_SUNRISE)&&(optimalExposureLength < minExposureLength)&&
+	   (predictedMeanCounts > maxMeanCounts[bin]))
+	{
+		// try next calibration
+		doneFrame = true;
+		doneOffset = true;
+		return true; 
+	}
+	sendTwilightCalibrateDpAck
+	if(frameState == FRAME_STATE_OK)
+	{
+		doneFrame = true;
+		calibrationFrameCount++;
+	}
+	// have we run out of twilight calibrate time?
+	// NB test at end to use recalculated exposure length
+	if((now+exposureLength+frameOverhead) > 
+		(implementationStartTime+twilightCalibrateCommand.getTimeToComplete()))
+	{
+	// try next calibration
+		doneFrame = true;
+		doneOffset = true;
+	}
+}
