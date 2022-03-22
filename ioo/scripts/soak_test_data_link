@@ -1,0 +1,58 @@
+#!/bin/csh
+# soak test data link
+# $Header: /space/home/eng/cjm/cvs/ioo/scripts/soak_test_data_link,v 1.1 2022-03-22 11:25:22 cjm Exp $
+set do_interface = 1
+set do_timing = 1
+set do_utility = 0
+set interface_test_count = 0
+set timing_test_count = 0
+set utility_test_count = 0
+set interface_success_count = 0
+set timing_success_count = 0
+set utility_success_count = 0
+set interface_failure_count = 0
+set timing_failure_count = 0
+set utility_failure_count = 0
+set loop_count = 0
+if( -r /home/dev/bin/o/ccd/test/${HOSTTYPE}/test_data_link ) then
+	alias test_data_link '/home/dev/bin/o/ccd/test/${HOSTTYPE}/test_data_link'
+else if( -r /icc/bin/o/ccd/test/${HOSTTYPE}/test_data_link ) then
+	alias test_data_link '/icc/bin/o/ccd/test/${HOSTTYPE}/test_data_link'
+endif
+set done = 0
+while ( ${done} == 0 )
+	if( ${do_interface} == 1 ) then
+		test_data_link -i pci -board interface -value ${loop_count} > /dev/null
+		set test_data_link_status = $status
+		echo "test_data_link (interface) returned ${test_data_link_status}."
+	endif
+	if( ${do_timing} == 1 ) then
+		test_data_link -i pci -board timing -value ${loop_count} > /dev/null
+		set test_data_link_status = $status
+		echo "test_data_link (timing) returned ${test_data_link_status}."
+	endif
+	if( ${do_utility} == 1 ) then
+		test_data_link -i pci -board utility -value ${loop_count} > /dev/null
+		set test_data_link_status = $status
+		echo "test_data_link (timing) returned ${test_data_link_status}."
+	endif
+
+	@ loop_count ++
+	if( (${loop_count} % 10000) == 0 ) then
+		set date_string = `/bin/date +"%Y-%m-%dT%H:%M:%S"`
+		echo "${date_string} : Loop ${loop_count}."
+		if( ${do_interface} == 1 ) then
+			echo "${date_string} : Interface: ${interface_test_count} tests: ${interface_success_count} succeeded: ${interface_failure_count} failed."
+		endif
+		if( ${do_timing} == 1 ) then
+			echo "${date_string} : Timing: ${timing_test_count} tests: ${timing_success_count} succeeded: ${timing_failure_count} failed."
+		endif
+		if( ${do_utility} == 1 ) then
+			echo "${date_string} : Utility: ${utility_test_count} tests: ${utility_success_count} succeeded: ${utility_failure_count} failed."
+		endif
+	endif
+end
+
+#
+# $Log: not supported by cvs2svn $
+#

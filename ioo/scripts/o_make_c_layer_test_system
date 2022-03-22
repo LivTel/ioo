@@ -1,0 +1,211 @@
+#!/bin/csh
+# Make a C layer test system with DSP code.
+# Copy files to the specified directory.
+if ( ${#argv} != 1 ) then
+	echo "Please specify a target directory."
+	echo "$0 <machine>"
+	exit 1
+endif
+set deployment_dir          = $1    
+# temporary directory containing root bin directory.
+set deployment_bin_dir 	= "${deployment_dir}/bin"
+# temporary directory for deployment temporary files
+set deployment_tmp_dir 	= "/tmp/o_make_c_layer_test_system"
+set camera_name         = "o"
+# dev root directory
+set dev_dir 		= "~dev"
+# dev binary root directory
+set dev_bin_dir 	= "${dev_dir}/bin"
+# directory script was run in
+set current_dir		= `pwd`
+setenv GREP "/bin/grep"
+set bin_file_type = "ELF 32-bit LSB executable"
+#
+# Create directory structure
+#
+echo "Creating directory structure..."
+set dir_count = 0
+set dir_list = "${deployment_dir}/bin ${deployment_bin_dir}/lib/${HOSTTYPE} ${deployment_bin_dir}/o/ccd/test/${HOSTTYPE} ${deployment_bin_dir}/o/dsp ${deployment_bin_dir}/ccd/misc/${HOSTTYPE} "
+foreach dir ( ${dir_list} )
+	mkdir -p ${dir}
+	if ($status != 0) then
+	   echo "Failed to make directory ${dir}"
+	   exit 2
+	endif
+	@ dir_count ++
+end
+echo "${dir_count} directories created."
+#
+# C libraries
+#
+echo "Copying C libraries..."
+# in /home/dev/bin/lib/${HOSTTYPE}
+set clib_list = "libcfitsio.so libngatastro.so libngatastrometrywcstools.so libngatfits.so libngatutil.so libtarga.so libo_ccd.so "
+set clib_count = 0
+foreach clib ( ${clib_list} )
+	echo "C Library : ${clib}"
+# copy clib to deployment location
+	cp ${dev_bin_dir}/lib/${HOSTTYPE}/${clib} ${deployment_bin_dir}/lib/${HOSTTYPE}/
+	set cp_status = $status
+	if( ${cp_status} != 0 ) then
+	    echo "Copy failed: ${dev_bin_dir}/lib/${HOSTTYPE}/${clib} to ${deployment_bin_dir}/lib/${HOSTTYPE}/"
+	    exit 5
+	endif
+# ident contents of lib
+	cd ${deployment_dir}
+	rm -rf ${deployment_tmp_dir}
+	mkdir ${deployment_tmp_dir}
+	cd ${deployment_bin_dir}
+	( ident lib/${HOSTTYPE}/${clib} > ${deployment_tmp_dir}/ident.txt ) >& ${deployment_tmp_dir}/ident_error.txt
+	set ident_string = `cat ${deployment_tmp_dir}/ident.txt`
+	echo "${ident_string}" >>! ${deployment_tmp_dir}/ident_list.txt
+	if ( -r ${deployment_tmp_dir}/ident_list.txt) then
+		cat ${deployment_tmp_dir}/ident_list.txt >>! ${deployment_bin_dir}/ident_list.txt 
+	endif
+# keep track of number of clibs processed
+	@ clib_count ++
+end
+# in ${eSTAR_LIB_HOME}
+set clib_list = "libestar_config.so "
+foreach clib ( ${clib_list} )
+	echo "C Library : ${clib}"
+# copy clib to deployment location
+	cp ${eSTAR_LIB_HOME}/${clib} ${deployment_bin_dir}/lib/${HOSTTYPE}/
+	set cp_status = $status
+	if( ${cp_status} != 0 ) then
+	    echo "Copy failed: ${eSTAR_LIB_HOME}/${clib} to ${deployment_bin_dir}/lib/${HOSTTYPE}/"
+	    exit 5
+	endif
+# ident contents of lib
+	cd ${deployment_dir}
+	rm -rf ${deployment_tmp_dir}
+	mkdir ${deployment_tmp_dir}
+	cd ${deployment_bin_dir}
+	( ident lib/${HOSTTYPE}/${clib} > ${deployment_tmp_dir}/ident.txt ) >& ${deployment_tmp_dir}/ident_error.txt
+	set ident_string = `cat ${deployment_tmp_dir}/ident.txt`
+	echo "${ident_string}" >>! ${deployment_tmp_dir}/ident_list.txt
+	if ( -r ${deployment_tmp_dir}/ident_list.txt) then
+		cat ${deployment_tmp_dir}/ident_list.txt >>! ${deployment_bin_dir}/ident_list.txt 
+	endif
+# keep track of number of clibs processed
+	@ clib_count ++
+end
+echo "${clib_count} C libraries copied."
+# in ${eSTAR_LIB_HOME}
+set clib_list = "libestar_config.so "
+foreach clib ( ${clib_list} )
+	echo "C Library : ${clib}"
+# copy clib to deployment location
+	cp ${eSTAR_LIB_HOME}/${clib} ${deployment_bin_dir}/lib/${HOSTTYPE}/
+	set cp_status = $status
+	if( ${cp_status} != 0 ) then
+	    echo "Copy failed: ${eSTAR_LIB_HOME}/${clib} to ${deployment_bin_dir}/lib/${HOSTTYPE}/"
+	    exit 5
+	endif
+# ident contents of lib
+	cd ${deployment_dir}
+	rm -rf ${deployment_tmp_dir}
+	mkdir ${deployment_tmp_dir}
+	cd ${deployment_bin_dir}
+	( ident lib/${HOSTTYPE}/${clib} > ${deployment_tmp_dir}/ident.txt ) >& ${deployment_tmp_dir}/ident_error.txt
+	set ident_string = `cat ${deployment_tmp_dir}/ident.txt`
+	echo "${ident_string}" >>! ${deployment_tmp_dir}/ident_list.txt
+	if ( -r ${deployment_tmp_dir}/ident_list.txt) then
+		cat ${deployment_tmp_dir}/ident_list.txt >>! ${deployment_bin_dir}/ident_list.txt 
+	endif
+# keep track of number of clibs processed
+	@ clib_count ++
+end
+echo "${clib_count} C libraries copied."
+#
+# C test programs
+#
+echo "Copying C test program directories..."
+set dir_list = "o/ccd/test/${HOSTTYPE} ccd/misc/${HOSTTYPE} "
+set dir_count = 0
+set file_count = 0
+# clean out deployment_tmp_dir
+cd ${deployment_dir}
+rm -rf ${deployment_tmp_dir}
+mkdir ${deployment_tmp_dir}
+cd ${deployment_bin_dir}
+# go through directory list
+foreach dir ( ${dir_list} )
+	echo "C test program directory : ${dir}"
+# get file list
+	find ${dev_bin_dir}/${dir}/* > ${deployment_tmp_dir}/file_list.txt
+	foreach file ( `cat ${deployment_tmp_dir}/file_list.txt` )
+# check file is an executable
+		file ${file} | ${GREP} -q "${bin_file_type}"
+		set grep_status = $status
+		if ( ${grep_status} == 0 ) then
+			echo "Deploying ${file}."
+# copy file to deployment location
+			cp ${file} ${deployment_bin_dir}/${dir}
+			set cp_status = $status
+			if( ${cp_status} != 0 ) then
+			    echo "Copy failed: ${file} to ${deployment_bin_dir}/${dir}"
+			    exit 6
+			endif
+# ident file and add to list
+			( ident ${dir}/${file:t} > ${deployment_tmp_dir}/ident.txt ) >& ${deployment_tmp_dir}/ident_error.txt
+			set ident_string = `cat ${deployment_tmp_dir}/ident.txt`
+			echo "${ident_string}" >>! ${deployment_tmp_dir}/ident_list.txt
+			@ file_count ++
+		else
+			echo "NOT Deploying ${file}."
+		endif
+	end
+	rm -f ${deployment_tmp_dir}/file_list.txt
+# keep track of number of dirs processed
+	@ dir_count ++
+end
+if ( -r ${deployment_tmp_dir}/ident_list.txt) then
+	cat ${deployment_tmp_dir}/ident_list.txt >>! ${deployment_bin_dir}/ident_list.txt 
+endif
+cd ${deployment_dir}
+rm -rf ${deployment_tmp_dir}
+echo "${dir_count} C test program directories copied, containg ${file_count} C test programs."
+#
+# Configs
+#
+# in bin sub-directories
+#echo "Copying machine configuration files..."
+#set file_list = "o/ccd/test/${HOSTTYPE}/e2v231-84.config "
+#set file_count = 0
+#cd ${dev_dir}
+#foreach file ( ${file_list} )
+#    set new_file = `echo ${file} | sed "s#${machine_name}.##"`
+#    cp ${dev_bin_dir}/${file} ${deployment_bin_dir}/${new_file}
+#    set cp_status = $status
+#    if( ${cp_status} != 0 ) then
+#	echo "Copy failed: ${dev_bin_dir}/${file} to ${deployment_bin_dir}/${new_file}"
+#	exit 5
+#    endif
+#    @ file_count ++
+#end
+#
+# DSP code
+#
+echo "Copying DSP code files..."
+set file_list = "o/dsp/time2v231-84.lod o/dsp/util.lod"
+set file_count = 0
+cd ${dev_bin_dir}
+foreach file ( ${file_list} )
+    cp ${dev_bin_dir}/${file} ${deployment_bin_dir}/${file}
+    set cp_status = $status
+    if( ${cp_status} != 0 ) then
+	echo "Copy failed: ${dev_bin_dir}/${file} to ${deployment_bin_dir}/${file}"
+	exit 6
+    endif
+    @ file_count ++
+end
+echo "${file_count} DSP code files copied."
+#
+# Tidy deployment temp
+#
+cd ${deployment_dir}
+rm -rf ${deployment_tmp_dir}
+#
+# $Log: not supported by cvs2svn $
+#

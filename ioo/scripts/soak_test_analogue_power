@@ -1,0 +1,28 @@
+#!/bin/csh
+# Turn on and off analogue power until it breaks
+if ( -x /icc/bin/o/ccd/test/i386-linux/test_analogue_power ) then
+	alias test_analogue_power '/icc/bin/o/ccd/test/i386-linux/test_analogue_power'
+else
+	echo "No test_analogue_power found."
+	exit 1
+endif
+set done = 0
+set count = 0
+while ( ${done} == 0 )
+	echo "Turning on analogue power: Test number ${count}"
+	test_analogue_power -i pci -on
+	set tap_status = $status
+	if( ${tap_status} != 78 ) then
+		echo "Turning on analogue power FAILED."
+		exit 1
+	endif
+	sleep 1
+	test_analogue_power -i pci -off
+	set tap_status = $status
+	if( ${tap_status} != 78 ) then
+		echo "Turning off analogue power FAILED."
+		exit 1
+	endif
+	sleep 1
+	@ count ++
+end

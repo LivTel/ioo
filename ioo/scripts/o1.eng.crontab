@@ -1,0 +1,20 @@
+# instrument archive logs
+# See occ@occ: /occ/rcs/lt_exec_DEFAULT
+# reboot.minutes = 30 after SODH (minutes).
+# See occ@occ:/occ/rcs/.site
+# sodh is 13 (local time)
+# tz_offset = 0
+# therefore machine rebooted at 13:30 GMT
+# So archive logs 11:35 BST (Should be EDT?)
+35 11 * * *  $HOME/scripts/instrument_archive_logs
+# Park first thing in the morning
+0 9 * * *  /icc/bin/o/scripts/o_park_filter_wheel
+# re-park the filter wheel after rebooting the machine
+# See roots crontab for details, currently rebooted 10:06 Mon
+#15 10 * * Mon  /icc/bin/o/scripts/o_park_filter_wheel
+# Software is also restarted by the RCS/OCC at 13:30 UT
+#45 13 * * *  /icc/bin/o/scripts/o_park_filter_wheel
+# get lots of data from a get status
+11 * * * * /icc/bin/o/scripts/o_get_status_cron >> /icc/log/o_get_status_cron.txt 2>&1
+# Monitor ntp offset and jitter
+*/5 * * * *     /home/eng/jmm/log_ntp_offset
