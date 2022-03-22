@@ -1,0 +1,15 @@
+#!/bin/csh
+# fake_twilight_calibration_bin1
+# Create a set of strings for putting in /icc/config/twilight_calibrate_state.properties
+# to make it look like binned 1 filters have just been done.
+# Any bin1 entries already present must be deleted.
+set now_s = `date "+%s"`
+set now_ms = ${now_s}"000"
+set filter_list = "SDSS-U Bessell-B SDSS-G Bessell-V SDSS-Z SDSS-I SDSS-R"
+foreach filter ( ${filter_list} )
+	echo "o.twilight_calibrate.last_time.1.false.AlMirror.Clear.${filter} = ${now_ms}"
+end
+#
+# $Log: not supported by cvs2svn $
+#
+
