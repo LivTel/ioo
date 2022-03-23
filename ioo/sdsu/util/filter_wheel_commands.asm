@@ -1,13 +1,14 @@
 ; filter_wheel_commands.asm
        COMMENT * 
-	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/util/filter_wheel_commands.asm,v 1.4 2011-08-18 16:44:43 cjm Exp $
+	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/util/filter_wheel_commands.asm,v 1.5 2022-03-23 15:28:25 cjm Exp $
 	This include file contains all the commands we can issue to the utility board,
 	to start filter wheel operations.
 	This source file should be included in utilappl.asm, after all the other commands are defined.
-	Version: $Revision: 1.4 $
+	Version: $Revision: 1.5 $
 	Author: $Author: cjm $
 	*
 
+ 	MSG	'Start of FILTER_WHEEL_MOVE =',@CVS(N,*) 	
 ; Filter wheel move: FWM <position>
 FILTER_WHEEL_MOVE
 ; command parameters
@@ -74,6 +75,7 @@ FW_MOVE_OFFSET3
 	BCLR	#DIG_OUT_BIT_CLUTCH_DISENGAGE,Y:<DIG_OUT   ; engage clutch on Y:DIG_OUT
 	JMP	FINISH					; Issue 'DON' and get next command
 
+ 	MSG	'End of FILTER_WHEEL_MOVE / Start of FILTER_WHEEL_RESET =',@CVS(N,*) 	
 FILTER_WHEEL_RESET
 ; set FW_OFFSET_POS to 1 - move filter wheel to next position
 	MOVE	X:<ONE,X0			; X0 = 1
@@ -93,6 +95,7 @@ FILTER_WHEEL_RESET
 	BCLR	#DIG_OUT_BIT_CLUTCH_DISENGAGE,Y:<DIG_OUT   ; engage clutch on Y:DIG_OUT
 	JMP	FINISH					; Issue 'DON' and get next command
 
+ 	MSG	'End of FILTER_WHEEL_RESET / Start of FILTER_WHEEL_ABORT =',@CVS(N,*) 	
 ; Filter wheel abort: FWA
 ; Resets ST_FW_RESET and ST_FW_MOVE STATUS bits (X:<STATUS)
 ; Clears filter wheel output bits DIG_OUT_BIT_MOTOR_ON
@@ -108,8 +111,12 @@ FILTER_WHEEL_ABORT
 	MOVE	X0,Y:FW_ERROR_CODE		; Y:FW_ERROR_CODE = X0 = 9
 	JMP	FINISH				; Issue 'DON' and get next command
 
+ 	MSG	'End of FILTER_WHEEL_ABORT =',@CVS(N,*) 	
        COMMENT * 
 	$Log: not supported by cvs2svn $
+	Revision 1.4  2011/08/18 16:44:43  cjm
+	First working version of detent counting code.
+
 	Revision 1.3  2011/07/26 13:51:49  cjm
 	Latest version - counts in and out of proximity sensors.
 
