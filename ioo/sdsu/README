@@ -1,0 +1,68 @@
+bif486 : Back illuminated F486, created by me from E2V230 generic software and fif486 waveforms
+device_driver: SDSU device driver
+docs: SDSU docs
+e2v230: E2V timing board code, old style.
+E2V231: E2V timing board code, new style.
+f486_final_dsp: F486 front illuminated, old style.
+fif486: F486 front illuminated
+hamamatsu-s9970: Hamamatsu-s9970, new style, developed from E2V230 generic software.
+util: SDSU utility board code, now with added filter wheel code.
+e2v231-84: Generic code copied from bif486, handwritten clock waveforms
+
+From email from Bob leach 23/07/08:
+E2V230.tar.gz  
+FIF486.tar.gz
+
+> Dear Iain,
+>
+> I don't have a clean current set of software for the F486, so need
+> to send you what I have in two parts. The first is for a front- 
+> illuminated
+> F486 from five years ago. The clock directions will be wrong, but
+> it should be pretty easy to adapt it if you just imaging the CCD  
+> register
+> map being flipped left-to-right. I'm also sending software for the
+> 4k device that E2V now makes, as it contains my current version
+> of the non-CCD-specific routines. Look especially for exposure
+> control routines in "timCCDmisc.asm"  in the E2V230 set to replace
+> the ones in the F486 software, as the older software has some bugs
+> or antiquities.
+
+From email from Bob leach 16/06/09:
+E2V231_DSP.tar.gz
+f486_Final_DSP.tar.gz
+
+See sdsu_email2.txt for details.
+
+Chip is Fairchild 486.
+
+http://www.fairchildimaging.com/products/fpa/ccd/area/ccd_486.htm
+We have a back-illuminated chip? Code is for fron-illuminated?
+
+CCD486DataSheetRevB.pdf from:
+http://www.fairchildimaging.com/products/fpa/ccd/area/ccd_486.htm
+
+Test chip is:
+Hamamatsu P/N S9970-0906 S/N K1501 102
+
+http://jp.hamamatsu.com/products/sensor-ssd/pd101/pd102/pd103/S9970-0906/index_en.html
+Spec sheet: 
+http://jp.hamamatsu.com/resources/products/ssd/pdf/s9970-0906_etc_kmpd1089e06.pdf
+
+Specifications
+	
+Cooling Non-cooled
+Active Area 12.288 x 1.44 mm
+Number of Pixels 512 x 60
+Pixel Size 24 x 24 um
+Frame Rate 25 frames/s
+Spectral Response Range 400 to1100 nm
+Full Well Capacity (Vertical) 300 ke-
+Dark Current Max. 0 deg. C 150 e-/pixel/s
+Readout Noise 4 e-rms
+
+Note
+	
+Measurement Condition	
+Typ. Ta=25 deg. C, unless otherwise noted, frame rate: area scanning
+
