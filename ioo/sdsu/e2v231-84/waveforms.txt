@@ -1,0 +1,36 @@
+IDLE
+----
+loop over Y:<NSR
+     CLOCK #<SERIAL_IDLE
+CLOCK #<PARALLEL_CLEAR_SPLIT
+
+RDCCD
+-----
+Y:<PARALLEL_CLEAR used for subimage readout
+
+loop over Y:<NP_READ
+     CLOCK Y:<PARALLEL_START
+     loop over Y:<NPBIN-1
+	  CLOCK Y:<PARALLEL_BIN
+     CLOCK Y:<PARALLEL_END
+     loop over Y:<NS_SKP1
+	  CLOCK Y:<SERIAL_SKIP
+     loop over #PRESCAN
+	  CLOCK #PXL_TBL with SXMIT changed to #>$74 (no pixel transmit)
+     loop over Y:<NS_READ-3
+	  CLOCK #PXL_TBL
+RDBIAS -> L_4 (only for sunimage?), uses #PXL_TBL with SXMIT changed to #>$74 (no pixel transmit)
+PIPE ; SXMIT the pixels left over in the pipeline: three pixels  
+     loop over 3
+	  CLOCK #PXL_TBL
+X:<IDL_ADR = #IDLE
+JSR	<WAIT_TO_FINISH_CLOCKING
+
+
+PXL_TBL (See GENERATE_SERIAL_WAVEFORM)
+	#SXMIT
+	#FIRST_CLOCKS
+	(loop over NSBIN - 1)
+	      #CLOCK_LINE
+	#RESET_VIDEO
+	#CHARGE_DUMP

@@ -1,0 +1,68 @@
+#!/bin/sh
+#
+	echo ""
+	echo "Assembling DSP code for the E2V231-84 array"
+	echo ""
+#
+# DOWNLOAD selects application code to be loaded from EEPROM or 
+#   downloaded from the host over the fiber optic link
+#
+# DOWNLOAD = HOST or ROM
+
+DOWNLOAD=HOST
+WAVEFORM_FILE=e2v231-84.waveforms
+DST_FILE=time2v231-84
+#
+# Does this machine have wine for running the Motorola assembler
+#
+which wine >& /dev/null
+which_status=$?
+if [ "${which_status}" == 1 ]; then
+    echo "wine not found: run on ltdevsrv."
+    exit 1
+fi
+
+alias asm56300='wine /home/dev/sdsu/astro-cam/DSP/CLAS563/BIN/ASM56300.EXE'
+alias dsplnk='wine /home/dev/sdsu/astro-cam/DSP/CLAS563/BIN/DSPLNK.EXE'
+alias cldlod='wine /home/dev/sdsu/astro-cam/DSP/CLAS563/BIN/CLDLOD.EXE'
+
+echo "asm56300 -b -ltim.ls -d DOWNLOAD $DOWNLOAD -d WAVEFORM_FILE $WAVEFORM_FILE tim.asm"
+asm56300 -b -ltim.ls -d DOWNLOAD $DOWNLOAD -d WAVEFORM_FILE "$WAVEFORM_FILE" tim.asm
+status=$?
+if [ "${status}" != 0 ]; then
+    echo "asm56300 failed."
+    exit 1
+fi
+echo "dsplnk -btim.cld -v tim.cln"
+dsplnk -btim.cld -v tim.cln 
+status=$?
+if [ "${status}" != 0 ]; then
+    echo "dsplnk failed."
+    exit 1
+fi
+rm -f "$DST_FILE".lod
+echo "cldlod tim.cld > "$DST_FILE".lod"
+cldlod tim.cld > "$DST_FILE".lod
+status=$?
+if [ "${status}" != 0 ]; then
+    echo "cldlod failed."
+    exit 1
+fi
+rm tim.cln ; rm tim.cld
+
+if [ "$DOWNLOAD" = "HOST" ] ; then
+	echo ""
+	echo "Created file ${DST_FILE}.lod for downloading over optical fiber"
+	echo ""
+fi
+
+if [ "$DOWNLOAD" = "ROM" ] ; then
+	echo ""
+	echo "Created Motorola S-record file 'tim.s' for EEPROM burning"
+	echo ""
+	srec -bs ${DST_FILE}.lod
+	rm ${DST_FILE}.lod 
+fi
+#
+# $Log: not supported by cvs2svn $
+#

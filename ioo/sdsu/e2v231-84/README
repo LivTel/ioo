@@ -1,0 +1,9 @@
+E2V231-84
+---------
+
+Codebase copied from bif486 with hand-written waveforms.
+
+6/11/2013
+
+Copied from ~dev/src/o/dummy_outputs/sdsu/e2v231-84 to install 
+dummy outputs as default DSP code (it has been running like this for several months).

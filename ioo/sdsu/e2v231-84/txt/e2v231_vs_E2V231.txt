@@ -1,0 +1,17 @@
+E2V231
+P_DELAY EQU	$A00000	; Parallel clock delay
+vs
+e2v231-84
+TOI_DLY	 EQU	$900000		; spec 10us : 16x640ns (bit 23 set) = 0x900000 = 10240ns
+
+Voltages all different, E2V231 subtrate @ about -8C wrt e2v231-84.
+
+PARALLEL_UP/PARALLEL_UP_START (towards GH): 
+E2V231 pulses TGU along with I4U and I1L =I4), 
+e2v231-84 pulses TGU with I1U and I4L (=I1)
+in other words parallel is wired up opposite way round to ours.
+Also PARALLEL_UP/PARALLEL_UP_BIN
+
+
+CLOCK_LINE_LEFT et el: E2V231 pulses RG at the start of the waveform, e2v231-84 pulses RG as per spec sheet.
+

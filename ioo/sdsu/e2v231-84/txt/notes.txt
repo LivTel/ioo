@@ -1,0 +1,45 @@
+; Fast Clocks:	RG+R1L+R2L+R3L+R1R+R2R+R3R+SW
+; Slow Clocks:	I1L+I2L+I3L+I4L+TGL+I1U+I2U+I3U+I4U+TGU+DG
+
+; clock names -> spec sheet
+; I1L = A1/B1
+; I2L = A2/B2
+; I3L = A3/B3
+; I4L = A4/B4
+; I1U = C1/D1
+; I2U = C2/D2
+; I3U = C3/D3
+; I4U = C4/D4
+; TGL = TGA
+; TGU = TGD
+
+; toi : 10us
+; tdrt: 10us
+; tdtr: 10us
+
+; CLK3 setup:
+; full waveform:
+; DC	CLK3+DELAY+I1L+I2L+I3L+I4L+TGL+I1U+I2U+I3U+I4U+TGU+DG
+; empty waveform:
+; DC	CLK3+0000000+000+000+000+000+000+000+000+000+000+000+00
+
+; PARALLEL_UP: ABCD go up towards Register/Amplifier GH
+; I1 = C1/D1/A4/B4 = I1U+I4L+TGU
+; I2 = C2/D2/A3/B3 = I2U+I3L
+; I3 = C3/D3/A2/B2 = I3U+I2L
+; I4 = C4/D4/A1/B1 = I4U+I1L
+; TGD = TGU = I1; TGA = TGL = low
+
+; PARALLEL_DOWN: ABCD go down towards Register/Amplifier EF, See data sheet, table top of P14
+; I1 = A1/B1/C4/D4 = I1L+I4U
+; I2 = A2/B2/C3/D3 = I2L+I3U
+; I3 = A3/B3/C2/D2 = I3L+I2U
+; I4 = A4/B4/C1/D1 = I4L+I1U+TGL
+; TGD = TGU = low; TGA = TGL = I4
+
+; PARALLEL_SPLIT: AB go down to register/amplifier EF, CD go up to register amplifier GH
+; I1 = A1/B1/C1/D1 = I1L+I1U+TGU
+; I2 = A2/B2/C2/D2 = I2L+I2U
+; I3 = A3/B3/C3/D3 = I3L+I3U
+; I4 = A4/B4/C4/D4 = I4L+I4U+TGL
+; TGD = TGU = I1; TGA = TGL = I4
