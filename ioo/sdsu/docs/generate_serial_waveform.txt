@@ -1,0 +1,15 @@
+GENERATE_SERIAL_WAVEFORM
+------------------------
+Start at PXL_TBL+1 : First word is count of elements in table
+
+save current address in Y:<SXMIT_ADR
+Add Y:SXMIT to PXL_TBL
+Add FIRST_CLOCKS to PXL_TBL
+loop over Y:<NSBIN-1
+{
+	Add CLOCK_LINE to PXL_TBL
+}
+Add RESET_VIDEO to PXL_TBL
+Add Y:CHARGE_DUMP to PXL_TBL
+
+Calculate length of PXL_TBL and store at position 0

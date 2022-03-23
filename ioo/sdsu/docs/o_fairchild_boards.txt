@@ -1,0 +1,128 @@
+O boards
+--------
+These were the SDSU board initally ordered for IO:O to work with the Fairchild F486 chip.
+
+SDSU chassis number S/N 492
+
+boards labelled 1-6 in chassis, looking from rear left to right (where rear is opposite end to power control board).
+
+
+1 ARC-45 Video board S/N 1071
+2 ARC-45 Video board S/N 1131
+3 clear
+4 ARC-32 Clock driver board S/N 153
+5 ARC-50 Utility board S/N 288
+6 ARC-22 Timing board S/N 827
+
+Also
+PCI: PCI Interface Board Rev 5D 3/27/06
+250MHz S/N 1022
+
+Slot1 ARC-45 Video board 
+------------------------
+ARC-45 Video Processor Board Rev 5B 7/26/01
+S/N 1071
+
+U29 labelled R5.0
+U30 labelled R5.1
+JP1 made between pins 1 and 2
+JP2 made between pins 1 and 2
+JP11 made
+DAC-A/D no jumpers made
+Switch no jumpers made
+
+Slot2 ARC-45 Video board 
+------------------------
+ARC-45 Video Processor Board Rev 5B 7/26/01
+S/N 1131
+
+U29 labelled R5.0
+U30 labelled R5.1
+JP1 made between pins 1 and 2
+JP2 made between pins 1 and 2
+JP11 made
+DAC-A/D position 0 made, 103 not made
+Switch no jumpers made
+
+Slot 4 ARC-32 IR and CCD Clock Driver Board
+-------------------------------------------
+ARC-32 IR and CCD Clock Driver Board Rev 6A 6/6/2006
+S/N 153
+Rails 13v
+Rise time 20ns
+J4 empty
+
+    DAC
+JP1 empty 0
+JP2 made  1 
+JP3 empty 2
+Jp4 empty 3
+
+    SW
+JP5 made  0
+JP6 empty 1
+JP7 ampty 2
+
+DAC_REF
+
+JP9 H made (high-middle, middle-ground empty) G
+JP8 L made (low-middle, middle-ground empty) G
+Therefore bipolar?
+
+Slot 5 ARC-50 Utility board
+---------------------------
+ARC-50 Utility board Rev R4B 12/5/00
+S/N 288
+U13 labelled Gen III P0
+U19 labelled P1
+U20 labelled P2
+
+Analogue input jumpers
+
+ . . . . . .
+   |   |      
+ . . . . . .
+ |   |   | |   
+ . . . . . .
+
+ J J J J J J
+ P P P P P P
+ 1 2 3 4 5 6
+
+NB JP4 different from default in docs
+
+JP9 made 
+JP10 clear
+
+JP11 .
+     |
+     .
+      
+     .
+
+i.e. Watchdog timer disabled - different to default in docs
+
+JP7 and JP8 soldered
+
+JP7 . ._.   JP8 . ._.
+
+Slot6 ARC-22 Timing board
+-------------------------
+
+ARC22 Timing Board R5D 7/10/02
+S/N 827 (on back)
+U3 labelled R5.2
+U16 labelled R5.4
+U37 labelled R5.4
+
+RCV no jumpers
+XMIT no jumpers
+ONCE clear
+JP2 clear
+JP1 ._. .
+
+Power Control Board
+-------------------
+
+This is an ARC-73 Power Control Board, Rev .8A 8/14/06.
+

@@ -1,0 +1,30 @@
+
+Subject:
+Re: IOO Wiring update
+From:
+Rob Barnsley <R.M.Barnsley@LJMU.ac.uk>
+Date:
+11/11/2013 10:45 AM
+To:
+Chris Mottram <C.Mottram@ljmu.ac.uk>
+
+Thanks Chris. Have added these.
+
+rob
+
+On 10/11/13 09:52, Chris Mottram wrote:
+> Hi Rob, I've finished wiring up the Controller side MIL-61 connector. Here are a few updates for your spreadsheet, I can't edit myself in PDF form.
+>
+> b Reset Gate (e) DB37 (Clocks) Pin 1 Colour is actually Brown
+> HH Register Clock Phase 1 (E) DB37 (Clocks) Pin 2 Colour is actually Yellow.
+> GG Reset Gate (F)  DB37 (Clocks) Pin 1 Colour is actually Red.
+> G Register Clock Phase 1 (G) DB37 (Clocks) Pin 5 Colour is actually White.
+> F Register Clock Phase 2 (G) DB37 (Clocks) Pin 6 Colour is actually Black.
+> g Reset Gate (H) DB37 (Clocks) Pin 1 Colour is actually Brown
+>
+> JJ,w,D,PP all have labelled coax attached, not terminated with a DB15 at the moment.
+>
+> cheers
+>
+> Chris
+

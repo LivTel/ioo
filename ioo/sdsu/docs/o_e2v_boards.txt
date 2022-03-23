@@ -1,0 +1,105 @@
+IO:O boards
+-----------
+
+These are the boards we ordered to make a replacement CCD system to drive by an E2V chip.
+There are also recycled boards/chassis from DillCam and SupIRCam.
+
+Chassis
+-------
+
+Recycled from FTN Dillcam: S/N 222
+
+Power Control Board: S/N 271
+R6C 5/1/98
+
+boards labelled 1-6 in chassis, looking from rear right to left.
+
+Slot A01 : ARC-45 Video Board S/N 1299
+Slot A02 : ARC-45 Video Board S/N 1250
+Slot A03 : empty
+Slot A04 : ARC-32 Clock Driver Board S/N 376
+Slot A05 : ARC-50 Utility Board S/N 281
+Slot A06 : ARC-22 Timing Board S/N 529
+
+ARC-45 Video board 
+------------------
+Astronomical Research Cameras, ARC-45 Video Board, Rev. 5B 7/26/01
+S/N 1299
+U29 = R5.0
+U30 = R5.1
+JP1 made between pins 1 and 2
+JP2 made between pins 1 and 2
+JP11 made
+DAC-A/D no jumpers made
+Switch no jumpers made
+
+ARC-45 Video board 
+------------------
+Astronomical Research Cameras, ARC-45 Video Board, Rev. 5B 7/26/01
+S/N 1250
+U29 = R5.0
+U30 = R5.1
+JP1 made between pins 1 and 2
+JP2 made between pins 1 and 2
+JP11 made
+DAC-A/D supplied no jumpers made, added jumper: DAC A/D jumper 0 made
+Switch no jumpers made
+
+ARC-32 Clock Driver Board
+-------------------------
+ARC-32 Clock Driver Board Rev. 6a 6/6/2006
+S/N 376
+Rails 13v
+Rise Time 20m (perhaps n?)
+U1 = R6.1
+DAC_REF
+JP9 H made G not made
+JP8 L made G not made
+ DAC
+JP2 made, JP1, JP3 JP4 not made
+SW0 / JP5 made
+SW1 / JP6 not made
+SW2 / JP7 not made
+ISR / J4, no links made
+
+ARC-50 Utility Board 
+--------------------
+S/N 281
+R4B 12/5/00
+Ex FTS Dillcam
+
+  . . . . . . 
+    |         
+  . . . . . . 
+  |   | | | |
+  . . . . . . 
+
+JP1 2 3 4 5 6
+N.B differs from Fairchild setup: JP4 was in the 'upper' position.
+This affects AIN6 input, which we are not using, so the SDSU default (as above) was retained.
+
+JP7 . ._. soldered
+JP8 . ._. soldered
+
+JP9 made
+JP10 empty
+JP11 .
+     |
+     .
+     
+     .
+
+
+ARC-22 Timing Board 
+-------------------
+S/N 529
+R5D 7/10/02
+Ex. SupIRCam
+U3 R5.2
+U16 R5.3
+U37 R5.3
+RCV No jumpers
+XMIT no jumpers
+JP2 clear
+JP1 ._. .
+

@@ -1,0 +1,48 @@
+~dev/src/o/sdsu/util/utilappl.asm
+---------------------------------
+
+T_COEFF	DC	$001000	; Coefficient for difference in temperatures: originally $010000
+$001000 = 4096
+$010000 = 65535
+$000400 = 1024
+$002000 = 8192
+
+1ms loop
+
+; Control the CCD Temperature
+; The algorithmn assumes a reverse biased diode whose A/D count A_CCDT 
+;   is proportional to temperature. Don't start controlling temperature 
+;   until it falls below target temperature. 
+	MOVE    Y:<T_CCDT,X0	; Get lower CCD temperature limit
+	MOVE    Y:<A_CCDT,A	; Get actual CCD temperature
+	SUB	X0,A
+	MOVE	A1,X0
+	MOVE	Y:<T_COEFF,X1	
+	MPY	X0,X1,A		; A = (actual - target) * T_COEFF
+	MOVE	Y:<DAC0,X1	; A positive -> actual > target ->
+	MOVE	Y:<DAC0_LS,X0	;   too cold -> add more heat
+	ADD	X,A		; Add both least and most significant
+				;   words (X0 and X1) to accumulator A
+	MOVE	Y:<CC00,X0	; Heats greater than this are not allowed
+	CMP	X0,A
+	JLT	<TST_LOW
+	MOVE	X0,A		; Make it the maximum heat
+	JMP	<WR_DAC
+TST_LOW	TST	A		; Heats of less than zero are not allowed
+	JGT	<WR_DAC
+	MOVE	X:<ZERO,A	; No heat
+WR_DAC	MOVEP	A1,Y:WR_DAC0	; Update DAC and record of it
+	MOVE	A1,Y:<DAC0
+	MOVE	A0,Y:<DAC0_LS
+	RTS			; Return from subroutine SERVICE call
+
+CC00	DC	$C00	; = 3072 Maximum heater voltage so the board doesn't burn up
+; A = (actual - target) * T_COEFF
+; A positive -> actual > target -> too cold -> add more heat
+; as actual and target are for a reverse biases temperature sensor
+; i.e actual and target ADUs are inversely proportional to the temperature
+A = (actual - target) * T_COEFF
+if A > CC00
+   A = CC00
+if A < 0
+   A = 0

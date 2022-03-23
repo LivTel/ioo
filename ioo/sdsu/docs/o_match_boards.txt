@@ -1,0 +1,82 @@
+PCI Card (ARC-64)
+--------
+IO:O PCI Interface Board Rev 5D 3/27/06 250MHz S/N 1022
+vs
+PCI Card ARC Rev 5B 5/4/04 S/N 626. More research needed, is this 50MHz or 250MHz? Looks like it's 250MHz
+
+Revision details in ~dev/src/o/sdsu/docs/ARC64_UsersManual.pdf
+Rev 5C:  PAL changed from Cypress to Altera due to part difficulties. Also reliability enhancement.
+Rev 5D: Empty flag of each receiving FIFO separately connected to the DSP.
+
+Chassis/Power control board
+---------------------------
+img_3776.jpg IO:O ARC-73 Power Control Board, Rev .8A 8/14/06.
+vs
+img_7309.jpg SupIRCam Power Control Board R6C 5/1/98 S/N 328
+vs
+DillCamS Power Control Board R7B 7/9/02 S/N 456.
+vs
+DillCAMN Power Control Board R6C 5/1/98 S/N 271.
+
+DillCAMS is newest, but has chassis in worst condition.
+
+Timing board
+------------
+img_7310.jpg SupIRCam ARC-22 Timing Board R5D 7/10/92 S/N 529. Chips have labels: R5.2/R5.3/R5.3.
+vs.
+img_3766.jpg IO:O ARC22 Timing Board R5D 7/10/02
+S/N 827 (on back)
+U3 labelled R5.2
+U16 labelled R5.4
+U37 labelled R5.4
+
+U16/U37 are older.
+ARC22_UsersManual.pdf: Modified U16 required for second FO transmitter. U3/U37 not mentioned in docs.
+
+Utility Board
+-------------
+img_3770.jpg IO:O ARC-50 Utility board Rev R4B 12/5/00 S/N 288
+* U13 labelled Gen III P0
+* U19 labelled P1
+* U20 labelled P2 
+vs
+FIS DillCam Slot 2 Utility Board ARC-50 Rev4B 12/5/00 S/N 281
+PALS unmarked.
+vs
+FTN DillCam Slot 1 SDSU Astronomy Dept CCDUTL Rev4A? 12/12/95 S/N 214
+
+~dev/src/o/sdsu/docs/ARC50_UsersManual.pdf:
+U13/U19/U20 are program ROMS. P2 goes on about jumper settings etc.
+Compare utilboot.asm for DillCams (RATCam) and IO:O, and burn new ROMS if they differ?
+
+Clock driver board
+------------------
+
+img_3772.jpg IO:O ARC-32 IR and CCD Clock Driver Board Rev 6A 6/6/2006 S/N 153
+    * Rails 13v
+    * Rise time 20ns 
+vs
+img_7305.jpg FTS DillCam SDSU Astronomy CCD Clock Driver Boards Rev 4A 9/19/97. S/N 462.
+vs
+FTN DillCam SDSU AStronomy CCD Clock Driver Board Rev4A 9/19/97 S/N 237
+vs
+img_7311.jpg SupIRCam SDSU/IRL Infrared Clock Driver Board Rev3B 1/2/97 S/N 355
+
+The spares look significantly different to the new card.
+
+Video boards
+------------
+
+img_3774.jpg IO:O ARC-45 Video Processor Board Rev 5B 7/26/01 S/N 1131
+img_3775.jpg IO:O ARC-45 Video Processor Board Rev 5B 7/26/01 S/N 1071
+# U29 labelled R5.0
+# U30 labelled R5.1 
+vs
+img_7306.jpg FTS DillCam CCD Video Processor Board Rev3B 7/3/97
+Older and different video connector
+vs
+img_7312.jpg SupIRCam SDSU IRL Video Processing Board Rev4C 4/18/97 S/N 183?
+SupIRCam SDSU IRL Video Processing Board Rev4C? 4/18/97 S/N 182
+Closer, but still different connectors.
+These look idential to ARC-42 - Dual Readout Infrared Video Board, as shown on: 
+http://www.astro-cam.com/arcpage.php?txt=products.php&cat=Video%20Processor%20Boards
