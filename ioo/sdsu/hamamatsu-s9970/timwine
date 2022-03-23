@@ -1,0 +1,60 @@
+#!/bin/sh
+#
+	echo ""
+	echo "Assembling DSP code for the Hamamatsu S9970 CCD"
+	echo ""
+#
+# DOWNLOAD selects application code to be loaded from EEPROM or 
+#   downloaded from the host over the fiber optic link
+#
+# DOWNLOAD = HOST or ROM
+# $Header: /space/home/eng/cjm/cvs/ioo/sdsu/hamamatsu-s9970/timwine,v 1.1 2022-03-23 15:12:58 cjm Exp $
+
+DOWNLOAD=HOST
+WAVEFORM_FILE=hamamatsu-s9970.waveforms
+DST_FILE=tim
+
+alias asm56300='wine /home/dev/sdsu/astro-cam/DSP/CLAS563/BIN/ASM56300.EXE'
+alias dsplnk='wine /home/dev/sdsu/astro-cam/DSP/CLAS563/BIN/DSPLNK.EXE'
+alias cldlod='wine /home/dev/sdsu/astro-cam/DSP/CLAS563/BIN/CLDLOD.EXE'
+
+asm56300 -b -ltim.ls -d DOWNLOAD $DOWNLOAD -d WAVEFORM_FILE "$WAVEFORM_FILE" tim.asm
+status=$?
+if [ "${status}" != 0 ]; then
+    echo "asm56300 failed."
+    exit 1
+fi
+dsplnk -btim.cld -v tim.cln 
+status=$?
+if [ "${status}" != 0 ]; then
+    echo "dsplnk failed."
+    exit 1
+fi
+rm -f "$DST_FILE".lod
+cldlod tim.cld > "$DST_FILE".lod
+status=$?
+if [ "${status}" != 0 ]; then
+    echo "cldlod failed."
+    exit 1
+fi
+rm tim.cln ; rm tim.cld
+
+if [ "$DOWNLOAD" = "HOST" ] ; then
+	echo ""
+	echo "Created file 'tim.lod' for downloading over optical fiber"
+	echo ""
+fi
+
+if [ "$DOWNLOAD" = "ROM" ] ; then
+	echo ""
+	echo "Created Motorola S-record file 'tim.s' for EEPROM burning"
+	echo ""
+	srec -bs tim.lod
+	rm tim.lod 
+fi
+# convert dos lod to unix
+dos2unix tim.lod
+
+#
+# $Log: not supported by cvs2svn $
+#

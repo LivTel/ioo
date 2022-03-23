@@ -1,0 +1,38 @@
+#!/bin/sh
+#
+	echo ""
+	echo "Assembling DSP code for a Hamamatsu S9970 CCD"
+	echo ""
+#
+# DOWNLOAD selects application code to be loaded from EEPROM or 
+#   downloaded from the host over the fiber optic link
+#
+# DOWNLOAD = HOST or ROM
+# $Header: /space/home/eng/cjm/cvs/ioo/sdsu/hamamatsu-s9970/tim,v 1.1 2022-03-23 15:13:01 cjm Exp $
+
+DOWNLOAD=HOST
+WAVEFORM_FILE=hamamatsu-s9970.waveforms
+DST_FILE=tim
+
+asm56300 -b -ltim.ls -d DOWNLOAD $DOWNLOAD -d WAVEFORM_FILE "$WAVEFORM_FILE" tim.asm
+dsplnk -btim.cld -v tim.cln 
+rm -f "$DST_FILE".lod
+cldlod tim.cld > "$DST_FILE".lod
+rm tim.cln ; rm tim.cld
+
+if [ "$DOWNLOAD" = "HOST" ] ; then
+	echo ""
+	echo "Created file 'tim.lod' for downloading over optical fiber"
+	echo ""
+fi
+
+if [ "$DOWNLOAD" = "ROM" ] ; then
+	echo ""
+	echo "Created Motorola S-record file 'tim.s' for EEPROM burning"
+	echo ""
+	srec -bs tim.lod
+	rm tim.lod 
+fi
+#
+# $Log: not supported by cvs2svn $
+#

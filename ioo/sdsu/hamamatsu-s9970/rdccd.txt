@@ -1,0 +1,38 @@
+tim.asm
+
+RDCCD
+-----
+
+Full Image:
+Y:<NP_SKIP = 0
+Y:<NS_SKP1 = #PRESKIP
+Y:<NS_SKP2 = 0
+Y:<NR_BIAS = 0
+Y:<NS_READ = Y:<NSR = 532
+Y:<NP_READ = Y:<NPR = 64
+
+hamamatsu-s9970.waveforms
+PRESKIP EQU     45      ; 50 on CCD - 5 to warm up the video processor
+
+loop over NP_SKIP
+	loop over NPBIN
+		clock <PARALLEL_CLEAR
+loop over Y:<NP_READ (to LPR)
+     loop over NPBIN
+	  clock PARALLEL
+check command
+check abort exp
+loop over NS_SKP1
+     clock SERIAL_SKIP
+loop over #PRESCAN (=8)
+    clock PXL_TBL, but SXMIT = $74 - no pixels transmitted?
+loop over Y:<NS_READ-3 (3 video processor pixels)
+     clock PXL_TBL
+loop over Y:<NS_SKP2 (= 0)
+     ...
+loop over Y:<NR_BIAS (= 0)
+     ...
+loop over 3
+     clock PXL_TBL (for video processing pixels above)
+
+

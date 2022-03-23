@@ -1,0 +1,81 @@
+hamamatsu-s9970.waveforms
+-------------------------
+
+; Switch state bit definitions for the bottom half of ARC32 clock driver board
+; Fast clocks, CLK2
+RG	EQU	1	; reset gate 			, SDSU Pin #1, chip pin #1
+P1H	EQU	2	; horizontal register clock #1  , SDSU Pin #2, chip pin #10
+P2H	EQU	4	; horizontal register clock #2, also SG  , SDSU Pin #3, chip pin #9, SG on chip pin #6
+; SG same as P2H
+
+; Bit definitions for top half of clock driver board, CLK3
+; Slow Clocks, CLK3
+P1V	EQU	1	; vertical register clock #1    , SDSU Pin #13, chip pin #15
+P2V	EQU	2	; vertical register clock #2    , SDSU Pin #14, chip pin #14 and TG chip pin #16
+; TGV  ; Vertical transfer gate (TG in spec sheet) same as P2V
+
+; Initialization of clock driver and video processor DACs and switches
+; Fast Clocks:	RG SDSU pin #1 + P1H SDSU pin 2 + P2H SDSU pin #3
+; Slow Clocks:  P1V SDSU pin #13 + P2V SDSU Pin #14
+; ARC-32
+DACS	DC	END_DACS-DACS-1
+	DC	CLKV+$0A0080					; DAC = unbuffered mode
+	DC	CLKV+$000100+@CVI((RG_HI+Vmax)/(2*Vmax)*255)	; Pin #1, Reset Gate
+	DC	CLKV+$000200+@CVI((RG_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$000400+@CVI((H_HI+Vmax)/(2*Vmax)*255)	; Pin #2, P1H
+	DC	CLKV+$000800+@CVI((H_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$002000+@CVI((H_HI+Vmax)/(2*Vmax)*255)	; Pin #3, P2H
+	DC	CLKV+$004000+@CVI((H_LO+Vmax)/(2*Vmax)*255)
+
+; Pin #4, Unused
+; Pin #5, Unused
+; Pin #6, Unused
+; Pin #7, Unused
+; Pin #8, Unused
+; Pin #9, Unused
+; Pin #10, Unused
+; Pin #11, Unused
+; Pin #12, Unused
+
+	DC	CLKV+$060100+@CVI((P_HI+Vmax)/(2*Vmax)*255)	; Pin #13, P1V
+	DC	CLKV+$060200+@CVI((P_LO+Vmax)/(2*Vmax)*255)
+	DC	CLKV+$060400+@CVI((P_HI+Vmax)/(2*Vmax)*255)	; Pin #14, P2V
+	DC	CLKV+$060800+@CVI((P_LO+Vmax)/(2*Vmax)*255)
+
+; Pin #15, Unused
+; Pin #16, Unused
+; Pin #17, Unused
+; Pin #18, Unused
+; Pin #19, Unused
+; Pin #33, Unused
+; Pin #34, Unused
+; Pin #35, Unused
+; Pin #36, Unused
+; Pin #37, Unused
+
+; Output and reset drain DC bias voltages
+	DC	DC0+$0d0000+@CVI((VOD-7.50)/22.5*4095)	; VOD DB25 pin #1 board #0, chip pin #4
+
+	DC	DC0+$0c0000+@CVI((VRD-5.00)/15.0*4095)	; VRD DB25 pin #3 board #0, chip pin #2
+
+; Output gate, anti-blooming gate and substrate voltages
+	DC	DC0+$0e0000+@CVI((VOG+10.0)/20.0*4095)	; VOG DB25 pin # 9 board #0, chip pin #5
+	DC	DC0+$0e4000+@CVI((VSS+10.0)/20.0*4095)	; VSS DB25 pin #10 board #0, chip pin #20
+
+
+; CCD clock voltages
+RG_HI	EQU	 4.0	; Reset Gate High
+RG_LO	EQU     -8.0	; Reset Gate Low
+H_HI	EQU	 4.0	; Horizontal Register Clock High
+H_LO	EQU	-8.0	; Horizontal Register Clock Low
+
+P_HI	EQU	 4.0	; Parallel Clocks High
+P_LO	EQU     -8.0	; Parallel Clocks Low
+Vmax	EQU    +13.0	; Maximum clock driver voltage (see ARC-32 clock driver board docs)
+ZERO	EQU	 0.0	; Unused pins
+
+tim.asm:
+We are using A/D 0
+; Transmit A/D = 0
+SXMIT			DC 	$00F000
+

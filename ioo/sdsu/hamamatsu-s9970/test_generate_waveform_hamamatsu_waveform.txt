@@ -1,0 +1,10 @@
+Waveform Index 1, Value 0xf000:Board=15:Delay 0 nsec:SXMIT 0 to 0
+Waveform Index 2, Value 0xc2005:Board=2:Delay 480 nsec:clk2:RG,0000,P2H,0000,0000,0000,0000,0000,0000,0000,0000,0000,
+Waveform Index 3, Value 0x902004:Board=2:Delay 10240 nsec:clk2:0000,0000,P2H,0000,0000,0000,0000,0000,0000,0000,0000,0000,
+Waveform Index 4, Value 0x17:Board=0:Delay 0 nsec:video value 23:0010111:Amplifier non-inverting:
+Waveform Index 5, Value 0x60007:Board=0:Delay 240 nsec:video value 7:0000111:Amplifier non-inverting:Integrate:
+Waveform Index 6, Value 0x1b:Board=0:Delay 0 nsec:video value 27:0011011:Amplifier inverting:
+Waveform Index 7, Value 0x902002:Board=2:Delay 10240 nsec:clk2:0000,P1H,0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,
+Waveform Index 8, Value 0x6000b:Board=0:Delay 240 nsec:video value 11:0001011:Amplifier inverting:Integrate:
+Waveform Index 9, Value 0x1b:Board=0:Delay 0 nsec:video value 27:0011011:Amplifier inverting:
+Waveform Index 10, Value 0x74:Board=0:Delay 0 nsec:video value 116:1110100:Reset the integrator:Dcc clamp (clamp video signal to ground):Amplifier non-inverting:Start A/D sample hold:Transfer A/D output to latch:
