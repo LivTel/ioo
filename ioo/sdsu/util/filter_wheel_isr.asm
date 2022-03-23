@@ -1,13 +1,13 @@
 ; filter_wheel_isr.asm
        COMMENT * 
-	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/util/filter_wheel_isr.asm,v 1.5 2011-12-01 12:08:24 cjm Exp $
+	$Header: /space/home/eng/cjm/cvs/ioo/sdsu/util/filter_wheel_isr.asm,v 1.6 2022-03-23 15:29:11 cjm Exp $
 	This include file is called from the 0.8ms SERVICE routine.
 	It evaluates the digital inputs DIG_IN, and may set digital outputs DIG_OUT.
 	It runs only if we are currently doing a filter wheel operation.
 	This source file should be included in utilappl.asm, near "UPD_DIG". Ideally, it should
 	come after the digital inputs are moved from RD_DIG to DIG_IN, but before
 	the outputs are moved from DIG_OUT to WR_DIG.
-	Version: $Revision: 1.5 $
+	Version: $Revision: 1.6 $
 	Author: $Author: cjm $
 	*
 
@@ -149,7 +149,7 @@ FW_ISR_LOCATORS_IN
 ; if locator 1 not in goto FW_ISR_LOCATOR_NOT_IN
 	JSET	#DIG_IN_BIT_LOCATOR_1_IN,Y:<DIG_IN,FW_ISR_LOCATOR_NOT_IN
 ; if locator 2 not in goto FW_ISR_LOCATOR_NOT_IN
-	JSET	#DIG_IN_BIT_LOCATOR_2_IN,Y:<DIG_IN,FW_ISR_LOCATOR_NOT_IN 
+	JSET	#DIG_IN_BIT_LOCATOR_2_IN,Y:<DIG_IN,FW_ISR_LOCATOR_NOT_IN
 ; if locator 3 not in goto FW_ISR_LOCATOR_NOT_IN
 	JSET	#DIG_IN_BIT_LOCATOR_3_IN,Y:<DIG_IN,FW_ISR_LOCATOR_NOT_IN 
 ; all three locators are in at this point, check we are in the right position
@@ -236,6 +236,9 @@ FW_ISR_END
 
        COMMENT * 
 	$Log: not supported by cvs2svn $
+	Revision 1.5  2011/12/01 12:08:24  cjm
+	Fixed comment.
+
 	Revision 1.4  2011/08/18 16:43:34  cjm
 	First working version of proximity counting software.
 
