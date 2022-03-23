@@ -1,0 +1,16 @@
+bif486.waveforms
+----------------
+
+VIDEO	EQU	$000000		; Video processor board switches
+CLK2	EQU	$002000		; Clock driver board lower half
+CLK3	EQU	$003000		; Clock driver board lower half
+DC0	EQU	$000000         ; Video board DC bias supply DAC voltage address 
+DC1	EQU	$100000
+CLKV	EQU	$200000	        ; Clock driver board DAC voltage selection address 
+
+
+SGN:
+
+$0C3C00 || $77/$BB/$DD/$EE + bit 8 set if fast
+
+$100000

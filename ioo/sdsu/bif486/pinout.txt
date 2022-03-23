@@ -1,0 +1,48 @@
+Waveform tables for Fairchild 486 4k x 4k CCD back-side CCD with the ARC 
+	four readout camera head board. 
+
+The quadrants are defined as follows - 
+
+0	Lower Left			3	2
+1	Lower right
+2	Upper right			0	1
+3	Upper Left
+
+; The serial clocks are mostly on the lower bank, CLK2
+RG	EQU	1	; Reset Gate			ARC-32 pin #1
+H1L	EQU	2	; Horizontal clock, left	ARC-32 pin #2
+H2L	EQU	4	; 				ARC-32 pin #3
+H3	EQU	8	; 				ARC-32 pin #4
+H1R	EQU	$10	; Horizontal clock, right	ARC-32 pin #5
+H2R	EQU	$20	; 				ARC-32 pin #6
+SW	EQU	$40	; Summing Well			ARC-32 pin #7
+; Where is TG (horizontal)? Not quite the same as SW
+; Not shown on spec sheet timing diagram however. 
+
+; The parallel clocks are all on the upper bank, CLK3
+V1U	EQU	1	; Vertical clock, upper		ARC-32 pin #13
+V2U	EQU	2	; 				ARC-32 pin #14
+V3U	EQU	4	; 				ARC-32 pin #15
+V1L	EQU	8	; Vertical clock, lower		ARC-32 pin #16
+V2L	EQU	$10	; 				ARC-32 pin #17
+V3L	EQU	$20	; 				ARC-32 pin #18
+; TG  = VTG on spec sheet
+TG	EQU	$40	; Transfer Gate			ARC-32 pin #19
+
+; Output drain DC bias voltages
+	DC	DC0+$0d0000+@CVI((VOD-7.5)/22.5*4095)	; Vod #0 = LL, ARC-45 #0, DB25 pin #1
+	DC	DC0+$0d4000+@CVI((VOD-7.5)/22.5*4095)	; Vod #1 = LR, ARC-45 #0, DB25 pin #2
+	DC	DC1+$0d0000+@CVI((VOD-7.5)/22.5*4095)	; Vod #2 = UR, ARC-45 #1, DB25 pin #1
+	DC	DC1+$0d4000+@CVI((VOD-7.5)/22.5*4095)	; Vod #3 = UL, ARC-45 #1, DB25 pin #2
+
+; Reset drain DC bias voltages
+	DC	DC0+$0c0000+@CVI((VRD-5.0)/15.0*4095)	; Vrd #0 = LL, ARC-45 #0, DB25 pin #3
+	DC	DC0+$0c4000+@CVI((VRD-5.0)/15.0*4095)	; Vrd #1 = LR, ARC-45 #0, DB25 pin #4
+	DC	DC1+$0c0000+@CVI((VRD-5.0)/15.0*4095)	; Vrd #2 = UR, ARC-45 #1, DB25 pin #3
+	DC	DC1+$0c4000+@CVI((VRD-5.0)/15.0*4095)	; Vrd #3 = LR, ARC-45 #1, DB25 pin #4
+
+; Output gate DC bias voltages
+	DC	DC0+$0e0000+@CVI((VOG+10.0)/20.0*4095) 	; Vog #0 = LL, ARC-45 #0, DB25 pin #9
+	DC	DC0+$0e4000+@CVI((VOG+10.0)/20.0*4095) 	; Vog #1 = LR, ARC-45 #0, DB25 pin #10
+	DC	DC1+$0e0000+@CVI((VOG+10.0)/20.0*4095) 	; Vog #2 = UR, ARC-45 #1, DB25 pin #9
+	DC	DC1+$0e4000+@CVI((VOG+10.0)/20.0*4095) 	; Vog #3 = UL, ARC-45 #1, DB25 pin #10

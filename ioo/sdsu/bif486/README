@@ -1,0 +1,439 @@
+Back Illuminated Fairchild 486 DSP code.
+
+This will be developed by combining Bob Leaches FIF486.tar.gz (Front Illuminated Fairchild 486)
+with the newest set of standard timing board code in E2V230.tar.gz   (E2V 4K device).
+
+fif486:
+tim.asm  timboot.asm  timCCDmisc.asm  timhdr.asm  timrom.asm
+
+e2v230:
+tim.asm timboot.asm timCCDmisc.asm
+
+timboot.asm is used for rom generation only - not for downloadable code.
+
+timrom.asm is a wrapper that includes timhdr.asm followed by timhdr.asm to make timrom for ROM loading.
+
+e2v230 timboot.asm contains most of fif486's timhdr.asm at the start.
+
+However fif486 tim.asm includes timboot.asm (also timhdr.asm,timCCDmisc.asm,WAVEFORM_FILE).
+e2v230 tim.asm includes timboot.asm (implicity including it's timhdr). (Also timCCDmisc.asm,WAVEFORM_FILE).
+
+fif486 and e2v230 tim.asm are faily similar, the main difference being RDCCD/ IDLE clocking.
+
+timCCDmisc.asm
+---------------
+
+POWER_OFF - same
+POWER_ON - same, but e2v230 has extra call to SEL_OS and sets some STATUS bits
+STATUS=#$1064 (set bits 2/5/6/12)=IDLMODE/SPLIT_S/SPLIT_P/ST_DITH (dither during exposure!)
+PON - same
+SET_BIASES - same
+SET_BIAS_VOLTAGES - same
+CLR_SWS - same
+CLEAR_SWITCHES - same
+SET_SHUTTER_STATE - e2v230 only
+fif486 OSHUT = e2v230 OPEN_SHUTTER - similar functionality, OPEN_SHUTTER uses SET_SHUTTER_STATE
+       looks like X:LATCH has more info in it(SET_SHUTTER_STATE).
+fif486 CSHUT = e2v230 CLOSE_SHUTTER - similar functionality, CLOSE_SHUTTER uses SET_SHUTTER_STATE
+fif486 OPEN_SHUTTER - calls OSHUT as JSR
+fif486 CLOSE_SHUTTER - calls CSHUT as JSR
+
+Effectively OPEN_SHUTTER and CLOSE_SHUTTER are the same in e2v230 and fif486 code.
+e2v230 uses an extra subroutine SET_SHUTTER_STATE.
+
+e2v230 OSHUT - same as fif486 but calls SET_SHUTTER_STATE
+e2v230 CSHUT - same as fif486 but calls SET_SHUTTER_STATE
+CLEAR - same 
+CLR_CCD - fif486 NPCLR = e2v230 NP_CLR
+	fif486 PARALLEL_CLEAR = e2v230 PARALLEL_CLEAR_SPLIT
+	fif486 CLOCK is a JSR  - e2v230 CLOCK is a macro (tim.asm?)
+	e2v230 has extra bit after JCC LPCLR1, sets IDL_ADR to LPCLR1 and then JMPs to PRC_RCV (precess received command?)
+	fif486 does a loop NSCLR on SERIAL_CLEAR to clear serial shift register
+EXPOSE - different! e2v230 loadds 0 into counter timer X:TLR0 and zeros X:<ELAPSED_TIME
+      	Then the same for a bit. fif486 calls clock on SERIAL_IDLE if idle.
+START_EXPOSURE - fif486 has check for FO command at start
+	fif486 puts serial clocks in correct state (SERIALS_EXPOSE)
+	e2v230 has a call to WAIT_TO_FINISH_CLOCKING before start
+	fif486 - if ST_SYNC is set in X:<STATUS this waits for an external trigger, parrallel clocks whilst doing so.
+
+e2v230 ABORT_EXPOSURE is fif486 ABORT_ALL
+
+fif486 SET_DC (SDC) L430 where is e2v230 equivelent
+
+Implementation of SET_BIAS_NUMBER is different between e2v230 and fif486 - API is the same
+
+SET_SUBARRAY_SIZES: e2v230 (L579) uses NRBIAS/NSREAD/NPREAD/ and sets BSET	#ST_DIRTY,X:<STATUS
+	fif486 uses NR_BIAS/NS_READ/NP_READ
+
+SET_SUBARRAY_POSITIONS
+	e2v230 (L592) implementation different from fif486, same API though
+	sets BSET	#ST_DIRTY,X:<STATUS
+
+e2v230 has GENERATE_WAVEFORM (GWF) , fif486 goes not.
+
+e2v230 SELECT_OUTPUT_SOURCE (L684) = fif486 SEL_OS (L622)
+
+e2v230 SELECT_OUTPUT_SOURCE is command, that extracts parameter into Y:<OS and calls e2v230 SEL_OS
+
+e2v230 SEL_OS and fif486 SEL_OS are quite different.
+e2v230 SEL_OS sets up waveform table.
+See waveform table address in tim.asm:
+; Waveform table addresses
+PARALLEL 		DC	PARALLEL_SPLIT
+PARALLEL_CLEAR 		DC	PARALLEL_CLEAR_SPLIT
+SERIAL_SKIP 		DC	SERIAL_SKIP_SPLIT
+FIRST_CLOCKS 		DC 	FIRST_CLOCKS_SPLIT
+CLOCK_LINE 		DC 	CLOCK_LINE_SPLIT
+SXMIT			DC 	$00F0C0
+CHARGE_DUMP 		DC 	CHARGE_DUMP_SPLIT
+INTEGRATE_SIGNAL 	DC 	INTEGRATE_SIGNAL_SPLIT
+
+These change based on SEL_OS selected.
+So perhaps CLR_CCD is wrong - should have used e2v230 version, and changed PARALLEL_CLEAR in bif486.waveforms to PARALLEL_CLEAR_SPLIT. I don't think it matters for CLR_CCD though.
+
+fif486 SEL_OS sets Y:OS ,checks it's legal, and then returns.
+
+fif486 DECLARE_WAVEFORM_TABLE_ADDRESSES is called before readout. Basically does the same thing as the second half
+of e2v230 SEL_OS.
+e2v230 PARALLEL = fif486 PARALLEL_CLOCK?
+fif486 DECLARE_WAVEFORM_TABLE_ADDRESSES does not setup Y:FIRST_CLOCKS/Y:CLOCK_LINE/Y:CHARGE_DUMP as they don't exist in
+fif486 tim.asm.
+fif486 DECLARE_WAVEFORM_TABLE_ADDRESSES calls SELECT_BINNING_SPLIT/SELECT_BINNING_LEFT/SELECT_BINNING_RIGHT at end.
+
+e2v230 __C == __E in SEL_OS
+e2v230 PARALLEL_DOWN == fif486 PARALLEL_LOWER (__C)
+SERIAL_SKIP_LEFT is the same in  e2v230/fif486
+e2v230 __D == __F
+e2v230 __B == __G
+e2v230 PARALLEL_UP == PARALLEL_UPPER
+
+e2v230 SET_PIXEL_TIME (L798) fif486 SET_PIXEL_TIM (L784)
+command is SPT (also SMP fif486)
+
+e2v230 INTEGRATE_RESET == fif486 I_RST1 (234567)?
+e2v230 INTEGRATE_SIGNAL_LEFT/INTEGRATE_SIGNAL_RIGHT/INTEGRATE_SIGNAL_SPLIT == I_SIG1 (234567)?
+cp ../e2v230/timCCDmisc.asm .
+e2v230 SET_PIXEL_TIME also does:BSET	#ST_DIRTY,X:<STATUS	; Readout parameters have been changed
+
+cp e2v230/timboot.asm timboot.asm 
+
+fif486 has SET_TRIGGER_MODE/NO_TRIGGER (STM command) - not present in e2v230.
+
+timboot.asm 
+-----------
+
+L44:ESSI Flags
+RDF	EQU	7		; Set when receiver is full of data
+not present in fif486/timhdr.asm
+
+L60: Port C is Enhanced Synchronous Serial Port 0 = ESSI0
+RX0	EQU	$FFFFB8		; Receive data register
+not present in fif486/timhdr.asm
+
+L82: Timer module addresses
+TRM	EQU	9		; Set to enable the timer preloading
+not present in fif486/timhdr.asm
+
+L117: Software status bits, defined at X:<STATUS = X:0
+ST_RCV	EQU	0	; Set to indicate word is from SCI = utility board
+not present in fif486/timhdr.asm
+
+L129-L131: Software status bits, defined at X:<STATUS = X:0
+ST_CNRD	EQU	14	; Set if in continous readout mode
+ST_DIRTY EQU	15	; Set if waveform tables need to be updated
+ST_SA	EQU	16	; Set if in subarray readout mode
+not present in fif486/timhdr.asm
+
+L134: Address for the table containing the incoming SCI words
+SCI_TABLE	EQU	$400
+not present in fif486/timhdr.asm
+
+L142: Large comment detailing controller configuration bits of the X:STATUS word
+More values for Video Processor compared to comment in fif486/timhdr.asm
+More values for Clock Driver Board compared to comment in fif486/timhdr.asm
+
+L206:
+ARC41		EQU	$000000	
+not present in fif486/timhdr.asm
+
+L209:
+ARC42		EQU	$000002	
+not present in fif486/timhdr.asm
+
+L211:
+ARC44		EQU	$000003	
+not present in fif486/timhdr.asm
+
+L213-216:
+ARC45		EQU	$000004
+ARC46		EQU	$000005		; 8-channel IR video board
+ARC48		EQU	$000006		; 8-channel CCD video board
+ARC47		EQU	$000007		; 4-channel CCD video board
+not present in fif486/timhdr.asm
+
+L218:
+ARC20		EQU	$000000	
+not present in fif486/timhdr.asm
+
+L221-L222:
+ARC22		EQU	$000010
+ARC32		EQU	$008000		; CCD & IR clock driver board
+not present in fif486/timhdr.asm
+
+L224:
+ARC50		EQU	$000020
+not present in fif486/timhdr.asm
+
+L236:
+CONT_RD		EQU	$100000		; Continuous readout implemented
+not present in fif486/timhdr.asm
+
+end of fif486/timhdr.asm.
+fif486/timrom.asm then loads fif486/timboot.asm
+
+L256:
+SCI_RCV exists in e2v code - NO equivalent in fif486 code.
+This is an ISR triggered to receive data from the utility board over the serial link.
+Perhaps the fif486 did not work with a utility board?
+CLR_ERR exists in e2v code - NO equivalent in fif486 code.
+Second ISR - clears SCI errors.
+
+Then a new table so the interrupts appear at P:$50.
+
+START is the same.
+
+TST_RCV is the same.
+
+PRC_RCV is different. 
+
+RD_COM in e2v230/timboot.asm is L_GET_COMMAND in fif486/timboot.asm.
+This is the end refernce for the DO loop on B = number of words in command to receive.
+fif486/timboot.asm uses GET_RCV to read each word in loop, e2v230/timboot.asm uses inline GET_WRD.
+
+More new code in e2v230/timboot.asm: checks if command for this timing board else sends to FO transmitter.
+Also transmits command to utility board over SCI port.
+
+Both timboot.asm s have a COMMAND routine.
+
+fif486/timboot.asm COMMAND starts with a 
+MOVE	#COM_BUF,R3
+followed by NOPs not present in e2v230/timboot.asm.
+
+COMMAND is roughtly the same apart from this.
+
+FINISH1 is roughtly the same, but the header is treated differently.
+e2v230/timboot.asm uses RD_COM to send the reply, whilst
+fif486/timboot.asm loops over NWORDS using XMT_WRD to send the reply.
+This is because e2v230/timboot.asm does not assume the command comes from the PCI card,
+but can also come from the utility board or another timing board?
+
+e2v230/timboot.asm then has a FO_XMT routine to send commands to the host computer (PCI card)
+	looping over NWORDS using XMT_WORD to transmit B retrieved from a stack pointed to by R3.
+
+GET_RCV on e2v230/timboot.asm uses GET_FO, RCV_STS and CHK_SCI to receive a command from the FO (PCI card)
+or from the SCI (utility board). It then carries on to do the same as fif486/timboot.asm GET_RCV.
+
+
+e2v230/timboot.asm CHK_FO is similar to fif486/timboot.asm TST1
+e2v230/timboot.asm  has extra calls to slow down RDFO access (and speed it up at the end).
+
+e2v230/timboot.asm has extra routine CHK_SCI for checking SCI (utility board).
+
+e2v230/timboot.asm XMT_WRD is similar to fif486/timboot.asm XMT_WRD, but has extra calls to Slow down RDFO access
+(and Restore RDFO access at the end).
+
+e2v230/timboot.asm has an extra line in CHK_HDR:
+MOVE	X:(R3),Y0
+This is because it checks the command or reply header in X:(R3), fif486/timboot.asm  checks Y0.
+
+CHK_HDR: Errors in e2v230/timboot.asm got to ERROR, goes to CHK_ERR in fif486/timboot.asm.
+CHK_HDR: On success in e2v230/timboot.asm  goes to PR_RCV, on success in fif486/timboot.asm
+bit #0 of SR is cleared, and RTS (it's a subroutine).
+
+CHK_ERR in fif486/timboot.asm sets bit #0 of SR, and RTS.
+
+TDL is the same.
+
+RDMEM is the same.
+
+WRMEM is the same.
+
+LDAPPL is the same.
+
+STOP_IDLE_CLOCKING is the same.
+
+STARTUP: fif486/timboot.asm has an extra weird comment. Trying to LDA/PON in STARTUP - why?
+Actual code is the same though.
+
+L629:
+INIT e2v230/timboot.asm has extra calls to clear DACS - DAC output switches
+
+L655: X:CRA0 programmed with differnt number in e2v230/timboot.asm.
+				; WL0-WL2 = 3 for 24-bit data words
+L659: X:CRB0 programmed with differnt number in e2v230/timboot.asm.
+X:PCRC/X:PRRC/X:PDRC all different.
+
+L680: e2v230/timboot.asm has  new lines to enable SSI transmitter. (Port C)
+
+e2v230/timboot.asm L693 Port D for serial transmission to the analog boards
+is the same as fif486/timboot.asm.
+
+e2v230/timboot.asm L723 SCI port programmed to communicate with utility board,
+in fif486/timboot.asm programmed to benign values.
+
+e2v230/timboot.asm L744 interrupts on SCI only (utility board)
+fif486/timboot.asm L420 no interrupts.
+
+e2v230/timboot.asm L765 reset of utility board not in fif486/timboot.asm.
+e2v230/timboot.asm L776 analog switch inputs to low not in fif486/timboot.asm.
+e2v230/timboot.asm L793 Transmit contents of accumulator A1 over SSI not in fif486/timboot.asm.
+e2v230/timboot.asm L813 setup circular SCI buffer not in fif486/timboot.asm.
+
+e2v230/timboot.asm L847 STATUS DC 4
+fif486/timboot.asm L468 STATUS DC $E4
+
+e2v230/timboot.asm L870 ELAPSED_TIME not present in fif486/timboot.asm.
+
+fif486/timboot.asm L506 has extra DC 0,0 at end of constants.
+
+e2v230/timboot.asm L887 various extra vars for saving register values:
+SAVE_SR/SAVE_X1/SAVE_A1/SAVE_R0/RCV_ERR/SCI_A1/SCI_R0
+
+END of timboot.asm
+
+
+cp ../fif486/1MHz.Good_Noise.waveforms bif486.waveforms
+
+
+tim.asm
+-------
+
+cp ../e2v230/tim.asm .
+
+RDCCD
+e2v230 RDCCD checks #ST_DIRTY in X:STATUS and calls CHANGED if binning parameters have changed.
+e2v230 RDCCD checks Y:<LAST_NSBIN against Y:<NSBIN and calls CHANGED if not equal.
+e2v230 RDCCD checks Y:<LAST_NPBIN against Y:<NPBIN and calls CHANGED if not equal.
+e2v230 RDCCD checks Y:<LAST_NSR against Y:<NSR and calls CHANGED if not equal.
+e2v230 RDCCD checks Y:<LAST_NPR against Y:<NPR and calls CHANGED if not equal.
+
+e2v230 CHANGED  set Y:<NP_SKIP/Y:<NS_SKP1/Y:<NS_SKP2/Y:<NR_BIAS to 0 if full image readout
+e2v230 CHANGED sets NS_READ = NSR and NP_READ = NPR if full image readout
+e2v230 CHANGED calls SUB_IMG if Y:<NBOXES > 0
+e2v230 SUB_IMG set Y:<NP_SKIP/Y:<NS_SKP1/Y:<NS_SKP2/Y:<NR_BIAS
+e2v230 SUB_IMG set Y:<NP_SKIP Y:<NS_SKP1 Y:<NS_SKP2
+	Y:<NS_READ = Y:<NSREAD 
+	Y:<NP_READ = Y:<NPREAD
+	Y:<NR_BIAS = Y:<NRBIAS
+e2v230 SUB_IMG end up at GO_ON
+e2v230 GO_ON calls GENERATE_SERIAL_WAVEFORM
+e2v230 then clears #ST_DIRTY in X:<STATUS
+e2v230 then halves Y:<NS_READ and Y:<NR_BIAS if #SPLIT_S set in X:STATUS.
+e2v230 then halves Y:<NP_READ if #SPLIT_P is set in X:STATUS.
+e2v230 then sets Y:<LAST_NSBIN Y:<LAST_NPBIN Y:<LAST_NSR Y:<LAST_NPR to Y:<NSBIN Y:<NPBIN Y:<NSR Y:<NPR
+e2v230 then loops over Y:<NP_SKIP x Y:<NPBIN clocking Y:<PARALLEL_CLEAR
+e2v230 Start of actual readout
+e2v230 then loops over Y:<NP_READ
+	e2v230 then loops over Y:<NPBIN
+		e2v230 then Y:<PARALLEL clocks
+	e2v230 calls GET_RCV to see if a command is received.
+	e2v230 if it was calls PRC_RCV
+	e2v230 then loops over Y:<NS_SKP1 clocking Y:<SERIAL_SKIP
+	e2v230 then loops over #PRESCAN clocking #PXL_TBL (serial processing without SXMIT)
+	e2v230 then loops over Y:<NS_READ-3 (video processor) pixels clocking #PXL_TBL
+	e2v230 then loops over Y:<NS_SKP2 clocking Y:<SERIAL_SKIP
+	e2v230 then loops over #PRESCAN clocking #PXL_TBL  (serial processing without SXMIT) to fill the video processor pipeline
+	e2v230 then loops over Y:<NR_BIAS clocking #PXL_TBL 
+	e2v230 then loops over  #3 clocking #PXL_TBL to  SXMIT the pixels left over in the pipeline: three pixels 
+LPR label - end of parallel readout
+	e2v230 L247 if #IDLMODE set in X:<STATUS, set X:<IDL_ADR = #IDLE else X:<IDL_ADR = #TST_RCV
+	e2v230 jumps to subroutine WAIT_TO_FINISH_CLOCKING
+	e2v230 clears #ST_RDC from X:<STATUS
+	e2v230 jumps to START
+
+RDCCD for fif486 is very different:
+fif486 L45 set #ST_RDC to X:<STATUS
+fif486 L46 calls PCI_READ_IMAGE subroutine
+	in e2v230 this call is made after EXPOSE in timCCDmisc.asm.
+fif486 L47 if #TST_IMG is set in X:STATUS call SYNTHETIC_IMAGE
+fif486 L48 delays until the shutter is closed.
+fif486 L59 calls DECLARE_WAVEFORM_TABLE_ADDRESSES subroutine
+fif486 if Y:<NBOXES == 0 full image readout: set Y:<NP_SKIP/Y:<NS_SKP1/Y:<NS_SKP2 to 0
+fif486 L68 if X:STATUS has #SPLIT_P set, Y:<NP_READ = Y:<NPR / 2 else Y:<NP_READ = Y:<NPR
+fif486 L72 if X:STATUS has #SPLIT_S set, Y:<NSERIALS_READ = Y:<NSR / 2 else  Y:<NSERIALS_READ = Y:<NSR
+fif486 L81 if subimage SUB_IMG
+	Sets Y:<NP_SKIP/Y:<NS_SKP1/Y:<NS_SKP2 from #READ_TABLE.
+fif486 L96 Call subroutine WAIT_TO_FINISH_CLOCKING
+fif486 Clock over Y:<NP_SKIP rows with clock Y:PARALLEL_CLOCK
+fif486 L108 Loop over Y:<NSCLR clocking #<SERIAL_CLEAR to clear accumulated charge from serial register
+fif486 L114 Start of main readout loop
+fif486 L114 Loop over Y:<NP_READ (to LPR)
+	fif486 L115 Loop over Y:<NPBIN clocking Y:PARALLEL_CLOCK
+	fif486 L121 Check for Abort, using subroutine GET_RCV and PRC_RCV
+	fif486 L136 Loop over Y:<NS_SKP1 clocking Y:<SERIAL_SKIP
+	fif486 L145 Loop over Y:<NSERIALS_READ clocking Y:<SERIAL_READ
+	fif486 L151 Loop over Y:<NS_SKP2 clockung Y:<SERIAL_SKIP (subimage readout)
+	fif486 L160 if Y:<NBOXES > 0 loop over Y:<NR_BIAS ( / 2 if #SPLIT_S set) clocking Y:<SERIAL_READ (subimage bias pixels)
+fif486 L174 end LPR (parallel loop)
+fif486 L178 if #IDLMODE set in X:<STATUS set X:<IDL_ADR = #IDLE else X:<IDL_ADR = #TST_RCV
+fif486 L184 WAIT_TO_FINISH_CLOCKING subroutine
+fif486 L185 Clear #ST_RDC in X:<STATUS
+fif486 L186 jump START
+
+fif486 contains OSH/CSH L211 not present in e2v230 - nope, moved to another part of the table.
+fif486 contains SDC SET_DC not present in e2v230.
+
+fif486 contains STM not present in e2v230. (SET_TRIGGER_MODE)
+e2v230 contains GWF GENERATE_WAVEFORM not present in fif486.
+
+e2v230 L327:
+NSR     DC      2200   	 	; Number Serial Read, set by host computer
+NPR     DC      2200	     	; Number Parallel Read, set by host computer
+
+fif486 L260:
+NSR     DC      4400   	 	; Number Serial Read, prescan + image + bias
+NPR     DC      512     	; Number Parallel Read
+
+fif486 L262:
+NSCLR	DC      NS_CLR  	; To clear the serial register
+Add as:
+NSCLR	DC      NS_CLR           ; To clear the serial register
+
+NS_CLR	DC      NSCLR           ; To clear the serial register
+changed to
+NSCLR	DC      NS_CLR           ; To clear the serial register
+
+e2v230 L337:
+NROWS	DC	40		; Number of rows in the storage region
+Not used?
+e2v230 L338:
+SBIN	DC	1		; Current serial binning number
+Not used?
+
+e2v230 L340:
+LAST_CLK 	DC	0	; Last clock before SXMIT
+Not used?
+
+Various other changes.
+
+CHARGE_DUMP_LEFT (tim.cln) ?
+CHARGE_DUMP_RIGHT (tim.cln)
+CHARGE_DUMP_SPLIT (tim.cln)
+CLOCK_LINE_LEFT (tim.cln)
+CLOCK_LINE_RIGHT (tim.cln)
+CLOCK_LINE_SPLIT (tim.cln)
+FIRST_CLOCKS_LEFT (tim.cln)
+FIRST_CLOCKS_RIGHT (tim.cln)
+FIRST_CLOCKS_SPLIT (tim.cln)
+INTEGRATE_RESET (tim.cln)
+INTEGRATE_SIGNAL_LEFT (tim.cln)
+INTEGRATE_SIGNAL_RIGHT (tim.cln)
+INTEGRATE_SIGNAL_SPLIT (tim.cln)
+PARALLEL_CLEAR_DOWN (tim.cln)
+PARALLEL_CLEAR_UP (tim.cln)
+PARALLEL_DOWN (tim.cln)
+PARALLEL_UP (tim.cln)
+PRESCAN (tim.cln)
+PRESKIP (tim.cln)
+PXL_TBL (tim.cln)
+RESET_VIDEO (tim.cln)

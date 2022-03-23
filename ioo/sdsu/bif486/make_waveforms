@@ -1,0 +1,19 @@
+#!/bin/csh
+set waveform_display_dir = "~dev/src/sdsu/waveformdisplay/"
+set input_dir = "~dev/src/o/sdsu/bif486/"
+set output_dir = "~dev/src/o/sdsu/bif486/waveforms/"
+#SERIAL_IDLE SERIAL_CLEAR SERIAL_SKIP_LEFT SERIAL_SKIP_RIGHT SERIAL_SKIP_SPLIT SERIALS_EXPOSE PARALLEL_CLEAR_SPLIT PARALLEL_LOWER PARALLEL_UPPER PARALLEL_SPLIT BIN_1_LEFT BIN_2_LEFT BIN_1_RIGHT BIN_2_RIGHT BIN_1_SPLIT BIN_2_SPLIT CLOCK_LINE_LEFT
+foreach waveform ( PARALLEL_UP PARALLEL_DOWN PARALLEL_SPLIT PARALLEL_CLEAR_UP PARALLEL_CLEAR_DOWN PARALLEL_CLEAR_SPLIT SERIAL_IDLE SERIAL_SKIP_LEFT SERIAL_SKIP_RIGHT SERIAL_SKIP_SPLIT SERIALS_EXPOSE SERIAL_CLEAR RESET_VIDEO FIRST_CLOCKS_LEFT CLOCK_LINE_LEFT CHARGE_DUMP_LEFT FIRST_CLOCKS_RIGHT CLOCK_LINE_RIGHT CHARGE_DUMP_RIGHT FIRST_CLOCKS_SPLIT CLOCK_LINE_SPLIT CHARGE_DUMP_SPLIT )
+	echo "Attempting waveform: ${waveform}"
+	set lower_waveform = `/bin/echo "${waveform}" | awk ' { print tolower($0)}'`
+	${waveform_display_dir}/waveform_display -config_file ${waveform_display_dir}/bif486.config -output_file ${output_dir}/${lower_waveform}.png -waveform_file ${input_dir}/bif486.waveforms -waveform ${waveform}
+	set waveform_display_status = $status
+	echo "Finished attempting waveform: ${waveform}"
+	if( ${waveform_display_status} != 0 ) then
+		/bin/echo "make_waveforms failed on waveform ${waveform}"
+		exit 1
+	endif
+end
+#
+# $Log: not supported by cvs2svn $
+#

@@ -1,0 +1,115 @@
+GENERATE_SERIAL_WAVEFORM
+------------------------
+Start at PXL_TBL+1 : First word is count of elements in table
+
+save current address in Y:<SXMIT_ADR
+Add Y:SXMIT to PXL_TBL
+Add FIRST_CLOCKS to PXL_TBL
+loop over Y:<NSBIN-1
+{
+	Add CLOCK_LINE to PXL_TBL
+}
+Add RESET_VIDEO to PXL_TBL
+Add Y:CHARGE_DUMP to PXL_TBL
+
+Calculate length of PXL_TBL and store at position 0
+
+Presumably all this lot replaces 
+fif486/timCCDmisc.asm
+DECLARE_WAVEFORM_TABLE_ADDRESSES sets
+if (amplifier == ALL)
+Y:SERIAL_SKIP=#SERIAL_SKIP_SPLIT
+Y:<SXMIT=#$00F0C0
+Y:PARALLEL_CLOCK=#PARALLEL_SPLIT
+etc
+
+
+
+;    xfer, A/D, integ, Pol+, Pol-, DCclamp, rst  (1 => switch open)
+; no delay
+	DC	VIDEO+$000000+%0010111		; Stop resetting integrator
+; delay=5
+I_RST1	DC	VIDEO+$050000+%0000111		; Integrate
+	DC	CLK2+$000000+00+00+H1L+000+00+000+H2R
+; delay = 1
+	DC	VIDEO+$010000+%0011011		; Stop Integrate
+; delay = 6
+I_SIG1	DC	VIDEO+$060000+%0001011
+; no delay
+	DC	VIDEO+$000000+%0011011		; Stop, A/D is sampling
+
+2 integration times , both equal (320ns)
+1st integration:
+5x40 + 1x40 = 240ns + 2x40ns instruction times (one to begin integration, one for summing well clocking instruction)
+= 320ns
+
+2nd integration:
+7x40ns + instruction time 40ns = 320ns
+
+VIDEO bits
+----------
+bit #0 rst when low reset integrator
+bit #1 Dcclamp when low clamp video input to ground
+bit #2 Pol-
+bit #3 Pol+
+therefore bit #3#2, value 01 configure amplifier non-inverting, value 10 amplifier inverting
+bit #4 integrate when low integrate on the dual slope integrator
+bit #5 A/D on a low to high transition start the A/D sample/hold and then conversion
+bit #6 xfer on a low to high transition transfer 16 bit image data from the A/D converter to a latch 
+
+
+;    xfer, A/D, integ, Pol+, Pol-, DCclamp, rst  (1 => switch open)
+BIN_1_LEFT
+	DC	END_BIN_1_LEFT-BIN_1_LEFT-1
+	DC	VIDEO+$000000+%1110100
+reset integrator, clamp video input to ground, non-inverting amplifier, don't integrate, A/D and xfer
+
+	DC	CLK2+S_DLY+00+RG+000+000+H3+000+000
+	DC	CLK2+S_DLY+SW+RG+000+H2L+H3+000+H2R
+	DC	CLK2+S_DLY+SW+00+H1L+H2L+00+H1R+H2R
+	DC	CLK2+S_DLY+SW+00+000+H2L+00+H1R+000
+SXMIT_BIN_1_LEFT
+	DC	$00F000
+transmit A/D 0, (top left?)
+	DC	VIDEO+$000000+%0010111		; Stop resetting integrator
+stop integrator reset, stop Dcclamp, non-inverting amplifier, don't integrate, no A/D, no xfer
+I_RST2	DC	VIDEO+INT_TIM+%0000111		; Integrate
+stop integrator reset, stop Dcclamp, non-inverting amplifier, integrate, no A/D, no xfer
+	DC	VIDEO+$000000+%0011011		; Stop Integrate
+stop integrator reset, stop Dcclamp, inverting amplifier, stop integrate, no A/D, no xfer
+	DC	CLK2+$020000+00+00+H1L+000+00+H1R+000
+I_SIG2	DC	VIDEO+INT_TIM+%0001011
+stop integrator reset, stop Dcclamp, inverting amplifier, integrate, no A/D, no xfer
+	DC	VIDEO+$000000+%0011011		; Stop, A/D is sampling
+stop integrator reset, stop Dcclamp, inverting amplifier, stop integrate, no A/D, no xfer
+
+
+E2V231.waveforms
+----------------
+
+CHARGE_DUMP_LEFT
+	DC	END_CHARGE_DUMP_LEFT-CHARGE_DUMP_LEFT-1
+	DC	CLK2+R_DELAY+00+R1L+000+000+000+R2R+000+00
+
+R1L     EQU     2       ; Readout Register Left, Phase 1        Pin #2
+R2R     EQU     $20     ; Readout Register Right, Phase 2       Pin #6
+
+INTEGRATE_SIGNAL_LEFT
+	DC	VIDEO+INT_TIM+%0001011		; Integrate
+no reset, no clamp video input to ground, amplifier inverting, dont' integrate, no A/D, no xfer
+	DC	VIDEO+$000000+%0011011		; Stop, A/D is sampling
+no reset, no clamp video input to ground, amplifier inverting, integrate, no A/D, no xfer
+	DC	VIDEO+%1110100	
+reset, clamp video input to ground,amplifier non-inverting, dont' integrate, A/D, xfer
+END_CHARGE_DUMP_LEFT
+
+VIDEO bits
+----------
+bit #0 rst when low reset integrator
+bit #1 Dcclamp when low clamp video input to ground
+bit #2 Pol-
+bit #3 Pol+
+therefore bit #3#2, value 01 configure amplifier non-inverting, value 10 amplifier inverting
+bit #4 integrate when low integrate on the dual slope integrator
+bit #5 A/D on a low to high transition start the A/D sample/hold and then conversion
+bit #6 xfer on a low to high transition transfer 16 bit image data from the A/D converter to a latch 

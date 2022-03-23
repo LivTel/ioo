@@ -1,0 +1,27 @@
+ From Bobs email:
+
+
+It also has something peculiar in
+the definition of the symbols for the clock driver, where H1 and H2 are
+reversed from what is expected, and so are the parallel phases I1 and I2.
+These were empirically determined, as the "right" way did not generate
+an image. I don't know if it was caused by a wiring error or incorrect
+Fairchild documentation.
+
+BIN_1_LEFT
+	DC	END_BIN_1_LEFT-BIN_1_LEFT-1
+	DC	VIDEO+$000000+%1110100
+
+	DC	CLK2+S_DLY+00+RG+000+000+H3+000+000
+	DC	CLK2+S_DLY+SW+RG+000+H2L+H3+000+H2R
+	DC	CLK2+S_DLY+SW+00+H1L+H2L+00+H1R+H2R
+	DC	CLK2+S_DLY+SW+00+000+H2L+00+H1R+000
+SXMIT_BIN_1_LEFT
+	DC	$00F000
+	DC	VIDEO+$000000+%0010111		; Stop resetting integrator
+I_RST2	DC	VIDEO+INT_TIM+%0000111		; Integrate
+	DC	VIDEO+$000000+%0011011		; Stop Integrate
+	DC	CLK2+$020000+00+00+H1L+000+00+H1R+000
+I_SIG2	DC	VIDEO+INT_TIM+%0001011
+	DC	VIDEO+$000000+%0011011		; Stop, A/D is sampling
+END_BIN_1_LEFT
