@@ -1,0 +1,26 @@
+Setup test:
+~/scripts/temperature_test_startup
+which consists of:
+cd /icc/bin/o/ccd/test/i386-linux
+./test_dsp_download -i pci -b timing -f /icc/bin/o/dsp/timbif486.lod
+./test_dsp_download -i pci -b utility -f /icc/bin/o/dsp/util.lod
+./test_analogue_power -i pci -on
+
+crontab:
+* * * * *               /icc/bin/o/ccd/test/test_temperature_control_cron
+
+cd /icc/bin/o/ccd/test/i386-linux/
+./test_temperature -i pci -set -200
+
+Get DAC0 heater ADUs (Y:2)
+./ccd_read_memory -i pci -b utility -space y -address 0x2
+
+Write DAC0 Heater ADUS manually whilst using util.lod.no_heater_servoing_for_v2adu_mapping:
+./ccd_write_memory -i pci -b utility -space y -address 0x2 -value 0x1
+
+
+Temperature coefficient Read:
+./ccd_read_memory -i pci -b utility -s y -a 0x1D
+Nominally 0x10000
+Write a new coefficient:
+./ccd_write_memory -i pci -b utility -space y -address 0x1D -value 0x1000

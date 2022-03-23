@@ -1,0 +1,67 @@
+cd /icc/bin/o/ccd/test/i386-linux
+
+./test_data_link -i pci -b interface -v 0x2
+./test_data_link -i pci -b timing -v 0x3
+./test_data_link -i pci -b utility -v 0x5
+
+#./test_dsp_download -i pci -b timing -f /icc/bin/o/dsp/time2v230.lod
+./test_dsp_download -i pci -b timing -f /icc/bin/o/dsp/timbif486.lod
+#./test_dsp_download -i pci -b timing -f /icc/bin/o/dsp/timhamamatsu-s9970.lod
+./test_dsp_download -i pci -b utility -f /icc/bin/o/dsp/util.lod
+
+./test_analogue_power -i pci -on
+
+This seems to return TOUT. After this nothing works until computer plus SDSU power is cycled?
+./test_analogue_power -i pci -off
+Worked fine second time!
+
+./test_data_link_multi -i pci -b pci -v 0x1 -c 100000
+./test_data_link_multi -i pci -b timing -v 0x1 -c 10000
+./test_data_link_multi -i pci -b utility -v 0x1 -c 1000
+
+./test_idle_clocking -i pci -idle
+./test_idle_clocking -i pci -stop_idle
+
+./test_setup_startup -i pci -timing_filename /icc/bin/o/dsp/timhamamatsu-s9970.lod -utility_filename /icc/bin/o/dsp/util.lod -temperature -110.0 
+
+
+./test_generate_waveform -i pci -setup -timing_filename /icc/bin/o/dsp/timhamamatsu-s9970.lod -utility_filename /icc/bin/o/dsp/uti./test_dsp_download -interface_device pci -board utility -filename /icc/bin/o/dsp/util.lodl.lod -dimensions -xs 532 -ys 64 -xb 1 -yb 1 -amplifier topleft -pixel_table_address 0x93 -clock_config /icc/bin/o/ccd/test/i386-linux/hamamatsu-s9970.config
+
+
+
+./test_exposure -i pci -setup -timing_filename /icc/bin/o/dsp/timhamamatsu-s9970.lod -utility_filename /icc/bin/o/dsp/util.lod -gain 4 true -xs 532 -ys 64 -xb 1 -yb 1 -amplifier topleft -expose 1000 -log_level 5 -f output.fits
+
+./test_exposure -i pci -setup -timing_filename /icc/bin/o/dsp/timbif486.lod -utility_filename /icc/bin/o/dsp/util.lod -gain 1 true -xs 4132 -ys 4096 -xb 1 -yb 1 -amplifier topleft -expose 5000 -log_level 5 -f output.fits
+
+./test_exposure -i pci -xs 532 -ys 64 -xb 1 -yb 1 -amplifier topleft -expose 1000 -log_level 5 -f output.fits
+
+./test_exposure -i pci -xs 4132 -ys 4096 -xb 1 -yb 1 -amplifier all -expose 5000 -log_level 5 -f output.fits
+
+Java test:
+java ngat.o.ccd.test.CCDLibraryTestExposure -interface_device INTERFACE_DEVICE_PCI -setup -timing_filename /icc/bin/o/dsp/timhamamatsu-s9970.lod -utility_filename /icc/bin/o/dsp/util.lod 
+
+java ngat.o.ccd.test.CCDLibraryTestExposure -interface_device INTERFACE_DEVICE_PCI -exposure -ncols 532 -nrows 64 -exposure_length 1000 -filename test1.fits
+
+java ngat.o.ccd.test.CCDLibraryTestExposure -interface_device INTERFACE_DEVICE_PCI -shutdown
+
+java ngat.o.ccd.test.CCDLibraryTestExposure -interface_device INTERFACE_DEVICE_PCI -setup -timing_filename /icc/bin/o/dsp/timhamamatsu-s9970.lod -utility_filename /icc/bin/o/dsp/util.lod -exposure -ncols 532 -nrows 64 -exposure_length 1000 -filename test1.fits -shutdown
+
+Filter wheel
+./test_filter_wheel -interface_device pci -timing_filename /icc/bin/o/dsp/timhamamatsu-s9970.lod -utility_filename /icc/bin/o/dsp/util.lod -move -position 1
+
+Temperature:
+Download timing ang utility board code, PON
+
+./test_temperature -i pci -g
+./test_temperature -i pci -s -60.0
+Read T_CCDT (target temperature ADU)
+./ccd_read_memory -interface_device pci -board utility -space y -address 0x1C
+
+Test CLR command:
+# Y:3 is NS_CLR, usually set to NSCLR = 2060 0x80c
+./ccd_read_memory -interface_device pci -board timing -space y -address 0x3
+./ccd_write_memory -i pci -b timing -space y -address 0x3 -value 2060
+# Y:4 is NP_CLR, usually set to NPCLR = 2049  = 0x801
+./ccd_read_memory -interface_device pci -board timing -space y -address 0x4
+./ccd_write_memory -i pci -b timing -space y -address 0x4 -value 0x801
+./test_manual_command -i pci -board timing -command CLR

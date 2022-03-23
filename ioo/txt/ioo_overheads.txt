@@ -1,0 +1,86 @@
+2015-05-11 T 05:24:36.507 UTC : - : - : Command:ngat.message.ISS_INST.MULTRUN Started.
+
+2015-05-11 T 05:24:37.271 UTC : - : - : ngat.o.O:sendISSCommand:ngat.message.ISS_INST.GET_FITS
+5s overhead
+2015-05-11 T 05:24:42.291 UTC : - : - : Done:ngat.message.ISS_INST.GET_FITS_DONE:successful:true:error number:0:error string:
+2015-05-11 T 05:24:42.291 UTC : - : - : ngat.o.O:sendBSSCommand:ngat.message.INST_BSS.GET_FITS
+2015-05-11 T 05:24:42.298 UTC : - : - : Done:ngat.message.INST_BSS.GET_FITS_DONE:successful:true:error number:0:error string:null
+
+
+2015-05-11 T 05:24:42.453 UTC : - : - : CCD_Exposure_Expose(handle=0xb5409620,clear_array=1,open_shutter=1,start_time_sec=0,exposure_time=10000,filename_count=1) started.
+2015-05-11 T 05:24:42.737 UTC : - : - : CCD_DSP_Command_SEX(handle=0xb5409620,exposure_length=9925) started.
+6s
+
+2015-05-11 T 05:24:51.749 UTC : - : - : CCD_DSP_Command_Ret(handle=0xb5409620) returned 9011 (0x2333).
+2015-05-11 T 05:24:51.749 UTC : - : - : CCD_Exposure_Expose(handle=0xb5409620):Elapsed exposure time is 0x2333.
+2015-05-11 T 05:24:51.749 UTC : - : - : CCD_Exposure_Expose(handle=0xb5409620):Exposure Status changed to PRE_READOUT 914 milliseconds before readout starts.
+2015-05-11 T 05:24:51.749 UTC : - : - : CCD_Exposure_Expose(handle=0xb5409620):Getting Readout Progress.
+2015-05-11 T 05:24:51.749 UTC : - : - : CCD_DSP_Command_Get_Readout_Progress(handle=0xb5409620) started.
+2015-05-11 T 05:24:51.749 UTC : - : - : CCD_Exposure_Expose(handle=0xb5409620):Readout progress is 0 of 0x89e960 pixels.
+2015-05-11 T 05:24:52.751 UTC : - : - : CCD_Exposure_Expose(handle=0xb5409620):Getting Host Status Transfer Register.
+2015-05-11 T 05:24:52.751 UTC : - : - : CCD_DSP_Command_Get_HSTR(handle=0xb5409620) started.
+2015-05-11 T 05:24:52.751 UTC : - : - : CCD_Exposure_Expose(handle=0xb5409620):HSTR is 0x2b.
+2015-05-11 T 05:24:52.751 UTC : - : - : CCD_Exposure_Expose(handle=0xb5409620):HSTR reply bits 0x5.
+2015-05-11 T 05:24:52.751 UTC : - : - : CCD_Exposure_Expose(handle=0xb5409620):HSTR Status is READOUT.
+2015-05-11 T 05:24:52.751 UTC : - : - : CCD_Exposure_Expose(handle=0xb5409620):Exposure Status changed to READOUT(HSTR).
+2015-05-11 T 05:24:52.751 UTC : - : - : CCD_Exposure_Expose(handle=0xb5409620):Getting Readout Progress.
+2015-05-11 T 05:24:52.751 UTC : - : - : CCD_DSP_Command_Get_Readout_Progress(handle=0xb5409620) started.
+2015-05-11 T 05:24:52.751 UTC : - : - : CCD_Exposure_Expose(handle=0xb5409620):Readout progress is 0 of 0x89e960 pixels.
+2015-05-11 T 05:25:01.768 UTC : - : - : CCD_Exposure_Expose(handle=0xb5409620):HSTR reply bits 0x1.
+2015-05-11 T 05:25:01.768 UTC : - : - : CCD_Exposure_Expose(handle=0xb5409620):Getting Readout Progress.
+2015-05-11 T 05:25:01.768 UTC : - : - : CCD_DSP_Command_Get_Readout_Progress(handle=0xb5409620) started.
+2015-05-11 T 05:25:01.768 UTC : - : - : CCD_Exposure_Expose(handle=0xb5409620):Readout progress is 0x89e960 of 0x89e960 pixels.
+2015-05-11 T 05:25:01.768 UTC : - : - : CCD_Exposure_Expose(handle=0xb5409620):Readout completed.
+2015-05-11 T 05:25:02.770 UTC : - : - : CCD_Exposure_Expose(handle=0xb5409620):Getting reply data.
+2015-05-11 T 05:25:02.770 UTC : - : - : CCD_Pixel_Stream_Post_Readout_Full_Frame:De-Interlacing.
+2015-05-11 T 05:25:04.556 UTC : - : - : CCD_Pixel_Stream_Post_Readout_Full_Frame:Saving to filename /icc/o-data/h_s_20150510_90_1_1_0.fits.
+2015-05-11 T 05:25:04.556 UTC : - : - : Pixel_Stream_Save:Started.
+2015-05-11 T 05:25:04.886 UTC : - : - : Pixel_Stream_Save:Completed.
+2015-05-11 T 05:25:04.888 UTC : - : - : CCD_Exposure_Expose(handle=0xb5409620) returned TRUE.
+2015-05-11 T 05:25:32.974 UTC : - : - : ngat.o.O:sendDpRtCommand:ngat.message.INST_DP.EXPOSE_REDUCE
+2015-05-11 T 05:25:33.934 UTC : - : - : Done:ngat.message.INST_DP.EXPOSE_REDUCE_DONE:successful:true:error number:0:error string:
+2015-05-11 T 05:25:33.936 UTC : - : - : ngat.o.O:sendDpRtCommand:ngat.message.INST_DP.EXPOSE_REDUCE
+2015-05-11 T 05:25:34.921 UTC : - : - : Command:ngat.message.ISS_INST.MULTRUN Completed.
+
+05:24:36-05:25:34 for 2x10s exp
+58s
+2x10s+2x12s+2x5s =  20+24+10 = 54s
+
+05:24:52
+05:25:04
+12s readout 2x2
+5s GET_FITS
+~1s extra overhead.
+
+
+
+bin 1
+-----
+
+2015-05-10 T 20:15:32.285 UTC : - : - : CCD_Setup_Dimensions(handle=0xb5409620,ncols(unbinned)=4396,nrows(unbinned)=4112,nsbin=1,npbin=1,amplifier=4480834(D_B),window_flags=0) started.
+
+2015-05-10 T 20:15:56.877 UTC : - : - : CCD_Exposure_Expose(handle=0xb5409620,clear_array=1,open_shutter=1,start_time_sec=0,exposure_time=20000,filename_count=1) started.
+20s exp
+2015-05-10 T 20:15:57.161 UTC : - : - : CCD_DSP_Command_SEX(handle=0xb5409620,exposure_length=19925) started.
+2015-05-10 T 20:16:16.207 UTC : - : - : CCD_DSP_Command_Ret(handle=0xb5409620) returned 19044 (0x4a64).
+2015-05-10 T 20:16:16.207 UTC : - : - : CCD_Exposure_Expose(handle=0xb5409620):Elapsed exposure time is 0x4a64.
+2015-05-10 T 20:16:16.207 UTC : - : - : CCD_Exposure_Expose(handle=0xb5409620):Exposure Status changed to PRE_READOUT 881 milliseconds before readout starts.
+2015-05-10 T 20:16:17.209 UTC : - : - : CCD_Exposure_Expose(handle=0xb5409620):HSTR is 0x2b.
+2015-05-10 T 20:16:17.209 UTC : - : - : CCD_Exposure_Expose(handle=0xb5409620):HSTR reply bits 0x5.
+2015-05-10 T 20:16:17.209 UTC : - : - : CCD_Exposure_Expose(handle=0xb5409620):HSTR Status is READOUT.
+2015-05-10 T 20:16:17.209 UTC : - : - : CCD_Exposure_Expose(handle=0xb5409620):Exposure Status changed to READOUT(HSTR).2015-05-10 T 20:16:44.279 UTC : - : - : CCD_DSP_Command_Get_Readout_Progress(handle=0xb5409620) started.
+2015-05-10 T 20:16:44.279 UTC : - : - : CCD_Exposure_Expose(handle=0xb5409620):Readout progress is 0x227a580 of 0x227a580 pixels.
+2015-05-10 T 20:16:44.279 UTC : - : - : CCD_Exposure_Expose(handle=0xb5409620):Readout completed.
+2015-05-10 T 20:16:45.281 UTC : - : - : CCD_Exposure_Expose(handle=0xb5409620):Getting reply data.
+2015-05-10 T 20:16:45.281 UTC : - : - : CCD_Pixel_Stream_Post_Readout_Full_Frame:De-Interlacing.
+2015-05-10 T 20:16:52.786 UTC : - : - : CCD_Pixel_Stream_Post_Readout_Full_Frame:Saving to filename /icc/o-data/twilight_calibrate.fits.
+2015-05-10 T 20:16:52.786 UTC : - : - : Pixel_Stream_Save:Started.
+2015-05-10 T 20:16:54.115 UTC : - : - : Pixel_Stream_Save:Completed.
+2015-05-10 T 20:16:54.123 UTC : - : - : CCD_Exposure_Expose(handle=0xb5409620) returned TRUE.
+
+20:16:17-20:16:44 readout = 27s
+20:16:45-20:16:52 deinterlacing 7s
+20:16:52-20:16:54 save 2s
+
+36s overall readout overhead for 1x1
+

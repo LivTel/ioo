@@ -1,0 +1,87 @@
+For low level testing of the filter wheel:
+
+cd /icc/bin/o/ccd/test/i386-linux
+
+Load the DSP code:
+./test_setup_startup -i pci -timing_filename /icc/bin/o/dsp/time2v231-84.lod -utility_filename /icc/bin/o/dsp/util.lod -temperature -60
+
+Or:
+./test_reset_controller -interface_device pci
+./test_dsp_download -interface_device pci -board utility -filename /icc/bin/o/dsp/util.lod
+
+
+Full filter wheel C and DSP test:
+./test_filter_wheel -interface_device pci -timing_filename /icc/bin/o/dsp/time2v231-84.lod -utility_filename /icc/bin/o/dsp/util.lod -log_level 5 -move -position 2
+Full filter wheel C and DSP test, 
+no reloading of timing and utility board code:
+./test_filter_wheel -nosetup -noshutdown -log_level 5 -reset
+./test_filter_wheel -nosetup -noshutdown -log_level 5 -move -position 2
+
+Just send the FWM command:
+./test_manual_command -interface_device pci -board utility -log_level 5 -command FWM -argument 1 
+TAD
+TDA
+OSH
+CSH
+TDL
+./test_data_link -i pci -b utility -v 0x5
+./test_manual_command -interface_device pci -board utility -log_level 5 -command TDL -argument 6
+
+Useful memory locations in /icc/bin/o/dsp/util.lod
+
+_SYMBOL Y
+DIG_IN               I 000000
+DIG_OUT              I 000001
+FW_POS_COUNT         I 000030
+FW_LAST_POS          I 000031
+FW_TARGET_POS        I 000032
+FW_OFFSET_POS        I 000033
+FW_TARGET_PROXIMITY_PATTERN  I 000034
+FW_ERROR_CODE        I 000035
+FW_TIMEOUT_INDEX     I 000036
+FW_TIMEOUT_COUNT     I 000037
+FW_PROXIMITY_PATTERN  I 000038
+FW_TMP1              I 000044
+
+#Write FW_LAST_POS:
+#./ccd_write_memory -interface_device pci -board utility -space y -address 0x3c -value 3 -log_level 5
+#Write FW_DIG_OUT:
+#./ccd_write_memory -interface_device pci -board utility -space y -address 0x1 -value 0x0
+
+Read FW_LAST_POS:
+./ccd_read_memory -interface_device pci -board utility -space y -address 0x31
+Read FW_TARGET_POS:
+./ccd_read_memory -interface_device pci -board utility -space y -address 0x32
+Read FW_OFFSET_POS:
+./ccd_read_memory -interface_device pci -board utility -space y -address 0x33
+Read FW_TARGET_PROXIMITY_PATTERN:
+./ccd_read_memory -interface_device pci -board utility -space y -address 0x34
+Read X:STATUS
+./ccd_read_memory -interface_device pci -board utility -space x -address 0x0
+Read FW_ERROR_CODE
+./ccd_read_memory -interface_device pci -board utility -space y -address 0x35
+Read FW_TIMEOUT_INDEX
+./ccd_read_memory -interface_device pci -board utility -space y -address 0x36
+Read FW_TIMEOUT_COUNT
+./ccd_read_memory -interface_device pci -board utility -space y -address 0x37
+Read DIG_IN:
+./ccd_read_memory -interface_device pci -board utility -space y -address 0x0
+
+
+/**
+ * The bit on the utility board, Y:DIG_OUT, is set to move the three locators in, 
+ * and cleared to move the three locators  out.
+ * This bit definition should be kept up to date with DIG_OUT_BIT_LOCATORS_IN, defined in filter_wheel_equ.asm.
+ */
+#define FW_OUTPUT_LOCATORS_IN                  (1<<0)
+/**
+ * The bit on the utility board, Y:DIG_OUT, is set to turn the motor on, and cleared to turn the motor off.
+ * This bit definition should be kept up to date with DIG_OUT_BIT_MOTOR_ON, defined in filter_wheel_equ.asm.
+ */
+#define FW_OUTPUT_MOTOR_ON                     (1<<1)
+/**
+ * The bit on the utility board, Y:DIG_OUT, is set to disengage the motor clutch, 
+ * and cleared to engage the motor clutch.
+ * This bit definition should be kept up to date with DIG_OUT_BIT_CLUTCH_DISENGAGE, defined in filter_wheel_equ.asm.
+ */
+#define FW_OUTPUT_CLUTCH_DISENGAGE             (1<<2)
