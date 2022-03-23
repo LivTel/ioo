@@ -1,0 +1,68 @@
+utilboot.asm 
+------------
+
+ 	ORG     P:RST_OFF,P:RST_OFF                    
+
+INIT etc
+; Load boot program into P: memory from EEPROM
+	MOVE    #P_OFF,R0	; Starting P: address in EEPROM
+	MOVE    #0,R1		; Put values starting at beginning of P:
+	DO      #APL_ADR+2,P_MOVE ; Boot program is APL_ADR words long
+	MOVE    P:(R0)+,A	; Get one word from EEPROM
+	MOVE	A,P:(R1)+	; Write it to DSP P: memory
+P_MOVE
+
+
+;  *****  Put interrupt service routine vectors in their required places  *****
+; After RESET jump to initialization code
+ 	ORG     P:RST_ISR,P:RST_ISR+P_OFF                   
+	JMP     INIT		; This is the interrupt service for RESET
+
+; The IRQA ISR is a long interrupt keyed to the 1 millisecond timer 
+        ORG     P:IRQA_ISR,P:IRQA_ISR+P_OFF
+	JSR	TIMER		; Jump to long TIMER routine for service
+
+; The SCI interrupts when it receives data from the timing board.
+        ORG     P:SCI_ISR,P:SCI_ISR+P_OFF
+	JSR     SCI_RCV		; SCI Receive data interrupt service routine
+
+; The SCI interrupts to here when there is an error.
+        ORG     P:SCI_ERR,P:SCI_ERR+P_OFF       
+	JSR     CLR_ERR
+
+; Put the ID words for this version of the ROM code. It is placed at
+;   the address of the SWI = software interrupt, which we never use. 
+        ORG     P:ROM_ID,P:ROM_ID+P_OFF
+
+; Start the command interpreting code
+        ORG     P:START,P:START+P_OFF         
+
+; Check for TIMER interrupts and go handle them if necessary
+	JSSET   #ST_SRVC,X:STATUS,SERVICE ; Do all millisecond service tasks
+	MOVEP	Y:WATCH,A	; Reset watchdog timer
+
+; Jump over the ISRs
+	JMP	<CONTINUE
+        ORG     P:CONTINUE,P:CONTINUE+P_OFF         
+
+; Check for overflow
+        IF	@CVS(N,*)>APL_ADR
+        WARN    'Internal P: memory overflow!'	; Make sure application code
+	ENDIF					;  will not be overwritten
+
+; Specify the memory location where the application program is to be loaded
+	ORG	P:APL_ADR,P:APL_ADR+P_OFF
+
+; Define TIMER as a simple jump addresses so the "bootrom" program 
+;   can work until the application program can be loaded
+SERVICE	RTS			; Just return from subroutine call
+TIMER	RTI			; Just return from interrupt
+
+ 	ORG     P:ROM_EXE,P:ROM_EXE                 
+
+WR_DAC is near the end of the SERVICE routine
+
+WR_DAC = 0x191
+
+PR_DONE              I 00023C
+APL_XY     EQU     $1EE0

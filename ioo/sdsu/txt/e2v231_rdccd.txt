@@ -1,0 +1,135 @@
+~dev/src/o/sdsu/E2V231/tim.asm:
+
+RDCCD
+-----
+
+if(#ST_DIRTY set in X:STATUS) jump CHANGED
+if Y:<LAST_NSBIN != Y:<NSBIN jump CHANGED
+if Y:<LAST_NPBIN != Y:<NPBIN jump CHANGED
+if Y:<LAST_NSR != Y:<NSR jump CHANGED
+if Y:<LAST_NPR != Y:<NPR jump CHANGED
+jump P_SHIFT
+
+CHANGED
+-------
+
+if Y:<NBOXES != 0 jump SUB_IMG
+Y:<NP_SKIP = 0
+Y:<NS_SKP1 = #PRESKIP
+Y:<NS_SKP2 = 0
+Y:<NR_BIAS = 0
+Y:<NS_READ = Y:<NSR
+Y:<NP_READ = Y:<NPR
+jump GO_ON
+
+SUB_IMG
+-------
+subimage stuff
+
+GO_ON
+-----
+
+gosub GENERATE_SERIAL_WAVEFORM
+clear #ST_DIRTY in X:<STATUS
+if(#SPLIT_S set in X:STATUS )
+{
+	Y:<NS_READ = Y:<NS_READ/2
+	Y:<NR_BIAS = Y:<NR_BIAS/2
+}
+if(#SPLIT_P set in X:STATUS)
+{
+	Y:<NP_READ = Y:<NP_READ/2
+}
+Y:<LAST_NSBIN = Y:<NSBIN
+Y:<LAST_NPBIN = Y:<NPBIN
+Y:<LAST_NSR = Y:<NSR
+Y:<LAST_NPR = Y:<NPR
+
+P_SHIFT
+-------
+; Skip over the required number of rows for subimage readout
+loop over Y:<NP_SKIP
+{
+	loop over Y:<NPBIN
+	{
+		clock Y:<PARALLEL_CLEAR
+	}
+}
+; This is the main loop over each line to be read out
+loop over Y:<NP_READ
+{
+	loop over Y:<NPBIN
+	{
+		clock Y:<PARALLEL
+	}
+	check command received
+	loop over Y:<NS_SKP1
+	{
+		clock Y:<SERIAL_SKIP
+	}
+	; Clock and video process prescan "pixels" without SXMIT to fill the pipeline  
+	Y:(Y:SXMIT_ADR) = #>$74
+	loop #PRESCAN
+	{
+		clock #PXL_TBL
+	}
+	Y:(Y:SXMIT_ADR) = Y:SXMIT
+	; Clock, video process and SXMIT remaining pixels minus 3 video processor pixels
+	loop over Y:<NS_READ-3
+	{
+		clock #PXL_TBL
+	}
+	; Skip over NS_SKP2 pixels if needed for subimage readout
+	if(Y:<NS_SKP2 > 0)
+	{
+		loop over Y:<NS_SKP2
+		{
+			clock Y:<SERIAL_SKIP
+		}	
+	}
+	if(Y:<NR_BIAS > 0)
+	{
+		Y:(Y:SXMIT_ADR) = #>$74
+		loop over #PRESCAN
+		{
+			clock #PXL_TBL
+		}
+		Y:(Y:SXMIT_ADR) = Y:SXMIT
+		loop over Y:<NR_BIAS
+		{
+			clock #PXL_TBL
+		}
+	} PIPE
+	; SXMIT the pixels left over in the pipeline: three pixels	
+	loop over 3
+	{
+		clock #PXL_TBL
+	}
+} LPR
+if(#IDLMODE set in X:<STATUS
+	    X:<IDL_ADR = #IDLE
+else
+		X:<IDL_ADR = #TST_RCV
+gosub WAIT_TO_FINISH_CLOCKING
+clear #ST_RDC in X:<STATUS
+
+~dev/src/o/sdsu/E2V231/timCCDmisc.asm:
+
+GENERATE_SERIAL_WAVEFORM
+------------------------
+ R1 = #(PXL_TBL+1)
+Y:<SXMIT_ADR = R1    (SXMIT_ADR is address of Y:SXMIT clock line)
+Y:(R1)+ = Y:SXMIT   (i.e. Add Y:SXMIT to PXL_TBL)
+Add Y:FIRST_CLOCKS to PXL_TBL
+if((Y:<NSBIN-1) > 0)
+{
+	loop over (Y:<NSBIN-1)
+	{
+		Add Y:CLOCK_LINE to PXL_TBL
+	} L_BIN
+}
+; Generate the video waveforms for integrating the reset level
+Add #RESET_VIDEO to PXL_TBL
+; Generate the waveforms for dumping charge and integrating the signal level
+Add Y:CHARGE_DUMP to PXL_TBL
+Calculate entries in PXL_TBL and set.

@@ -1,0 +1,35 @@
+SDSU Controller notes
+---------------------
+
+From my workbook, 20090512
+
+SDSU PSU S/N 532
+
+SDSU Power control board ARC73 Rev. 8A 8/14/06 SN 1166
+
+Backplane
+A01		Timing board
+A02		Utility board
+A03		Clock board
+A04		empty
+A05		Video board
+A06		Video board
+
+A01: ARC-22 Timing board R5D 7(?)/01/02
+     S/N 827
+
+A02: ARC-50 Utility board Rev. R4B 12/5/00
+     S/N 288
+
+A03: ARC-32 IR & CCD Clock Driver board Rev. 6A 6/6/2006
+     S/N 153 Rails 13v Rise time 20 n
+
+A05: ARC-45 CCD Video Processor board Rev. 5B 7/26/01
+     S/N 1131
+
+A06: ARC-45 CCD Video Processor board Rev. 5B 7/26/01
+     S/N 1071
+
+
+
+     

@@ -1,0 +1,9 @@
+Utility board code.
+Copied from e2v230 which contains Bob Leaches latest code.
+Created utilwine to compile assember into DSP .lod file using wine (on ltdevsrv).
+
+Coped over filter wheel code from /home/dev/src/sdsu/astro-cam/1.7/ngat (RATCam mode), and
+modified it for one wheel. This is DC motor code.
+
+
+

@@ -1,0 +1,54 @@
+FWA
+FWR
+FWM <direction> <number of detents to move>
+
+NB FW_DETENT_CHECK_COUNT will have to be tuned for the 12 position wheel, and rotation speeds.
+
+Digital Inputs
+--------------
+; Bit definitions of the digital input word DIG_IN (Y:0)
+; Note these values take the form of a bit number i.e. '4' means the fourth bit is set,
+; rather than a bit mask number (1<<'4') == 16
+; This is so they can be used with BSET,BCLR,JSET,JCLR
+FW0_INPUT_DETENT	EQU	0	; (1<<0) Set when wheel 0 is in a detent position.
+FW0_INPUT_HOME		EQU	1	; (1<<1) Set when wheel 0 is in it's home position.
+
+Digital Outputs
+---------------
+
+; Bit definitions of the digital output word DIG_OUT (Y:1)
+; DIG_OUT bit 0 was for output enable when using stepper motors, this is no longer needed.
+FW0_OUTPUT_MOVE		EQU	1	; (1<<1) Set to tell filter wheel 0 to move.
+FW0_OUTPUT_DIR		EQU	2	; (1<<2) Sets filter wheel's 0 direction.
+
+Software Variables
+------------------
+
+SECONDS_PER_REVOLUTION will have to be updated based on the real speed of the filter wheel.
+
+FW_MEM_LOC_UTIL_BOARD_STATUS = X:STATUS = X:0
+containing:
+FW_STATUS_BIT_MOVE      = ST_FW_MOVE	  EQU	5	; Set if a filter wheel move (FWM) operation is in progress.
+FW_STATUS_BIT_RESET     = ST_FW_RESET	  EQU	6	; Set if a filter wheel reset (FWR) operation is in progress.
+FW_STATUS_BIT_IN_DETENT = ST_FW_IN_DETENT EQU	7	; Last known state of the filter wheel detent. 
+							; Used to detect filter wheel detent state changes.
+No C equiv: ST_FW_DETENT_CHECK	EQU	8	; Set if we are detent checking, clear if we are de-bouncing.
+
+
+FW_MEM_LOC_UTIL_BOARD_DIGITAL_INPUT = Y:DIG_IN = Y:0
+containing:
+FW0_INPUT_DETENT	EQU	0	; (1<<0) Set when wheel 0 is in a detent position.
+FW0_INPUT_HOME		EQU	1	; (1<<1) Set when wheel 0 is in it's home position.
+
+
+FW_MEM_LOC_UTIL_BOARD_DIGITAL_OUTPUT = Y:DIG_OUT = Y:1
+containing:
+FW0_OUTPUT_MOVE		EQU	1	; (1<<1) Set to tell filter wheel 0 to move.
+FW0_OUTPUT_DIR		EQU	2	; (1<<2) Sets filter wheel's 0 direction.
+
+FW_MEM_LOC_DETENT_CHECK_COUNT =  Y:FW_DETENT_CHECK_COUNT = Y:0x3b
+Number of times round the 0.8ms ISR after leaving a detent before we start checking for the next detent (de-bounce).
+
+FW_MEM_LOC_POS_MOVE = Y:FW_POS_MOVE = Y:0x3d
+Number of position to move to reach required position, updated during FWM
+
