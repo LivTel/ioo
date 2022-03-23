@@ -5,12 +5,47 @@
 # 
 
 DOWNLOAD=HOST
+# Does timing board do exposures, or the utility board.
+MASTER=TIMING
+# Do we want to include the TDA, TAD,TDG commands (Test A/D, D/A, digital
+TESTCOM=NO
+#
+# Does this machine have wine for running the Motorola assembler
+#
+which wine >& /dev/null
+which_status=$?
+if [ "${which_status}" == 1 ]; then
+    echo "wine not found: run on ltdevsrv."
+    exit 1
+fi
+alias asm56000='wine /home/dev/sdsu/astro-cam/DSP/CLAS56/BIN/ASM56000.EXE'
+alias dsplnk='wine /home/dev/sdsu/astro-cam/DSP/CLAS56/BIN/DSPLNK.EXE'
+alias cldlod='wine /home/dev/sdsu/astro-cam/DSP/CLAS56/BIN/CLDLOD.EXE'
 
+echo "asm56000 -b -lutilboot.ls utilboot.asm"
 asm56000 -b -lutilboot.ls utilboot.asm
-asm56000 -b -lutilappl.ls -d DOWNLOAD $DOWNLOAD utilappl.asm 
+echo "asm56000 -b -lutilappl.ls -d DOWNLOAD $DOWNLOAD utilappl.asm"
+asm56000 -b -lutilappl.ls -d DOWNLOAD $DOWNLOAD -d MASTER $MASTER utilappl.asm 
+status=$?
+if [ "${status}" != 0 ]; then
+    echo "asm56000 failed."
+    exit 1
+fi
+echo "dsplnk -butil.cld -v utilboot.cln utilappl.cln"
 dsplnk -butil.cld -v utilboot.cln utilappl.cln
+status=$?
+if [ "${status}" != 0 ]; then
+    echo "dsplnk failed."
+    exit 1
+fi
 rm util.lod
+echo "cldlod util.cld > util.lod"
 cldlod util.cld > util.lod
+status=$?
+if [ "${status}" != 0 ]; then
+    echo "cldlod failed."
+    exit 1
+fi
 rm utilboot.cln ; rm utilappl.cln ; rm util.cld
 
 if [ "$DOWNLOAD" = "HOST" ] ; then
