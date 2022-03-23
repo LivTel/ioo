@@ -459,9 +459,12 @@ ABORT	BCLR    #ST_EX,X:<STATUS ; Take out of exposing mode
 	JMP     <FINISH		; Issue 'DON' and get next command
 	ENDIF
 
+ 	MSG	'Just before including filter wheel commands =',@CVS(N,*) 	
+	
 ; Include filter wheel commands.
 	INCLUDE "filter_wheel_commands.asm"
 
+ 	MSG	'Just after including filter wheel commands =',@CVS(N,*) 	
 ; A 'DON' reply has been received in response to a command issued by
 ;    the Utility board. Read the X:STATUS bits in responding to it.
 
@@ -469,6 +472,8 @@ ABORT	BCLR    #ST_EX,X:<STATUS ; Take out of exposing mode
 PR_DONE	MOVE	N4,R0		; Get internal jump address
 	MOVE	#<START,N4	; Set internal jump address to default
 	JMP	(R0)		; Jump to the internal jump address
+
+ 	MSG	'Top of Util Application =',@CVS(N,*) 	
 
 ; Check for program overflow - its hard to overflow since this application
 ;   can be very large indeed
