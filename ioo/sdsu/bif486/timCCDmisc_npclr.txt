@@ -1,0 +1,34 @@
+e2v230
+------
+
+tim.asm:NP_CLR  DC      NPCLR           ; To clear the parallel register 
+timCCDmisc.asm:CLR_CCD  DO      Y:<NP_CLR,LPCLR2        ; Loop over number of lines in image
+
+tim.asm:NP_CLR  DC      NPCLR           ; To clear the parallel register 
+
+So where _is_ NPCLR defined? Should be in STA0500A.waveforms?
+NP_CLR	EQU	2200    	; To clear the parallel register 
+NP_CLR is but grep can't find it!!!
+tim.lod:NPCLR                I 000898
+
+
+fif486
+------
+
+tim.asm:NPCLR   DC      NP_CLR          ; To clear the parallel register 
+timCCDmisc.asm: DO      Y:<NPCLR,LPCLR2
+
+tim.asm:NPCLR   DC      NP_CLR          ; To clear the parallel register 
+
+1MHz.Good_Noise.waveforms:NP_CLR        EQU     2200            ; To clear the parallel register 
+
+NB NP_CLR and NPCLR are reversed in e2v230 compared to fif486.
+
+Try to use the fif486 convention.
+bif486.waveforms contains NP_CLR
+bif486 tim.asm should contain line:
+tim.asm:NPCLR   DC      NP_CLR          ; To clear the parallel register 
+
+Also replacing PARALLEL_CLEAR_SPLIT with PARALLEL_CLEAR: PARALLEL_CLEAR_SPLIT
+does not appear to be defined in wavforms also:
+tim.asm:PARALLEL_CLEAR          DC      PARALLEL_CLEAR_SPLIT

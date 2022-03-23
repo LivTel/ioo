@@ -1,0 +1,36 @@
+timCCDmisc.asm
+
+Check #SHUT in X:STATUS is set.
+
+As part of START_EXPOSURE sequence:
+
+NB no delay for opening shutter
+
+; Delay readout until the shutter has fully closed
+	MOVE	Y:<SHDEL,A
+	TST	A
+	JLE	<S_DEL0
+	MOVE	#100000,X0
+	DO	A,S_DEL0		; Delay by Y:SHDEL milliseconds
+	DO	X0,S_DEL1
+	NOP
+S_DEL1	NOP
+S_DEL0	NOP
+
+; Shutter subroutines
+OSHUT	BSET    #ST_SHUT,X:<STATUS 	; Set status bit to mean shutter open
+	MOVE	#0,X0
+	JSR	<SET_SHUTTER_STATE
+	RTS
+
+CSHUT	BCLR    #ST_SHUT,X:<STATUS 	; Clear status to mean shutter closed
+	MOVE	#>$10,X0
+	JSR	<SET_SHUTTER_STATE
+	RTS
+
+tim.asm:
+SHDEL		DC	SH_DEL	; Delay from shutter close to start of readout
+
+bif486.waveforms:
+SH_DEL	EQU	50		; Delay in milliseconds between shutter
+				;   closing and image readout

@@ -1,0 +1,22 @@
+;SXMIT	EQU	$00F0C0				; Transmit A/Ds = 0 to 3
+;SXMIT	EQU	$00F040				; Transmit A/Ds = 0 to 1
+;SXMIT	EQU	$00F0C2				; Transmit A/Ds = 2 to 3
+
+;SXMIT	EQU	$00F000				; Transmit A/D = 0
+;SXMIT	EQU	$00F041				; Transmit A/D = 1
+;SXMIT	EQU	$00F082				; Transmit A/D = 2
+;SXMIT	EQU	$00F0C3				; Transmit A/D = 3
+
+ARC-22 250 MHz Fiber Optic Timing Board, GenIII
+(bits 0 based)
+bits #15-12 all set means SXMIT command
+bits #5-0 select starting number of A/D converter
+bits #10-6 select ending number of A/D converter
+
+
+0x41 : Bit 0 and bit 6 set (A/Ds 1-1)
+0x82 : Bit 1 and bit 7 set (A/Ds 2-2)
+0x40 : Bit 6 set           (A/Ds 0-1)
+
+0x81 : Bit 0 and bit 7 set (A/Ds 1-2)
+;SXMIT	EQU	$00F081				; Transmit A/Ds = 1 to 2
