@@ -84,6 +84,8 @@ UTILEXPOSURECHECKFLAGS = -DCCD_DSP_UTIL_EXPOSURE_CHECK=3
 # Allow RDM/WRM/temperature get calls when we are exposing.
 #UTILEXPOSURECHECKFLAGS = 
 
+BINDIR 		= $(O_CCD_BIN_HOME)/c/$(HOSTTYPE)
+
 #CCD_FILTER_WHEEL_FAKE
 # Add -DCCD_FILTER_WHEEL_FAKE to fake filter wheel movement
 CFLAGS = -g $(CCHECKFLAG) -I$(INCDIR) -I$(JNIINCDIR) -I$(JNIMDINCDIR) -L$(LT_LIB_HOME) \
@@ -95,10 +97,10 @@ DOCFLAGS = -static
 SRCS 		= 	ccd_interface.c ccd_pci.c ccd_text.c ccd_global.c ccd_dsp.c ccd_dsp_download.c \
 			ccd_temperature.c ccd_setup.c ccd_exposure.c ccd_filter_wheel.c ccd_pixel_stream.c
 HEADERS		=	$(SRCS:%.c=%.h) ccd_interface_private.h ccd_exposure_private.h ccd_setup_private.h
-OBJS		=	$(SRCS:%.c=%.o)
+OBJS		=	$(SRCS:%.c=$(BINDIR)/%.o)
 DOCS 		= 	$(SRCS:%.c=$(DOCSDIR)/%.html)
 JAVASRCS 	= 	$(SRCS) ngat_o_ccd_CCDLibrary.c
-JAVAOBJS	=	$(JAVASRCS:%.c=%.o)
+JAVAOBJS	=	$(JAVASRCS:%.c=$(BINDIR)/%.o)
 JAVADOCS 	= 	$(JAVASRCS:%.c=$(DOCSDIR)/%.html)
 LIBNAME		=	lib$(O_HOME)_$(O_CCD_HOME)
 
@@ -114,6 +116,9 @@ static: $(LT_LIB_HOME)/$(LIBNAME).a
 $(LT_LIB_HOME)/$(LIBNAME).a: $(OBJS)
 	ar rcv $@ $?
 
+$(BINDIR)/%.o: %.c
+	cc $(CFLAGS) -c $< -o $@ 
+
 # special case for ngat_o_ccd_CCDLibrary - depending on whether ngat.o.ccd.CCDLibrary has changed
 # recreate the machine generated JNI header
 # touch it, javah does not update the timestamp correctly
@@ -128,14 +133,6 @@ $(JAVADOCS): $(JAVASRCS)
 	-$(CDOC) -d $(DOCSDIR) -h $(INCDIR) $(DOCFLAGS) $(JAVASRCS)
 
 $(JAVADOCS) : $(JAVASRCS)
-
-checkout:
-	-$(CO) $(CO_OPTIONS) $(JAVASRCS)
-	-(cd $(INCDIR); $(CO) $(CO_OPTIONS) $(HEADERS);)
-
-checkin:
-	-$(CI) $(CI_OPTIONS) $(JAVASRCS)
-	-(cd $(INCDIR); $(CI) $(CI_OPTIONS) $(HEADERS);)
 
 staticdepend:
 	makedepend $(MAKEDEPENDFLAGS) -- $(CFLAGS) -- $(SRCS)
