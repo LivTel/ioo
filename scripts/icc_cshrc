@@ -26,7 +26,7 @@ end
 alias delete_log_files 		'/icc/bin/scripts/delete_log_files.csh'
 alias o_reboot       		'/icc/bin/scripts/o_reboot'
 alias o_engineering_mode 	'/icc/bin/scripts/o_engineering_mode'
-alias icsgui           		'/icc/bin/ccs_gui/java/icsgui'
+alias icsgui           		'/icc/bin/ics_gui/java/icsgui'
 alias myps             		'ps -e -o pid,pcpu,vsz,ruser,args'
 # Do not delete the next comment, it delimits the cshrc updated by the o_tar_install script.
 # <o_install:end>

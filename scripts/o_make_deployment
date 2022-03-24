@@ -73,7 +73,7 @@ echo "Creating directory structure..."
 set dir_count = 0
 # ${deployment_bin_dir}/o/java/ngat/o/test ${deployment_bin_dir}/o/java/ngat/o/ccd 
 # ${deployment_bin_dir}/o/java/ngat/o/ccd/test 
-set dir_list = "${deployment_dir} ${deployment_dir}/${init_d_dir} ${deployment_icc_dir} ${deployment_bin_dir} ${deployment_dir}/icc/o-data ${deployment_dir}/icc/o-data/log_archive ${deployment_dir}/icc/log ${deployment_icc_dir}/config ${deployment_bin_dir}/o/java ${deployment_bin_dir}/scripts ${deployment_bin_dir}/o/scripts ${deployment_bin_dir}/o/ccd/test/${HOSTTYPE} ${deployment_bin_dir}/o/dsp ${deployment_bin_dir}/ics_util/c/${HOSTTYPE} ${deployment_bin_dir}/ccd/misc/${HOSTTYPE} ${deployment_bin_dir}/javalib ${deployment_bin_dir}/lib/${HOSTTYPE} ${deployment_bin_dir}/ccs_gui/java ${deployment_bin_dir}/ccs_gui/java/wav ${deployment_bin_dir}/autobooter/java ${deployment_bin_dir}/o/test ${deployment_bin_dir}/dprt/test ${deployment_bin_dir}/dprt/java/ngat/dprt/o ${deployment_bin_dir}/libdprt/o/test/${HOSTTYPE} ${deployment_bin_dir}/tiptilt/pitiptilt/test/${HOSTTYPE}"
+set dir_list = "${deployment_dir} ${deployment_dir}/${init_d_dir} ${deployment_icc_dir} ${deployment_bin_dir} ${deployment_dir}/icc/o-data ${deployment_dir}/icc/o-data/log_archive ${deployment_dir}/icc/log ${deployment_icc_dir}/config ${deployment_bin_dir}/o/java ${deployment_bin_dir}/scripts ${deployment_bin_dir}/o/scripts ${deployment_bin_dir}/o/ccd/test/${HOSTTYPE} ${deployment_bin_dir}/o/dsp ${deployment_bin_dir}/ics_util/c/${HOSTTYPE} ${deployment_bin_dir}/ccd/misc/${HOSTTYPE} ${deployment_bin_dir}/javalib ${deployment_bin_dir}/lib/${HOSTTYPE} ${deployment_bin_dir}/ics_gui/java ${deployment_bin_dir}/ics_gui/java/wav ${deployment_bin_dir}/autobooter/java ${deployment_bin_dir}/o/test ${deployment_bin_dir}/dprt/test ${deployment_bin_dir}/dprt/java/ngat/dprt/o ${deployment_bin_dir}/libdprt/o/test/${HOSTTYPE} ${deployment_bin_dir}/tiptilt/pitiptilt/test/${HOSTTYPE}"
 foreach dir ( ${dir_list} )
 	mkdir -p ${dir}
 	if ($status != 0) then
@@ -158,7 +158,7 @@ echo "${jar_count} jars copied."
 # Java classes
 #
 echo "Copying Java class directories..."
-set java_class_dir_list = "autobooter/java dprt/test dprt/java/ngat/dprt dprt/java/ngat/dprt/o ccs_gui/java "
+set java_class_dir_list = "autobooter/java dprt/test dprt/java/ngat/dprt dprt/java/ngat/dprt/o ics_gui/java "
 # o/test
 set java_class_dir_count = 0
 foreach java_class_dir ( ${java_class_dir_list} )
@@ -297,7 +297,7 @@ echo "${dir_count} C test program directories copied, containg ${file_count} C t
 # Scripts
 #
 echo "Copying scripts..."
-set file_list = "o/scripts/o_engineering_mode o/scripts/soak_test_filter_wheel o/scripts/soak_test_data_link o/scripts/filter_change o/scripts/o_get_status_cron o/scripts/o_park_filter_wheel o/scripts/o_twilight_calibrate_analysis o/scripts/o_get_heater_adus o/scripts/o_idle_ccd scripts/killhup.csh scripts/fuser_check ccs_gui/java/icsgui o/ccd/test/test_temperature_control_cron o/scripts/move_locators o/scripts/get_proximity_positions o/scripts/get_locator_positions o/scripts/motor_set"
+set file_list = "o/scripts/o_engineering_mode o/scripts/soak_test_filter_wheel o/scripts/soak_test_data_link o/scripts/filter_change o/scripts/o_get_status_cron o/scripts/o_park_filter_wheel o/scripts/o_twilight_calibrate_analysis o/scripts/o_get_heater_adus o/scripts/o_idle_ccd scripts/killhup.csh scripts/fuser_check ics_gui/java/icsgui o/ccd/test/test_temperature_control_cron o/scripts/move_locators o/scripts/get_proximity_positions o/scripts/get_locator_positions o/scripts/motor_set"
 set file_count = 0
 cd ${dev_dir}
 foreach file ( ${file_list} )
@@ -316,7 +316,7 @@ echo "${file_count} scripts copied."
 #
 # in bin sub-directories
 echo "Copying machine configuration files..."
-set file_list = "o/ccd/test/${HOSTTYPE}/e2v231-84.config o/ccd/test/${HOSTTYPE}/bif486.config o/ccd/test/${HOSTTYPE}/hamamatsu-s9970.config o/java/${machine_name}.fits.properties o/java/${machine_name}.o.net.properties o/java/${machine_name}.o.properties dprt/java/${machine_name}.dprt.properties ccs_gui/java/${machine_name}.ccs_gui.properties ccs_gui/java/${machine_name}.ccs_gui_config.properties ccs_gui/java/${machine_name}.ccs_gui.fits.properties ccs_gui/java/${machine_name}.ics_gui.fits.bss.properties autobooter/java/${machine_name}.autobooter.properties"
+set file_list = "o/ccd/test/${HOSTTYPE}/e2v231-84.config o/ccd/test/${HOSTTYPE}/bif486.config o/ccd/test/${HOSTTYPE}/hamamatsu-s9970.config o/java/${machine_name}.fits.properties o/java/${machine_name}.o.net.properties o/java/${machine_name}.o.properties dprt/java/${machine_name}.dprt.properties ics_gui/java/${machine_name}.ics_gui.properties ics_gui/java/${machine_name}.ics_gui_config.properties ics_gui/java/${machine_name}.ics_gui.fits.properties ics_gui/java/${machine_name}.ics_gui.fits.bss.properties autobooter/java/${machine_name}.autobooter.properties"
 set file_count = 0
 cd ${dev_dir}
 foreach file ( ${file_list} )
@@ -408,8 +408,8 @@ echo "${file_count} DSP code files copied."
 # gif files
 #
 echo "Copying gif/wav files..."
-set file_list = "ccs_gui/java/lt.gif ccs_gui/java/lt_icon.gif ccs_gui/java/ratcam.gif ccs_gui/java/wav/halopperational.wav ccs_gui/java/wav/halsorrydave.wav ccs_gui/java/wav/halsmoothly.wav ccs_gui/java/wav/halmessage4u.wav ccs_gui/java/wav/halgoodevening.wav"
-# ccs_gui/java/wav/command_completed.wav ccs_gui/java/wav/command_failed.wav ccs_gui/java/wav/filename.wav ccs_gui/java/wav/iss_message.wav ccs_gui/java/wav/welcome.wav
+set file_list = "ics_gui/java/lt.gif ics_gui/java/lt_icon.gif ics_gui/java/ratcam.gif ics_gui/java/wav/halopperational.wav ics_gui/java/wav/halsorrydave.wav ics_gui/java/wav/halsmoothly.wav ics_gui/java/wav/halmessage4u.wav ics_gui/java/wav/halgoodevening.wav"
+# ics_gui/java/wav/command_completed.wav ics_gui/java/wav/command_failed.wav ics_gui/java/wav/filename.wav ics_gui/java/wav/iss_message.wav ics_gui/java/wav/welcome.wav
 set file_count = 0
 cd ${dev_dir}
 foreach file ( ${file_list} )
