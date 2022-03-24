@@ -1,0 +1,101 @@
+Clocking for bif486/tim.asm RDCCD
+---------------------------------
+Actually e2v230 version but bif486 diffs the same atm
+
+NB full readout 
+Y:<NP_SKIP = 0
+Y:<NS_SKP1 = #PRESKIP
+Y:<NS_SKP2 = 0
+Y:<NR_BIAS = 0
+Y:<NS_READ = Y:<NSR
+Y:<NP_READ = Y:<NPR
+
+JSR GENERATE_SERIAL_WAVEFORM L121
+GENERATE_SERIAL_WAVEFORM generates a serial waveform starting at PXL_TBL
+(the end of Y memory).
+GENERATE_SERIAL_WAVEFORM
+{
+	PXL_TBL
+	-------
+	Add Y:SXMIT to PXL_TBL
+	Add FIRST_CLOCKS list to PXL_TBL
+	if( Y:<NSBIN > 1)
+	{
+		loop over Y:<NSBIN-1
+		{
+			Add Y:CLOCK_LINE list to PXL_TBL
+		}
+	}
+	Add RESET_VIDEO list to PXL_TBL
+	Add CHARGE_DUMP list to PXL_TBL
+}
+
+This is dynamic generation of BIN_1_LEFT/BIN_2_LEFT/BIN_1_RIGHT/BIN_2_RIGHT/BIN_1_SPLIT/BIN_2_SPLIT
+
+Back to RDCCD
+if ( #SPLIT_S set in X:STATUS) ; if split serial
+{
+   Y:<NS_READ /= 2
+}
+if ( #SPLIT_P set in X:STATUS) ; if split parallel
+{ 
+  Y:<NP_READ /= 2
+}
+loop over Y:<NP_SKIP
+{
+	loop over Y:<NPBIN
+	{
+		clock Y:<PARALLEL_CLEAR
+	}
+}
+loop over Y:<NP_READ
+{
+	loop over Y:<NPBIN
+	{
+		clock Y:<PARALLEL
+	}
+	check if command received
+	loop over Y:<NS_SKP1
+	{
+		clock Y:<SERIAL_SKIP
+	}
+	; Clock and video process prescan "pixels" without SXMIT to fill the pipeline  
+	(*Y:SXMIT_ADR) (SXMIT in PXL_TBL) = #>$74 
+	loop over #PRESCAN
+	{
+		clock #PXL_TBL
+	}
+	(*Y:SXMIT_ADR) (SXMIT in PXL_TBL) = Y:SXMIT
+	; Clock, video process and SXMIT remaining pixels minus 3 video processor pixels
+	loop over (Y:<NS_READ-3)
+	{
+		clock #PXL_TBL
+	}
+	if( Y:<NS_SKP2 > 0)
+	{
+		loop over Y:<NS_SKP2
+		{
+			clock Y:<SERIAL_SKIP
+		}
+	}
+	if( Y:<NR_BIAS > 0 )
+	{
+		(*Y:SXMIT_ADR) = #>$74
+		loop over #PRESCAN
+		{
+			clock #PXL_TBL
+		}
+		(*Y:SXMIT_ADR) = Y:SXMIT
+		loop over Y:<NR_BIAS
+		{
+			clock #PXL_TBL
+		}	
+	}
+	; SXMIT the pixels left over in the pipeline: three pixels  
+	loop over #3
+	{
+		clock #PXL_TBL
+	}
+}(LPR)
+
+Restore idle clocking, WAIT_TO_FINISH_CLOCKING, remove #ST_RDC in X:<STATUS
