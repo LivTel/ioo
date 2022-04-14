@@ -437,6 +437,16 @@ int CCD_Exposure_Expose(CCD_Interface_Handle_T* handle,int clear_array,int open_
 				      handle->Exposure_Data.Exposure_Length,Exposure_Data.Shutter_Trigger_Delay,
 				      Exposure_Data.Shutter_Close_Delay);
 #endif
+		/* recheck modified exposure length is not < 0 */
+		if(handle->Exposure_Data.Modified_Exposure_Length < 0)
+		{
+			CCD_Pixel_Stream_Delete_Fits_Images(filename_list,filename_count);
+			Exposure_Error_Number = 10;
+			sprintf(Exposure_Error_String,
+				"CCD_Exposure_Expose:Illegal value:modified exposure length = %d",
+				handle->Exposure_Data.Modified_Exposure_Length);
+			return FALSE;
+		}
 	}
 	else
 	{
