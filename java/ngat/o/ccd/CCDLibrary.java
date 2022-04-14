@@ -389,6 +389,10 @@ public class CCDLibrary
 	 */
 	private native int CCD_Exposure_Shutter_Open_Delay_Get();
 	/**
+	 * Native wrapper to set the shutter exposure start time offset.
+	 */
+	private native void CCD_Exposure_Shutter_Start_Time_Offset_Set(int offset_ms);
+	/**
 	 * Native wrapper to set the exposure shutter close delay.
 	 */
 	private native void CCD_Exposure_Shutter_Close_Delay_Set(int delay_ms);
@@ -965,6 +969,17 @@ public class CCDLibrary
 	public int getShutterOpenDelay()
 	{
 		return CCD_Exposure_Shutter_Open_Delay_Get();
+	}
+
+	/**
+	 * Method to set the shutter start time offset. This offset is added to the exposure start time timestamp taken
+	 * when we command the exposure to start.
+	 * @param offset_ms The offset in milliseconds.
+	 * @see #CCD_Exposure_Shutter_Start_Time_Offset_Set
+	 */
+	public void setShutterStartTimeOffset(int offset_ms)
+	{
+		CCD_Exposure_Shutter_Start_Time_Offset_Set(offset_ms);
 	}
 
 	/**

@@ -97,6 +97,8 @@ extern void CCD_Exposure_Shutter_Trigger_Delay_Set(int delay_ms);
 extern int CCD_Exposure_Shutter_Trigger_Delay_Get(void);
 extern void CCD_Exposure_Shutter_Open_Delay_Set(int delay_ms);
 extern int CCD_Exposure_Shutter_Open_Delay_Get(void);
+extern void CCD_Exposure_Shutter_Start_Time_Offset_Set(int offset_ms);
+extern int CCD_Exposure_Shutter_Start_Time_Offset_Get(void);
 extern void CCD_Exposure_Shutter_Close_Delay_Set(int delay_ms);
 extern int CCD_Exposure_Shutter_Close_Delay_Get(void);
 extern void CCD_Exposure_Readout_Delay_Set(int delay_ms);

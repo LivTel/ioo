@@ -905,6 +905,7 @@ public class O
 	 * @see ngat.o.ccd.CCDLibrary#filterWheelReset
 	 * @see ngat.o.ccd.CCDLibrary#setShutterTriggerDelay
 	 * @see ngat.o.ccd.CCDLibrary#setShutterOpenDelay
+	 * @see ngat.o.ccd.CCDLibrary#setShutterStartTimeOffset
 	 * @see ngat.o.ccd.CCDLibrary#setShutterCloseDelay
 	 * @see ngat.o.ccd.CCDLibrary#setReadoutDelay
 	 * @see ngat.o.ndfilter.NDFilterArduino
@@ -917,7 +918,7 @@ public class O
 		int deviceNumber,textPrintLevel;
 		int pciLoadType,timingLoadType,timingApplicationNumber,utilityLoadType,utilityApplicationNumber,gain;
 		int startExposureClearTime,startExposureOffsetTime,readoutRemainingTime;
-		int shutterTriggerDelay,shutterOpenDelay,shutterCloseDelay,readoutDelay;
+		int shutterTriggerDelay,shutterOpenDelay,shutterStartTimeOffset,shutterCloseDelay,readoutDelay;
 		int filterWheelFilterCount,ndFilterArduinoPortNumber;
 		long memoryMapLength;
 		double targetTemperature;
@@ -962,6 +963,7 @@ public class O
 			readoutRemainingTime = status.getPropertyInteger("o.config.readout_remaining_time");
 			shutterTriggerDelay = status.getPropertyInteger("o.config.shutter.trigger_delay");
 			shutterOpenDelay = status.getPropertyInteger("o.config.shutter.open_delay");
+			shutterStartTimeOffset = status.getPropertyInteger("o.config.shutter.start_time_offset");
 			shutterCloseDelay = status.getPropertyInteger("o.config.shutter.close_delay");
 			readoutDelay = status.getPropertyInteger("o.config.readout_delay");
 			// NDFilter slide configuration information
@@ -990,6 +992,7 @@ public class O
 			// other config
 			ccd.setShutterTriggerDelay(shutterTriggerDelay);
 			ccd.setShutterOpenDelay(shutterOpenDelay);
+			ccd.setShutterStartTimeOffset(shutterStartTimeOffset);
 			ccd.setShutterCloseDelay(shutterCloseDelay);
 			ccd.setReadoutDelay(readoutDelay);
 		}

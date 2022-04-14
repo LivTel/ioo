@@ -99,6 +99,12 @@
  */
 #define EXPOSURE_DEFAULT_SHUTTER_OPEN_DELAY             (45)
 /**
+ * The default amount of time, in milliseconds, to add to the exposure start time timestamp.
+ * The Bonn shutter takes ~400ms to open, so if we add ~200ms to the exposure start time the exposure start time
+ * with respect to the centre of the frame is consistent no matter which direction the bonn shutter is traveling in.
+ */
+#define EXPOSURE_DEFAULT_SHUTTER_START_TIME_OFFSET      (200)
+/**
  * The default amount of time, in milliseconds, for the Uniblitz CS90 shutter to close completely.
  * The Uniblitz spec sheet says 90ms, IAS calibration 2011/09/28 110ms.
  */
@@ -125,6 +131,10 @@
  *     line high and the shutter starting to open. This delay is caused by the Uniblitz CS90 shutter controller.</dd>
  * <dt>Shutter_Open_Delay</dt> <dd>The length of time in milliseconds, that it takes the Uniblitz CS90 shutter 
  *     to open.</dd>
+ * <dt>Shutter_Start_Time_Offset</dt> <dd>The length of time in milliseconds, to add to the exposure start time. 
+ *                                    The bonn shutter can start opening from either direction. It takes ~400ms to open.
+ *                                    For a consistent exposure start time we can take the exposure start time to be
+ *                                    when the shutter cross the centre of the frame.</dd>
  * <dt>Shutter_Close_Delay</dt> <dd>The length of time in milliseconds, that it takes the Uniblitz CS90 shutter 
  *     to close.</dd>
  * <dt>Readout_Delay</dt> <dd>The length of time in milliseconds, to wait after the shutter has closed before
@@ -139,6 +149,7 @@ struct Exposure_Struct
 	int Start_Exposure_Offset_Time;
 	int Shutter_Trigger_Delay;
 	int Shutter_Open_Delay;
+	int Shutter_Start_Time_Offset;
 	int Shutter_Close_Delay;
 	int Readout_Delay;
 	int Readout_Remaining_Time;
@@ -153,7 +164,7 @@ struct Exposure_Struct
 static char rcsid[] = "$Id: ccd_exposure.c,v 1.7 2013-03-25 15:15:03 cjm Exp $";
 /**
  * Internal exposure data (library wide).
- * @see #Exposure_Struc
+ * @see #Exposure_Struct
  */
 static struct Exposure_Struct Exposure_Data;
 /**
@@ -177,6 +188,7 @@ static int Exposure_Shutter_Control(CCD_Interface_Handle_T* handle,int value);
  * <dt>Start_Exposure_Offset_Time</dt> <dd>EXPOSURE_DEFAULT_START_EXPOSURE_OFFSET_TIME</dd>
  * <dt>Shutter_Trigger_Delay</dt>      <dd>EXPOSURE_DEFAULT_SHUTTER_TRIGGER_DELAY</dd>
  * <dt>Shutter_Open_Delay</dt>         <dd>EXPOSURE_DEFAULT_SHUTTER_OPEN_DELAY</dd>
+ * <dt>Shutter_Start_Time_Offset</dt>  <dd>EXPOSURE_DEFAULT_SHUTTER_START_TIME_OFFSET</dd>
  * <dt>Shutter_Close_Delay</dt>        <dd>EXPOSURE_DEFAULT_SHUTTER_CLOSE_DELAY</dd>
  * <dt>Readout_Delay</dt>              <dd>EXPOSURE_DEFAULT_READOUT_DELAY</dd>
  * <dt>Readout_Remaining_Time</dt>     <dd>EXPOSURE_DEFAULT_READOUT_REMAINING_TIME</dd>
@@ -187,6 +199,7 @@ static int Exposure_Shutter_Control(CCD_Interface_Handle_T* handle,int value);
  * @see #EXPOSURE_DEFAULT_START_EXPOSURE_OFFSET_TIME
  * @see #EXPOSURE_DEFAULT_SHUTTER_TRIGGER_DELAY
  * @see #EXPOSURE_DEFAULT_SHUTTER_OPEN_DELAY
+ * @see #EXPOSURE_DEFAULT_SHUTTER_START_TIME_OFFSET
  * @see #EXPOSURE_DEFAULT_SHUTTER_CLOSE_DELAY
  * @see #EXPOSURE_DEFAULT_READOUT_DELAY
  * @see #EXPOSURE_DEFAULT_READOUT_REMAINING_TIME
@@ -210,6 +223,7 @@ void CCD_Exposure_Initialise(void)
 	Exposure_Data.Start_Exposure_Offset_Time = EXPOSURE_DEFAULT_START_EXPOSURE_OFFSET_TIME;
 	Exposure_Data.Shutter_Trigger_Delay = EXPOSURE_DEFAULT_SHUTTER_TRIGGER_DELAY;
 	Exposure_Data.Shutter_Open_Delay = EXPOSURE_DEFAULT_SHUTTER_OPEN_DELAY;
+	Exposure_Data.Shutter_Start_Time_Offset = EXPOSURE_DEFAULT_SHUTTER_START_TIME_OFFSET;
 	Exposure_Data.Shutter_Close_Delay = EXPOSURE_DEFAULT_SHUTTER_CLOSE_DELAY;
 	Exposure_Data.Readout_Delay = EXPOSURE_DEFAULT_READOUT_DELAY;
 	Exposure_Data.Readout_Remaining_Time = EXPOSURE_DEFAULT_READOUT_REMAINING_TIME;
@@ -1212,6 +1226,34 @@ extern int CCD_Exposure_Shutter_Open_Delay_Get(void)
 }
 
 /**
+ * Routine to set an offset to apply to the exposure start time timestamp taken when we begin an exposure.
+ * The bonn shutter can start opening from either direction. It takes ~400ms to open.
+ * For a consistent exposure start time we can take the exposure start time to be
+ * when the shutter cross the centre of the frame. i.e. we set this offset to half the shutter crossing time.
+ * @param offset_ms The offset to apply to the start time, in milliseconds.
+ * @see #Exposure_Struct
+ * @see #Exposure_Data
+ */
+extern void CCD_Exposure_Shutter_Start_Time_Offset_Set(int offset_ms)
+{
+	Exposure_Data.Shutter_Start_Time_Offset = offset_ms;
+}
+
+/**
+ * Routine to get the offset applied to the exposure start time timestamp taken when we begin an exposure.
+ * The bonn shutter can start opening from either direction. It takes ~400ms to open.
+ * For a consistent exposure start time we can take the exposure start time to be
+ * when the shutter cross the centre of the frame. i.e. we set this offset to half the shutter crossing time.
+ * @return The offset to apply to the start time, in milliseconds.
+ * @see #Exposure_Struct
+ * @see #Exposure_Data
+ */
+extern int CCD_Exposure_Shutter_Start_Time_Offset_Get(void)
+{
+	return Exposure_Data.Shutter_Start_Time_Offset;
+}
+
+/**
  * Routine to set the length of time the Uniblitz CS90 shutter controller takes to close the shutter.
  * See the IO:O "O Shutter Timing" documentation for more details.
  * @param delay_ms The delay length, in milliseconds.
@@ -1264,6 +1306,8 @@ extern int CCD_Exposure_Readout_Delay_Get(void)
  * clock_gettime or gettimeofday is used, depending on whether _POSIX_TIMERS is defined.
  * We then add the Shutter Trigger Time to the captured time, as this delay occurs after the SEX command is sent,
  * before the shutter bagins to open.
+ * We also add the Shutter Start Time Offset, which allows us to correct for the different directions the bonn
+ * shutter opens (by correcting the exposure start time to the middle of the shutter/CCD). 
  * @param handle The address of a CCD_Interface_Handle_T that holds the device connection specific information.
  * @see ccd_exposure_private.html#CCD_Exposure_Struct
  * @see ccd_interface.html#CCD_Interface_Handle_T
@@ -1284,6 +1328,8 @@ void CCD_Exposure_Set_Exposure_Start_Time(CCD_Interface_Handle_T* handle)
 #endif
 	/* add shutter trigger delay to get correct time */
 	CCD_Global_Add_Time_Ms(&(handle->Exposure_Data.Exposure_Start_Time),Exposure_Data.Shutter_Trigger_Delay);
+	/* Add the shutter start time offset to correct for the bonn shutter crossing time */
+	CCD_Global_Add_Time_Ms(&(handle->Exposure_Data.Exposure_Start_Time),Exposure_Data.Shutter_Start_Time_Offset);
 }
 
 /**

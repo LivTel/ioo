@@ -456,6 +456,19 @@ JNIEXPORT jint JNICALL Java_ngat_o_ccd_CCDLibrary_CCD_1Exposure_1Shutter_1Open_1
 }
 
 /**
+ * Class:     ngat_o_ccd_CCDLibrary
+ * Method:    CCD_Exposure_Shutter_Start_Time_Offset_Set
+ * Signature: (I)V
+ * @see ccd_exposure.html#CCD_Exposure_Shutter_Start_Time_Offset_Set
+ */
+JNIEXPORT void JNICALL Java_ngat_o_ccd_CCDLibrary_CCD_1Exposure_1Shutter_1Start_1Time_1Offset_1Set(JNIEnv *env,
+												   jobject obj,
+												   jint offset_ms)
+{
+	CCD_Exposure_Shutter_Start_Time_Offset_Set((int)offset_ms);
+}
+
+/**
  * Class:     ngat_o_ccd_CCDLibrary<br>
  * Method:    CCD_Exposure_Shutter_Close_Delay_Set<br>
  * Signature: (I)V<br>
