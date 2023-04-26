@@ -1,0 +1,14 @@
+#!/bin/csh
+# o_take_bias
+java ngat.o.test.SendConfigCommand -ip o1 -port 7979 -xBin 2 -yBin 2 -filter SDSS-R
+set java_status = $status
+# This will usually fail during the day trying to set the telescope focus offset e.g.
+# ngat.o.test.SicfTCPClientConnectionThread:processDone:ngat.message.ISS_INST.CONFIG:done has
+#        error Number:1300805
+#        error String:setFocusOffset failed:java.lang.Exception: ngat.o.CONFIGImplementation:focusOffset failed:-0.06:<<090055>> Command not allowed in present system state.
+#        successful:false
+#Acknowledge with timeToComplete:120000
+#Done returned error(1300805): setFocusOffset failed:java.lang.Exception: ngat.o.CONFIGImplementation:focusOffset failed:-0.06:<<090055>> Command not allowed in present system state.
+java ngat.o.test.SendBiasCommand  -ip o1 -port 7979 -serverport 7383 > /tmp/o_bias_output.txt
+set bias_fits_filename = `cat /tmp/o_bias_output.txt | grep 'Filename' | sed 's/Filename:\(.*\)/\1/'`
+echo ${bias_fits_filename}
