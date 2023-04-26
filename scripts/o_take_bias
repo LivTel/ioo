@@ -10,5 +10,7 @@ set java_status = $status
 #Acknowledge with timeToComplete:120000
 #Done returned error(1300805): setFocusOffset failed:java.lang.Exception: ngat.o.CONFIGImplementation:focusOffset failed:-0.06:<<090055>> Command not allowed in present system state.
 java ngat.o.test.SendBiasCommand  -ip o1 -port 7979 -serverport 7383 > /tmp/o_bias_output.txt
-set bias_fits_filename = `cat /tmp/o_bias_output.txt | grep 'Filename' | sed 's/Filename:\(.*\)/\1/'`
-echo ${bias_fits_filename}
+set bias_fits_filename_1 = `cat /tmp/o_bias_output.txt | grep 'Filename' | sed 's/Filename:\(.*\)/\1/'`
+echo ${bias_fits_filename_1}
+set bias_fits_filename_0 = `echo ${bias_fits_filename} | sed 's/_1.fits/_0.fits/'`
+echo ${bias_fits_filename_0}
